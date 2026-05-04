@@ -1,5 +1,5 @@
 ﻿## **DevOps Course Summer 2026 Group Project Problem Statement --- AI-Integrated Life Manager App**
-Alexander Michael Wudy, Ahmet Coşkun, Werber Richter
+Alexander Michael Wudy, Ahmet Coşkun, Werner Richter
 
 **Main functionality:** The main functionality of this app is allowing the user to perform various life management activities, such as note taking, scheduling calendar events, creating to-do lists etc., all in one application.
 
