@@ -7,7 +7,8 @@ The main functionality of this app is allowing the user to perform various life 
 ## Intended user base
 Any person that uses their technical devices for planning their daily lives and want to have multiple tools combined into one application to get a better overview.
 
-**GenAI integration:** GenAI will be integrated in the form of a LLM-powered chatbot that allows the user to query the data that they previously provided (notes, calendar events etc). For instance, the user will be able to find out the events on their schedule for next week by simply asking “What do I have scheduled for next week?”.
+## GenAI integration
+GenAI will be integrated in the form of a LLM-powered chatbot that allows the user to query the data that they previously provided (notes, calendar events etc). For instance, the user will be able to find out the events on their schedule for next week by simply asking “What do I have scheduled for next week?”.
 
 **Example scenarios for the app:**
 • A student needs to take notes for their lecture
