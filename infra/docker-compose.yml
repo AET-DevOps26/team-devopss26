@@ -1,0 +1,55 @@
+services:
+  #####################################################################################################
+  # USER SERVICE 
+  #####################################################################################################
+  user-service-db:
+    networks:
+      user-service-net: { }
+    image: postgres:12.8
+    command: -p ${USER_SERVICE_POSTGRES_PORT_INT}
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${USER_SERVICE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${USER_SERVICE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${USER_SERVICE_POSTGRES_DB}
+    ports:
+      - "${USER_SERVICE_POSTGRES_PORT_EXT}:${USER_SERVICE_POSTGRES_PORT_INT}"
+    volumes:
+      - user-service-db:/var/lib/postgresql/data
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "pg_isready -p ${USER_SERVICE_POSTGRES_PORT_INT} -U ${USER_SERVICE_POSTGRES_USER} -d ${USER_SERVICE_POSTGRES_DB}"
+      ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  user-service-app:
+    networks:
+      user-service-net: { }
+    env_file:
+      - .env
+    build:
+      context: ../services/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "${USER_SERVICE_APP_PORT}:${USER_SERVICE_APP_PORT}"
+    depends_on:
+      user-service-db:
+        condition: service_healthy
+  #####################################################################################################
+  # GENAI SERVICE
+  #####################################################################################################
+  # TODO: INSERT HERE
+  
+  #####################################################################################################
+  # FRONTEND SERVICE
+  #####################################################################################################
+  # TODO: INSERT HERE
+
+volumes:
+  user-service-db: { }
+
+networks:
+  user-service-net: { }

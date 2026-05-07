@@ -1,0 +1,9 @@
+name: default.yml
+on: [push]
+
+jobs:
+  todo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Implement me
+        run: echo "Hello, World!"
