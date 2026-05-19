@@ -1,0 +1,82 @@
+@startuml
+' All class definitions required by our architecture
+class User {
+	- id: Long
+	- email: String
+	- oauthProvider: String
+	- oauthSubject: String
+}
+
+class Note {
+	- id: Long
+	- title: String
+	- content: String
+	- createdAt: DateTime
+	- lastUpdatedAt: DateTime
+	--
+	+ updateContent(title: String, content: String): void
+}
+
+class CalendarEvent {
+	- id: Long
+	- title: String
+	- description: String
+	- startTime: DateTime
+	- endTime: DateTime
+	- location: String
+	--
+	+ updateContent(title: String, description: String, startTime: DateTime, endTime: DateTime, location: String): void
+}
+
+class Checklist {
+	- id: Long
+	- title: String
+	- createdAt: DateTime
+	--
+	+ addItem(text: String): ChecklistItem
+	+ removeItem(itemId: Long): void
+}
+
+class ChecklistItem {
+	- id: Long
+	- text: String
+	- completed: boolean
+	- position: Integer
+}
+
+class ChatConversation {
+	- id: Long
+	- title: String
+	- createdAt: DateTime
+	--
+	+ addChatMessage(role: ChatRole, content: String): ChatMessage
+}
+
+class ChatMessage {
+	- id: Long
+	- content: String
+	- timestamp: Long
+}
+
+enum ChatRole {
+	USER
+	AGENT
+}
+
+note as GlobalInfo
+  **General information:**
+  * every field is private by default, and is exposed via getters
+     and setters only
+  * getters and setters are not declared by default, but should
+     be included via Lombok using @Getter and @Setter
+end note
+
+' Connections between classes
+User "1" --> "*" Note
+User "1" --> "*" CalendarEvent
+User "1" --> "*" Checklist
+Checklist "1" --> "*" ChecklistItem
+User "1" --> "*" ChatConversation
+ChatConversation "1" --> "*" ChatMessage
+ChatMessage --> ChatRole
+@enduml
