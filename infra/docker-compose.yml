@@ -171,7 +171,20 @@ services:
   #####################################################################################################
   # GENAI SERVICE
   #####################################################################################################
-  # TODO: INSERT HERE
+  genai-service-app:
+    <<: *app-template
+    container_name: genai-service-app
+    build:
+      context: ../services/genai-service
+    ports:
+      - "${GENAI_SERVICE_APP_PORT}:${GENAI_SERVICE_APP_PORT}"
+    networks:
+      - genai-service-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${GENAI_SERVICE_APP_PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   #####################################################################################################
   # FRONTEND SERVICE
@@ -193,3 +206,4 @@ networks:
   checklist-service-net: {}
   calendar-service-net: {}
   note-service-net: {}
+  genai-service-net: {}
