@@ -189,7 +189,16 @@ services:
   #####################################################################################################
   # FRONTEND SERVICE
   #####################################################################################################
-  # TODO: INSERT HERE
+  client:
+    container_name: client
+    build:
+      context: ../web-client
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+    ports:
+      - "${CLIENT_PORT:-3000}:80"
+    networks:
+      - client-net
 
 # --- VOLUMES & NETWORKS ---
 # Define the volumes and networks used by the services.
@@ -207,3 +216,4 @@ networks:
   calendar-service-net: {}
   note-service-net: {}
   genai-service-net: {}
+  client-net: {}
