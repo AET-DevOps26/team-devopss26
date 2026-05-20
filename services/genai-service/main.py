@@ -5,7 +5,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -24,9 +24,9 @@ _prompt = ChatPromptTemplate.from_messages([
     ("human", "{message}"),
 ])
 
-_llm = ChatGroq(
-    model="llama-3.1-8b-instant",
-    api_key=os.environ["GROQ_API_KEY"],
+_llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",
+    google_api_key=os.environ["GEMINI_API_KEY"],
 )
 
 _chain = _prompt | _llm | StrOutputParser()
