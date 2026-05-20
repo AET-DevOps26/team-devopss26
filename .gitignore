@@ -1,1 +1,27 @@
-.idea
+# ============== IntelliJ IDEA =================
+# Ignoriere den Inhalt des .idea-Ordners, aber nicht den Ordner selbst.
+.idea/*
+
+# Behalte aber diese spezifischen Dateien und Ordner
+!.idea/misc.xml
+!.idea/vcs.xml
+!.idea/codeStyles/
+!.idea/runConfigurations/
+!.idea/dictionaries/
+
+# Ignoriere explizit die benutzerspezifische workspace.xml
+.idea/workspace.xml
+
+# Die .iml-Dateien werden oft durch Gradle/Maven generiert.
+*.iml
+*.iws
+*.ipr
+
+# ============== Maven / General =================
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ============== VS Code =================
+.vscode/

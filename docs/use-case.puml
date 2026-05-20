@@ -1,0 +1,50 @@
+@startuml
+'https://plantuml.com/use-case-diagram
+
+left to right direction
+
+package "AI-integrated Life Management App" {
+
+	package Chatbot as Chatbot {
+		(Query the chatbot)
+	}
+
+	package Notes as Notes {
+		(Create Note)
+		(Edit Note)
+		(View Note)
+		(Delete Note)
+	}
+	
+	package Calendar as Calendar {
+		(Create Event)
+		(Edit Event)
+		(View Event)
+		(Delete Event)
+	}
+	
+	package Checklists as Checklists {
+		(Create Checklist)
+		(Edit Checklist)
+		(View Checklist)
+		(Delete Checklist)
+		(Manage Items in Checklist)
+	}
+	
+	package Settings as Settings {
+		(Change Time Display)
+	}
+	
+	package Administrator as Administrator {
+		(Manage User)
+	}
+
+}
+
+User --> Notes
+User --> Calendar
+User --> Checklists
+User --> Chatbot
+User --> Settings
+Admin --> Administrator
+@enduml
