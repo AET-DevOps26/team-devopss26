@@ -1,0 +1,74 @@
+@startuml
+skinparam nodesep 40
+skinparam ranksep 50
+skinparam shadowing false
+
+skinparam RectangleBackgroundColor #F2F4F4
+skinparam NodeBackgroundColor #E5E8E8
+skinparam ComponentBackgroundColor #AED6F1
+skinparam DatabaseBackgroundColor #F9E79F
+
+top to bottom direction
+
+cloud "User" as user #transparent
+
+rectangle "Network Boundary" {
+    
+    node "Frontend Server" as feServer {
+       [React Frontend] as fe
+    }
+    
+    node "API Gateway" as gatewayServer {
+       [Reverse Proxy] as proxy
+    }
+    
+    rectangle "Backend Microservices" {
+        
+        node "Chatbot Service" as msChat {
+            [Chatbot Engine] as sbChat
+        }
+        
+        node "Admin Service" as msAdmin {
+            [Spring Boot Admin] as sbAdmin
+            database "Postgres (Admin)" as pgAdmin
+            sbAdmin -down-> pgAdmin
+        }
+        
+        node "User Service" as msUser {
+            [Spring Boot User] as sbUser
+            database "Postgres (User)" as pgUser
+            sbUser -down-> pgUser
+        }
+        
+        node "Checklists Service" as msCheck {
+            [Spring Boot Checklists] as sbCheck
+            database "Postgres (Checklists)" as pgCheck
+            sbCheck -down-> pgCheck
+        }
+        
+        node "Calendar Service" as msCal {
+            [Spring Boot Calendar] as sbCal
+            database "Postgres (Calendar)" as pgCal
+            sbCal -down-> pgCal
+        }
+        
+        node "Notes Service" as msNotes {
+            [Spring Boot Notes] as sbNotes
+            database "Postgres (Notes)" as pgNotes
+            sbNotes -down-> pgNotes
+        }
+    }
+}
+
+user -down-> fe : Access App
+
+fe -down-> proxy : API Requests (HTTPS)
+
+proxy -down-> sbChat
+proxy -down-> sbAdmin
+proxy -down-> sbUser
+proxy -down-> sbCheck
+proxy -down-> sbCal
+proxy -down-> sbNotes
+
+@enduml
