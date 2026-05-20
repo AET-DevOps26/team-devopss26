@@ -1,0 +1,100 @@
+@startuml
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 60
+skinparam defaultTextAlignment center
+
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #BDBDBD
+}
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam database {
+  BackgroundColor #F9E79F
+  BorderColor #D4AC0D
+}
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #9E9E9E
+}
+
+title Frontend Architecture — React Client (web-client/)
+top to bottom direction
+
+rectangle "Web Client" #F8F9FA {
+  rectangle "Build Tooling" as BUILD {
+    component "Vite" as VITE
+    component "Tailwind CSS v4" as TW
+    component "TanStack Router" as ROUTER
+  }
+
+  rectangle "UI Layer" as UI {
+    component "React 19 + shadcn/ui" as REACT
+    component "AppShell + Pages" as PAGES
+    component "react-oidc-client" as OIDC_LIB
+  }
+
+  rectangle "State Management" as STATE {
+    component "authStore (Zustand)" as AUTHSTORE
+    component "chatStore (Zustand)" as CHATSTORE
+    component "TanStack Query" as TQ
+  }
+
+  rectangle "API Layer" as API {
+    component "Axios Client" as AXIOS
+    component "Service Modules" as SVCS
+    component "OpenAPI Types" as TYPES
+  }
+
+  rectangle "Testing" as TESTING {
+    component "Vitest + RTL" as VITEST
+    component "MSW" as MSW
+  }
+}
+
+rectangle "External" #FFF3E0 {
+  component "OIDC Provider" as OIDC #FFCDD2
+  rectangle "Backend" {
+    component "Spring Boot" as BACKEND #C5E1A5
+    database "PostgreSQL" as DB
+    component "GenAI\n(FastAPI / Gemini)" as GENAI #E1BEE7
+  }
+
+}
+
+VITE     -down-> REACT : bundles
+TW       -down-> REACT
+ROUTER   -down-> PAGES : routes
+
+OIDC_LIB -down-> OIDC : OIDC flow
+OIDC_LIB -down-> AUTHSTORE
+
+PAGES    -left-> REACT
+PAGES    -down-> AUTHSTORE
+PAGES    -down-> CHATSTORE
+PAGES    -down-> TQ
+
+TQ       -down-> SVCS : queries
+SVCS     -down-> AXIOS
+AXIOS    -right-> AUTHSTORE : JWT
+AXIOS    -down-> BACKEND : REST
+BACKEND  -down-> DB
+BACKEND  -down-> GENAI : chat proxy
+
+SVCS     -down-> TYPES
+
+VITEST   -down-> MSW
+MSW      -down-> AXIOS : intercepts
+
+legend bottom
+  Auth is handled client-side via react-oidc-client.
+  AuthProvider wraps the app and manages the OIDC flow.
+  authStore wraps useAuth() for cross-layer JWT access.
+  Chat requests are proxied through Spring Boot to GenAI.
+  MSW intercepts Axios calls during tests.
+endlegend
+
+@enduml
