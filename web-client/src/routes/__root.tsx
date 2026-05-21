@@ -1,8 +1,9 @@
-import { Outlet, createRootRoute } from '@tanstack/react-router';
+import { createRootRoute } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { TanStackDevtools } from '@tanstack/react-devtools';
 
-import '../styles.css';
+import 'src/styles.css';
+import { AppShell } from 'src/components/layout/AppShell';
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -11,7 +12,7 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <>
-      <Outlet />
+      <AppShell />
       <TanStackDevtools
         config={{
           position: 'bottom-right',
