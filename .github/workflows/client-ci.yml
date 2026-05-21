@@ -2,12 +2,7 @@ name: Client CI
 
 on:
   push:
-    paths:
-      - 'web-client/**'
   pull_request:
-    branches: [main]
-    paths:
-      - 'web-client/**'
 
 jobs:
   build:
