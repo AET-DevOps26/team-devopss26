@@ -1,4 +1,22 @@
-FROM ubuntu:latest
-LABEL authors="Werner Richter"
+FROM node:22-alpine AS build
 
-ENTRYPOINT ["top", "-b"]
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
+RUN npm run build
+
+FROM caddy:alpine
+
+COPY --from=build /app/dist /usr/share/caddy
+COPY Caddyfile /etc/caddy/Caddyfile
+
+EXPOSE 80
+
+LABEL authors="w-richter"
