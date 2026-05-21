@@ -1,0 +1,74 @@
+@startuml
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 50
+skinparam defaultTextAlignment center
+
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #BDBDBD
+}
+skinparam component {
+  BackgroundColor #E8F0FE
+  BorderColor #5C6BC0
+}
+
+title Frontend Component Decomposition — web-client/src/
+top to bottom direction
+
+component "main.tsx\n(RouterProvider)" as ENTRY
+
+rectangle "Layout" as LAYOUT {
+  component "AppShell\n(__root.tsx)" as SHELL
+  component "Sidebar" as SIDEBAR
+  component "Topbar" as TOPBAR
+}
+
+rectangle "Pages" as PAGES {
+  component "Dashboard" as DASH
+  component "Notes\n(list + editor)" as NOTES
+  component "Calendar" as CAL
+  component "Chat" as CHAT
+  component "Settings" as SETT
+}
+
+rectangle "Shared Components" as SHARED {
+  component "ErrorBoundary" as ERR
+  component "EmptyState" as EMPTY
+  component "Skeleton" as SKELETON
+  component "Toast (sonner)" as TOAST
+  component "MarkdownEditor" as MDEDIT
+  component "MarkdownRenderer" as MDRENDER
+  component "CalendarView\n(react-big-calendar)" as CALVIEW
+}
+
+ENTRY -down-> SHELL : renders
+
+SHELL  -down-> SIDEBAR
+SHELL  -down-> TOPBAR
+SHELL  -down-> DASH
+SHELL  -down-> NOTES
+SHELL  -down-> CAL
+SHELL  -down-> CHAT
+SHELL  -down-> SETT
+
+DASH   ..> EMPTY
+DASH   ..> SKELETON
+NOTES  ..> EMPTY
+NOTES  ..> MDEDIT
+NOTES  ..> MDRENDER
+CAL    ..> CALVIEW
+CHAT   ..> MDRENDER
+
+SHELL  ..> ERR
+SHELL  ..> TOAST
+SHELL  ..> SKELETON
+
+legend bottom
+  Solid arrows (↓) = rendered in the layout tree.
+  Dashed arrows (..>) = contextual / per-page usage.
+  Skeleton replaces spinner for all loading states.
+  No login/register pages — auth handled by OIDC redirect.
+endlegend
+
+@enduml
