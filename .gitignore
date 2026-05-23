@@ -17,11 +17,14 @@
 *.iws
 *.ipr
 
+# ============== VS Code =================
+.vscode/
+
 # ============== Maven / General =================
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# ============== VS Code =================
-.vscode/
+# ============== Secrets =================
+**/.env
