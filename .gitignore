@@ -28,3 +28,22 @@ target/
 
 # ============== Secrets =================
 **/.env
+
+# ============== Terraform =================
+# Ignore local tfvars files (they often contain secrets/passwords)
+**/*.tfvars
+**/*.auto.tfvars
+
+# Local Terraform working directories
+**/.terraform/
+
+# State Files (CRITICAL: THESE CONTAIN SECRETS IN PLAINTEXT!)
+**/*.tfstate
+**/*.tfstate.*
+
+# Provider Lock File (ignored for easier local cross-platform development)
+**/.terraform.lock.hcl
+
+# Crash Logs
+**/crash.log
+**/crash.*.log
