@@ -1,0 +1,17 @@
+{{- $global := .Values.global }}
+{{- $pg := .Values.postgres }}
+{{- range $name, $cfg := .Values.services }}
+{{- $prefix := replace "-" "_" $name | upper }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-config
+  namespace: {{ $global.namespace }}
+data:
+  {{ $prefix }}_APP_PORT: "{{ $cfg.appPort }}"
+  {{ $prefix }}_POSTGRES_URL: "postgres"
+  {{ $prefix }}_POSTGRES_PORT_INT: "5432"
+  {{ $prefix }}_POSTGRES_DB: "{{ $cfg.dbName }}"
+  {{ $prefix }}_POSTGRES_USER: "{{ $pg.user }}"
+{{- end }}

@@ -1,0 +1,70 @@
+# ── Global ──────────────────────────────────────────────────────
+global:
+  namespace: devopss26
+  imageTag: latest
+  imagePullPolicy: IfNotPresent          # local → prod: Always
+  # imagePullSecrets:                    # uncomment for private GHCR
+  #   - name: ghcr-secret
+
+# Registry prefix for team's own images (kept OUT of global to avoid
+# cascading into Bitnami subcharts which also read global.imageRegistry)
+imageRegistry: team-devopss26            # local → prod: ghcr.io/aet-devops26/team-devopss26
+
+# ── Java service map (range-based — add/remove services here) ──
+services:
+  user-service:
+    appPort: 8001
+    contextPath: /api/user
+    dbName: userdb
+  admin-service:
+    appPort: 8002
+    contextPath: /api/admin
+    dbName: admindb
+  checklist-service:
+    appPort: 8003
+    contextPath: /api/checklist
+    dbName: checklistdb
+  calendar-service:
+    appPort: 8004
+    contextPath: /api/calendar
+    dbName: calendardb
+  note-service:
+    appPort: 8005
+    contextPath: /api/note
+    dbName: notedb
+
+# ── Client (Caddy + React) ─────────────────────────────────────
+client:
+  replicaCount: 1
+  image:
+    repository: team-devopss26/client
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 80
+
+# ── GenAI Service (Python FastAPI) ──────────────────────────────
+genaiService:
+  replicaCount: 1
+  image:
+    repository: team-devopss26/genai-service
+    tag: latest
+    pullPolicy: IfNotPresent
+  appPort: 8006
+  geminiApiKey: ""
+  resources:
+    requests: { memory: "128Mi", cpu: "100m" }
+    limits: { memory: "256Mi", cpu: "250m" }
+
+# ── PostgreSQL (official image, single instance) ────────────────
+postgres:
+  user: admin
+  password: admin
+  persistence:
+    size: 2Gi
+
+# ── Ingress ────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  host: ""
+  className: ""
+  annotations: {}

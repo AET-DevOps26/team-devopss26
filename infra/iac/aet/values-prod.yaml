@@ -1,0 +1,24 @@
+# Production overrides for AET Rancher — helm install -f values-prod.yaml
+# Only overrides what changes from local: registry, pull policy, and ingress.
+# All service ports, context paths, and db names inherit from values.yaml.
+
+global:
+  namespace: devopss26
+  imageTag: latest
+  imagePullPolicy: Always
+
+imageRegistry: ghcr.io/aet-devops26/team-devopss26
+
+client:
+  image:
+    repository: ghcr.io/aet-devops26/team-devopss26/client
+
+genaiService:
+  image:
+    repository: ghcr.io/aet-devops26/team-devopss26/genai-service
+
+ingress:
+  enabled: true
+  host: ""   # set via --set ingress.host=... at deploy time
+  className: ""
+  annotations: {}

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: client-caddyfile
+  namespace: {{ .Values.global.namespace }}
+data:
+  Caddyfile: |
+    :80 {
+        root * /usr/share/caddy
+        try_files {path} /index.html
+        file_server
+
+        reverse_proxy /api/user/*       http://user-service:{{ index .Values.services "user-service" "appPort" }}
+        reverse_proxy /api/admin/*      http://admin-service:{{ index .Values.services "admin-service" "appPort" }}
+        reverse_proxy /api/checklist/*  http://checklist-service:{{ index .Values.services "checklist-service" "appPort" }}
+        reverse_proxy /api/calendar/*   http://calendar-service:{{ index .Values.services "calendar-service" "appPort" }}
+        reverse_proxy /api/note/*       http://note-service:{{ index .Values.services "note-service" "appPort" }}
+        reverse_proxy /api/genai/*      http://genai-service:{{ .Values.genaiService.appPort }}
+    }

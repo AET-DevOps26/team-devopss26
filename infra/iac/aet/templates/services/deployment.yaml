@@ -1,0 +1,51 @@
+{{- $global := .Values.global }}
+{{- $imageRegistry := .Values.imageRegistry }}
+{{- $postgresql := .Values.postgresql }}
+{{- range $name, $cfg := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $global.namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      {{- with $global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          image: "{{ $imageRegistry }}/{{ $name }}:{{ $global.imageTag }}"
+          imagePullPolicy: {{ $global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ $cfg.appPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ $name }}-config
+            - secretRef:
+                name: {{ $name }}-secret
+          livenessProbe:
+            tcpSocket:
+              port: {{ $cfg.appPort }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: {{ $cfg.appPort }}
+            initialDelaySeconds: 20
+            periodSeconds: 5
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits: { memory: "512Mi", cpu: "500m" }
+{{- end }}
