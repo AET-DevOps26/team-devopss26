@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${GENAI_SERVICE_APP_PORT:-8006}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${GENAI_SERVICE_APP_PORT:-8006} --root-path /api/genai"]
