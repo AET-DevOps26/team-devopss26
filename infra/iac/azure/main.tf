@@ -6,6 +6,13 @@ terraform {
     }
   }
 
+  backend "azurerm" {
+    resource_group_name  = "devops-rg"
+    storage_account_name = "tumdevopss26tfstate"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
+
   required_version = ">= 1.15.4"
 }
 

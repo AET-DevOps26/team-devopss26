@@ -9,6 +9,10 @@ resource "azurerm_linux_virtual_machine" "vm" {
     username   = "devops-admin"
     public_key = file("keys/alex.pub")
   }
+  admin_ssh_key {
+    username   = "devops-admin"
+    public_key = file("keys/werner.pub")
+  }
   
   network_interface_ids           = [azurerm_network_interface.net-interface.id]
   size                            = "Standard_B2ts_v2"
