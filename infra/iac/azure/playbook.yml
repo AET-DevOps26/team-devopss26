@@ -1,0 +1,94 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+    - name: Update apt package index and install prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        update_cache: yes
+
+    - name: Create directory for apt keyrings
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download and de-armor Docker's official GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+        force: true
+
+    - name: Add Docker repository to Apt sources
+      ansible.builtin.apt_repository:
+        repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: Install Docker Engine and plugins
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        update_cache: yes
+
+    - name: Add admin user to the docker group
+      ansible.builtin.user:
+        name: devops-admin
+        groups: docker
+        append: yes
+
+    - name: Ensure Docker service is started and enabled
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+        
+    - name: Install git and pip3
+      ansible.builtin.apt:
+        name:
+          - git
+          - python3-pip
+        state: present
+
+    - name: Install Docker module for Python
+      ansible.builtin.pip:
+        name:
+          - docker
+          - docker-compose
+        state: present
+        
+    - name: Ensure target directory exists and has correct permissions
+      ansible.builtin.file:
+        path: /home/devops-admin/app
+        state: directory
+        owner: devops-admin
+        group: devops-admin
+        mode: '0755'
+
+    - name: Clone or pull Git repository
+      ansible.builtin.git:
+        repo: 'https://x-access-token:{{ github_token }}@github.com/AET-DevOps26/team-devopss26.git'
+        dest: /home/devops-admin/app
+        version: main
+        force: yes
+        accept_hostkey: yes
+      become: yes
+      become_user: devops-admin
+
+    - name: Start application with Docker Compose
+      community.docker.docker_compose_v2:
+        project_src: /home/devops-admin/app/infra
+        state: present
+        pull: always
+      become: yes
+      become_user: devops-admin
+      environment:
+        BUILDKIT_NUMBER_OF_THREADS: "1"

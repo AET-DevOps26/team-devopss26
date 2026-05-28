@@ -28,6 +28,7 @@ target/
 
 # ============== Secrets =================
 **/.env
+infra/iac/azure/hosts.ini
 
 # ============== Terraform =================
 # Ignore local tfvars files (they often contain secrets/passwords)

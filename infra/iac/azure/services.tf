@@ -7,6 +7,10 @@ resource "azurerm_linux_virtual_machine" "vm" {
   admin_username                  = "devops-admin"
   admin_ssh_key {
     username   = "devops-admin"
+    public_key = file("keys/pipeline.pub")
+  }
+  admin_ssh_key {
+    username   = "devops-admin"
     public_key = file("keys/alex.pub")
   }
   admin_ssh_key {
