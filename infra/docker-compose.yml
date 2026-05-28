@@ -171,6 +171,39 @@ services:
   #####################################################################################################
   # GENAI SERVICE
   #####################################################################################################
+  genai-service-db:
+    <<: *db-template
+    container_name: genai-service-db
+    environment:
+      POSTGRES_USER: ${GENAI_SERVICE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${GENAI_SERVICE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${GENAI_SERVICE_POSTGRES_DB}
+    ports:
+      - "${GENAI_SERVICE_POSTGRES_PORT_EXT}:5432"
+    volumes:
+      - genai-service-db:/var/lib/postgresql/data
+    networks:
+      - genai-service-net
+
+  genai-service-liquibase:
+    image: liquibase/liquibase:4.29
+    env_file: .env
+    container_name: genai-service-liquibase
+    depends_on:
+      genai-service-db:
+        condition: service_healthy
+    volumes:
+      - ../services/genai-service/db/changelog:/liquibase/changelog
+    command:
+      - --url=jdbc:postgresql://${GENAI_SERVICE_POSTGRES_URL}:${GENAI_SERVICE_POSTGRES_PORT_INT}/${GENAI_SERVICE_POSTGRES_DB}
+      - --username=${GENAI_SERVICE_POSTGRES_USER}
+      - --password=${GENAI_SERVICE_POSTGRES_PASSWORD}
+      - --changeLogFile=db.changelog-master.xml
+      - --searchPath=/liquibase/changelog
+      - update
+    networks:
+      - genai-service-net
+
   genai-service-app:
     <<: *app-template
     container_name: genai-service-app
@@ -180,6 +213,9 @@ services:
       - "${GENAI_SERVICE_APP_PORT}:${GENAI_SERVICE_APP_PORT}"
     networks:
       - genai-service-net
+    depends_on:
+      genai-service-liquibase:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${GENAI_SERVICE_APP_PORT}/health || exit 1"]
       interval: 10s
@@ -208,6 +244,7 @@ volumes:
   checklist-service-db: {}
   calendar-service-db: {}
   note-service-db: {}
+  genai-service-db: {}
 
 networks:
   user-service-net: {}
