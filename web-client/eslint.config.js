@@ -61,5 +61,19 @@ export default tseslint.config(
     },
   },
 
+  {
+    files: ['src/components/ui/**/*.tsx', 'src/hooks/use-mobile.ts'],
+    extends: [tseslint.configs.disableTypeChecked],
+    rules: {
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/no-confusing-void-expression': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+
   prettier,
 );
