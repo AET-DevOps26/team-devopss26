@@ -1,8 +1,8 @@
-name: Build & Push images
+name: Build & Push Images
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/setup-ghcr-build-workflow#38]
   workflow_dispatch:
 
 env:
