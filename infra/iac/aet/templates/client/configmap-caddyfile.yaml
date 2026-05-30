@@ -6,14 +6,28 @@ metadata:
 data:
   Caddyfile: |
     :80 {
-        root * /usr/share/caddy
-        try_files {path} /index.html
-        file_server
+        handle /api/user/* {
+            reverse_proxy http://user-service:{{ index .Values.services "user-service" "appPort" }}
+        }
+        handle /api/admin/* {
+            reverse_proxy http://admin-service:{{ index .Values.services "admin-service" "appPort" }}
+        }
+        handle /api/checklist/* {
+            reverse_proxy http://checklist-service:{{ index .Values.services "checklist-service" "appPort" }}
+        }
+        handle /api/calendar/* {
+            reverse_proxy http://calendar-service:{{ index .Values.services "calendar-service" "appPort" }}
+        }
+        handle /api/note/* {
+            reverse_proxy http://note-service:{{ index .Values.services "note-service" "appPort" }}
+        }
+        handle /api/genai/* {
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
 
-        reverse_proxy /api/user/*       http://user-service:{{ index .Values.services "user-service" "appPort" }}
-        reverse_proxy /api/admin/*      http://admin-service:{{ index .Values.services "admin-service" "appPort" }}
-        reverse_proxy /api/checklist/*  http://checklist-service:{{ index .Values.services "checklist-service" "appPort" }}
-        reverse_proxy /api/calendar/*   http://calendar-service:{{ index .Values.services "calendar-service" "appPort" }}
-        reverse_proxy /api/note/*       http://note-service:{{ index .Values.services "note-service" "appPort" }}
-        reverse_proxy /api/genai/*      http://genai-service:{{ .Values.genaiService.appPort }}
+        handle {
+            root * /usr/share/caddy
+            try_files {path} /index.html
+            file_server
+        }
     }

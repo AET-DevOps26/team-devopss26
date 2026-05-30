@@ -7,7 +7,7 @@ global:
   #   - name: ghcr-secret
 
 # Registry prefix for team's own images (kept OUT of global to avoid
-# cascading into Bitnami subcharts which also read global.imageRegistry)
+# cascading into subcharts which also read global.imageRegistry)
 imageRegistry: team-devopss26            # local → prod: ghcr.io/aet-devops26/team-devopss26
 
 # ── Java service map (range-based — add/remove services here) ──

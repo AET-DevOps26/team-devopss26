@@ -3,6 +3,8 @@
 # All service ports, context paths, and db names inherit from values.yaml.
 
 global:
+  imagePullSecrets:
+    - name: ghcr-secret
   namespace: devopss26
   imageTag: latest
   imagePullPolicy: Always

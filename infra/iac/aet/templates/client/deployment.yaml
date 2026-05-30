@@ -25,6 +25,10 @@ spec:
           imagePullPolicy: {{ .Values.client.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.client.port }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - name: caddyfile
               mountPath: /etc/caddy/Caddyfile

@@ -25,3 +25,14 @@ target/
 
 # ============== VS Code =================
 .vscode/
+
+# ============== Security / Secrets =================
+.env
+*.tgz
+*secret*
+*credential*
+*.key
+*.pem
+*.cert
+kubeconfig
+stud.yaml

@@ -25,6 +25,10 @@ spec:
           imagePullPolicy: {{ .Values.genaiService.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.genaiService.appPort }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           envFrom:
             - configMapRef:
                 name: genai-service-config

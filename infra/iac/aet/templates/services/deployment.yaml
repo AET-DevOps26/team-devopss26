@@ -1,6 +1,5 @@
 {{- $global := .Values.global }}
 {{- $imageRegistry := .Values.imageRegistry }}
-{{- $postgresql := .Values.postgresql }}
 {{- range $name, $cfg := .Values.services }}
 ---
 apiVersion: apps/v1
@@ -30,6 +29,10 @@ spec:
           imagePullPolicy: {{ $global.imagePullPolicy }}
           ports:
             - containerPort: {{ $cfg.appPort }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           envFrom:
             - configMapRef:
                 name: {{ $name }}-config
