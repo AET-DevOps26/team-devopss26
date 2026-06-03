@@ -189,9 +189,6 @@ services:
     image: liquibase/liquibase:4.29
     env_file: .env
     container_name: genai-service-liquibase
-    depends_on:
-      genai-service-db:
-        condition: service_healthy
     volumes:
       - ../services/genai-service/db/changelog:/liquibase/changelog
     command:
