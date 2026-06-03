@@ -203,6 +203,9 @@ services:
       - update
     networks:
       - genai-service-net
+    depends_on:
+      genai-service-db:
+        condition: service_healthy
 
   genai-service-app:
     <<: *app-template
