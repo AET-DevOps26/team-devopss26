@@ -5,7 +5,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet id="1" author="genai-service">
+    <changeSet id="1" author="ahmet_coskun">
         <createTable tableName="chat_conversation">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -14,19 +14,16 @@
                 <constraints nullable="false"/>
             </column>
             <column name="title" type="VARCHAR(255)"/>
-            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="NOW()">
+            <column name="created_at" type="BIGINT" defaultValueComputed="EXTRACT(EPOCH FROM NOW())::BIGINT * 1000">
                 <constraints nullable="false"/>
             </column>
         </createTable>
-    </changeSet>
-
-    <changeSet id="2" author="genai-service">
         <createIndex tableName="chat_conversation" indexName="idx_chat_conversation_user_id">
             <column name="user_id"/>
         </createIndex>
     </changeSet>
 
-    <changeSet id="3" author="genai-service">
+    <changeSet id="2" author="ahmet_coskun">
         <createTable tableName="chat_message">
             <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
@@ -45,23 +42,17 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-    </changeSet>
-
-    <changeSet id="4" author="genai-service">
         <addForeignKeyConstraint
                 baseTableName="chat_message" baseColumnNames="conversation_id"
                 referencedTableName="chat_conversation" referencedColumnNames="id"
                 constraintName="fk_chat_message_conversation"
                 onDelete="CASCADE"/>
-    </changeSet>
-
-    <changeSet id="5" author="genai-service">
         <createIndex tableName="chat_message" indexName="idx_chat_message_conversation_id">
             <column name="conversation_id"/>
         </createIndex>
     </changeSet>
 
-    <changeSet id="6" author="genai-service">
+    <changeSet id="3" author="ahmet_coskun">
         <sql>ALTER TABLE chat_message ADD CONSTRAINT chk_chat_message_role CHECK (role IN ('USER', 'AGENT'))</sql>
     </changeSet>
 
