@@ -19,7 +19,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   }
   
   network_interface_ids           = [azurerm_network_interface.net-interface.id]
-  size                            = "Standard_B2ts_v2"
+  size                            = "Standard_B2s_v2"
 
   os_disk {
     name                 = "devops-vm-os-disk"
@@ -32,5 +32,18 @@ resource "azurerm_linux_virtual_machine" "vm" {
     offer     = "0001-com-ubuntu-server-jammy"
     sku       = "22_04-lts-gen2"
     version   = "latest"
+  }
+}
+
+resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
+  virtual_machine_id = azurerm_linux_virtual_machine.vm.id
+  location           = azurerm_linux_virtual_machine.vm.location
+  enabled            = true
+
+  daily_recurrence_time = "0300"
+  timezone              = "W. Europe Standard Time"
+
+  notification_settings {
+    enabled         = false
   }
 }

@@ -12,8 +12,6 @@ x-db-template: &db-template
 
 x-app-template: &app-template
   env_file: .env
-  build:
-    dockerfile: Dockerfile
 
 # --- SERVICES ---
 # Define the actual services using the templates above.
@@ -21,22 +19,31 @@ services:
   #####################################################################################################
   # USER SERVICE
   #####################################################################################################
-  user-service-db:
+  services-db:
     <<: *db-template
-    container_name: user-service-db
+    container_name: services-db
     environment:
-      POSTGRES_USER: ${USER_SERVICE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${USER_SERVICE_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${USER_SERVICE_POSTGRES_DB}
+      POSTGRES_USER: ${SERVICES_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SERVICES_POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      POSTGRES_MULTIPLE_DATABASES: user_service_db,admin_service_db,checklist_service_db,calendar_service_db,note_service_db,genai_service_db
     ports:
-      - "${USER_SERVICE_POSTGRES_PORT_EXT}:5432"
+      - "${SERVICES_POSTGRES_PORT_EXT}:5432"
     volumes:
-      - user-service-db:/var/lib/postgresql/data
+      - services-db:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
     networks:
+      - admin-service-net
+      - calendar-service-net
+      - checklist-service-net
+      - client-net
+      - genai-service-net
+      - note-service-net
       - user-service-net
 
   user-service-app:
     <<: *app-template
+    image: ghcr.io/aet-devops26/team-devopss26/user-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: user-service-app
     build:
       context: ../services/user-service
@@ -45,28 +52,15 @@ services:
     networks:
       - user-service-net
     depends_on:
-      user-service-db:
+      services-db:
         condition: service_healthy
 
   #####################################################################################################
   # ADMIN SERVICE
   #####################################################################################################
-  admin-service-db:
-    <<: *db-template
-    container_name: admin-service-db
-    environment:
-      POSTGRES_USER: ${ADMIN_SERVICE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${ADMIN_SERVICE_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${ADMIN_SERVICE_POSTGRES_DB}
-    ports:
-      - "${ADMIN_SERVICE_POSTGRES_PORT_EXT}:5432"
-    volumes:
-      - admin-service-db:/var/lib/postgresql/data
-    networks:
-      - admin-service-net
-
   admin-service-app:
     <<: *app-template
+    image: ghcr.io/aet-devops26/team-devopss26/admin-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: admin-service-app
     build:
       context: ../services/admin-service
@@ -75,28 +69,15 @@ services:
     networks:
       - admin-service-net
     depends_on:
-      admin-service-db:
+      services-db:
         condition: service_healthy
 
   #####################################################################################################
   # CHECKLIST SERVICE
   #####################################################################################################
-  checklist-service-db:
-    <<: *db-template
-    container_name: checklist-service-db
-    environment:
-      POSTGRES_USER: ${CHECKLIST_SERVICE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${CHECKLIST_SERVICE_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${CHECKLIST_SERVICE_POSTGRES_DB}
-    ports:
-      - "${CHECKLIST_SERVICE_POSTGRES_PORT_EXT}:5432"
-    volumes:
-      - checklist-service-db:/var/lib/postgresql/data
-    networks:
-      - checklist-service-net
-
   checklist-service-app:
     <<: *app-template
+    image: ghcr.io/aet-devops26/team-devopss26/checklist-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: checklist-service-app
     build:
       context: ../services/checklist-service
@@ -105,28 +86,15 @@ services:
     networks:
       - checklist-service-net
     depends_on:
-      checklist-service-db:
+      services-db:
         condition: service_healthy
 
   #####################################################################################################
   # CALENDAR SERVICE
   #####################################################################################################
-  calendar-service-db:
-    <<: *db-template
-    container_name: calendar-service-db
-    environment:
-      POSTGRES_USER: ${CALENDAR_SERVICE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${CALENDAR_SERVICE_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${CALENDAR_SERVICE_POSTGRES_DB}
-    ports:
-      - "${CALENDAR_SERVICE_POSTGRES_PORT_EXT}:5432"
-    volumes:
-      - calendar-service-db:/var/lib/postgresql/data
-    networks:
-      - calendar-service-net
-
   calendar-service-app:
     <<: *app-template
+    image: ghcr.io/aet-devops26/team-devopss26/calendar-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: calendar-service-app
     build:
       context: ../services/calendar-service
@@ -135,28 +103,15 @@ services:
     networks:
       - calendar-service-net
     depends_on:
-      calendar-service-db:
+      services-db:
         condition: service_healthy
 
   #####################################################################################################
   # NOTE SERVICE
   #####################################################################################################
-  note-service-db:
-    <<: *db-template
-    container_name: note-service-db
-    environment:
-      POSTGRES_USER: ${NOTE_SERVICE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${NOTE_SERVICE_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${NOTE_SERVICE_POSTGRES_DB}
-    ports:
-      - "${NOTE_SERVICE_POSTGRES_PORT_EXT}:5432"
-    volumes:
-      - note-service-db:/var/lib/postgresql/data
-    networks:
-      - note-service-net
-
   note-service-app:
     <<: *app-template
+    image: ghcr.io/aet-devops26/team-devopss26/note-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: note-service-app
     build:
       context: ../services/note-service
@@ -165,26 +120,12 @@ services:
     networks:
       - note-service-net
     depends_on:
-      note-service-db:
+      services-db:
         condition: service_healthy
 
   #####################################################################################################
   # GENAI SERVICE
   #####################################################################################################
-  genai-service-db:
-    <<: *db-template
-    container_name: genai-service-db
-    environment:
-      POSTGRES_USER: ${GENAI_SERVICE_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${GENAI_SERVICE_POSTGRES_PASSWORD}
-      POSTGRES_DB: ${GENAI_SERVICE_POSTGRES_DB}
-    ports:
-      - "${GENAI_SERVICE_POSTGRES_PORT_EXT}:5432"
-    volumes:
-      - genai-service-db:/var/lib/postgresql/data
-    networks:
-      - genai-service-net
-
   genai-service-liquibase:
     image: liquibase/liquibase:4.29
     env_file: .env
@@ -192,20 +133,21 @@ services:
     volumes:
       - ../services/genai-service/db/changelog:/liquibase/changelog
     command:
-      - --url=jdbc:postgresql://${GENAI_SERVICE_POSTGRES_URL}:${GENAI_SERVICE_POSTGRES_PORT_INT}/${GENAI_SERVICE_POSTGRES_DB}
-      - --username=${GENAI_SERVICE_POSTGRES_USER}
-      - --password=${GENAI_SERVICE_POSTGRES_PASSWORD}
+      - --url=jdbc:postgresql://${SERVICES_POSTGRES_URL}:${SERVICES_POSTGRES_PORT_INT}/genai_service_db
+      - --username=${SERVICES_POSTGRES_USER}
+      - --password=${SERVICES_POSTGRES_PASSWORD}
       - --changeLogFile=db.changelog-master.xml
       - --searchPath=/liquibase/changelog
       - update
     networks:
       - genai-service-net
     depends_on:
-      genai-service-db:
+      services-db:
         condition: service_healthy
 
   genai-service-app:
     <<: *app-template
+    image: ghcr.io/aet-devops26/team-devopss26/genai-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: genai-service-app
     build:
       context: ../services/genai-service
@@ -232,19 +174,14 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
     ports:
-      - "${CLIENT_PORT:-3000}:80"
+      - "${CLIENT_PORT:-80}:80"
     networks:
       - client-net
 
 # --- VOLUMES & NETWORKS ---
 # Define the volumes and networks used by the services.
 volumes:
-  user-service-db: {}
-  admin-service-db: {}
-  checklist-service-db: {}
-  calendar-service-db: {}
-  note-service-db: {}
-  genai-service-db: {}
+  services-db: {}#
 
 networks:
   user-service-net: {}

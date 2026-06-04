@@ -65,7 +65,7 @@
           - docker-compose
         state: present
         
-    - name: Ensure target directory exists and has correct permissions
+    - name: Ensure app directory exists on VM
       ansible.builtin.file:
         path: /home/devops-admin/app
         state: directory
@@ -73,19 +73,57 @@
         group: devops-admin
         mode: '0755'
 
-    - name: Clone or pull Git repository
-      ansible.builtin.git:
-        repo: 'https://x-access-token:{{ github_token }}@github.com/AET-DevOps26/team-devopss26.git'
-        dest: /home/devops-admin/app
-        version: main
-        force: yes
-        accept_hostkey: yes
-      become: yes
-      become_user: devops-admin
+    - name: Copy docker-compose.yml to VM
+      ansible.builtin.copy:
+        src: ../../docker-compose.yml
+        dest: /home/devops-admin/app/docker-compose.yml
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+
+    - name: Copy .env file to VM
+      ansible.builtin.copy:
+        src: ../../.env
+        dest: /home/devops-admin/app/.env
+        owner: devops-admin
+        group: devops-admin
+        mode: '0600'
+
+    - name: Ensure init-db directory exists on VM
+      ansible.builtin.file:
+        path: /home/devops-admin/app/init-db
+        state: directory
+        owner: devops-admin
+        group: devops-admin
+        mode: '0755'
+
+    - name: Copy 01-init-databases.sh to VM
+      ansible.builtin.copy:
+        src: ../../init-db/01-init-databases.sh
+        dest: /home/devops-admin/app/init-db/01-init-databases.sh
+        owner: devops-admin
+        group: devops-admin
+        mode: '0755'
+
+    - name: Ensure genai-service changelog directory exists on VM
+      ansible.builtin.file:
+        path: /home/devops-admin/services/genai-service/db/changelog
+        state: directory
+        owner: devops-admin
+        group: devops-admin
+        mode: '0755'
+
+    - name: Copy genai-service changelogs to VM
+      ansible.builtin.copy:
+        src: ../../../services/genai-service/db/changelog/
+        dest: /home/devops-admin/services/genai-service/db/changelog/
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
 
     - name: Start application with Docker Compose
       community.docker.docker_compose_v2:
-        project_src: /home/devops-admin/app/infra
+        project_src: /home/devops-admin/app
         state: present
         pull: always
       become: yes
