@@ -40,7 +40,7 @@ resource "azurerm_dev_test_global_vm_shutdown_schedule" "vm_shutdown" {
   location           = azurerm_linux_virtual_machine.vm.location
   enabled            = true
 
-  daily_recurrence_time = "0300"
+  daily_recurrence_time = "0200"
   timezone              = "W. Europe Standard Time"
 
   notification_settings {
