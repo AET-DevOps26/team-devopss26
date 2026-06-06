@@ -3,11 +3,16 @@ import time
 from datetime import datetime
 from typing import Optional, List
 
+import jwt
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from langchain_cohere import ChatCohere
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
+from langchain_mistralai import ChatMistralAI
 from pydantic import BaseModel
 from sqlalchemy import String, Text, ForeignKey, DateTime, BigInteger, CheckConstraint, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -58,14 +63,52 @@ class ChatMessage(Base):
     conversation: Mapped["ChatConversation"] = relationship("ChatConversation", back_populates="messages")
 
 
+# ── JWT auth ──────────────────────────────────────────────────────────────────
+_JWT_PUBLIC_KEY = os.environ.get("JWT_PUBLIC_KEY", "").strip()
+_bearer = HTTPBearer(auto_error=False)
+
+
+def _get_current_user_id(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer)) -> Optional[int]:
+    if credentials is None:
+        return None
+    try:
+        if _JWT_PUBLIC_KEY:
+            payload = jwt.decode(credentials.credentials, _JWT_PUBLIC_KEY, algorithms=["RS256"])
+        else:   # until security is fully implemented
+            payload = jwt.decode(credentials.credentials, options={"verify_signature": False}, algorithms=["RS256"])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError as exc:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {exc}")
+
+    raw_id = payload.get("user_id")
+    if raw_id is None:
+        raise HTTPException(status_code=401, detail="Token does not contain a user identity")
+    try:
+        return int(raw_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=401, detail="Token user identity is not a valid integer")
+
+
 # ── LangChain ─────────────────────────────────────────────────────────────────
 _prompt = ChatPromptTemplate.from_messages([
     ("system", "You are a helpful assistant for a personal productivity app. "
                "Users can ask you about their notes, calendar events, and checklists."),
     ("human", "{message}"),
 ])
-_llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.environ["GEMINI_API_KEY"])
-_chain = _prompt | _llm | StrOutputParser()
+
+_SUPPORTED_MODELS = {"gemini", "groq-llama", "mistral", "cohere"}
+
+def _build_chain(model: str):
+    if model == "groq-llama":
+        llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.environ["GROQ_API_KEY"])
+    elif model == "mistral":
+        llm = ChatMistralAI(model="mistral-small-latest", api_key=os.environ["MISTRAL_API_KEY"])
+    elif model == "cohere":
+        llm = ChatCohere(model="command-r", cohere_api_key=os.environ["COHERE_API_KEY"])
+    else:  # default: gemini
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.environ["GEMINI_API_KEY"])
+    return _prompt | llm | StrOutputParser()
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -91,6 +134,7 @@ class ChatRequest(BaseModel):
     message: str
     user_id: int
     conversation_id: Optional[int] = None
+    model: str = "gemini"  # one of: gemini, groq-llama, mistral, cohere
 
 
 class MessageOut(BaseModel):
@@ -122,16 +166,29 @@ def health():
 
 
 @app.post("/conversations", response_model=ConversationOut)
-async def create_conversation(request: ConversationCreateRequest, db: AsyncSession = Depends(get_db)):
-    conversation = ChatConversation(user_id=request.user_id)
+async def create_conversation(
+    request: ConversationCreateRequest,
+    jwt_user_id: Optional[int] = Depends(_get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    user_id = jwt_user_id if jwt_user_id is not None else request.user_id
+    conversation = ChatConversation(user_id=user_id)
     db.add(conversation)
     await db.commit()
-    await db.refresh(conversation)
-    return conversation
+    result = await db.execute(
+        select(ChatConversation)
+        .where(ChatConversation.id == conversation.id)
+        .options(selectinload(ChatConversation.messages))
+    )
+    return result.scalar_one()
 
 # The schema of the output is defined above as ConversationOut
 @app.get("/conversations/{conversation_id}", response_model=ConversationOut)
-async def get_conversation(conversation_id: int, db: AsyncSession = Depends(get_db)):
+async def get_conversation(
+    conversation_id: int,
+    jwt_user_id: Optional[int] = Depends(_get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(
         select(ChatConversation)
         .where(ChatConversation.id == conversation_id)
@@ -140,18 +197,26 @@ async def get_conversation(conversation_id: int, db: AsyncSession = Depends(get_
     conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    if jwt_user_id is not None and conversation.user_id != jwt_user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
     return conversation
 
 
 @app.delete("/conversations/{conversation_id}")
-async def delete_conversation(conversation_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_conversation(
+    conversation_id: int,
+    jwt_user_id: Optional[int] = Depends(_get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
 
     # Check whether the conversation actually exists
     result = await db.execute(select(ChatConversation).where(ChatConversation.id == conversation_id))
     conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    
+    if jwt_user_id is not None and conversation.user_id != jwt_user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     # Delete the conversation
     await db.delete(conversation)
     await db.commit()
@@ -160,9 +225,17 @@ async def delete_conversation(conversation_id: int, db: AsyncSession = Depends(g
 
 ## This is the main endpoint that chat requests go through
 @app.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
+async def chat(
+    request: ChatRequest,
+    jwt_user_id: Optional[int] = Depends(_get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
     if not request.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
+    if request.model not in _SUPPORTED_MODELS:
+        raise HTTPException(status_code=400, detail=f"unsupported model '{request.model}'. Choose from: {sorted(_SUPPORTED_MODELS)}")
+
+    user_id = jwt_user_id if jwt_user_id is not None else request.user_id
 
     if request.conversation_id:             # If this is not a new conversation
         # Check whether the conversation actually exists in the database
@@ -172,9 +245,11 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
         conversation = result.scalar_one_or_none()
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
+        if jwt_user_id is not None and conversation.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Access denied")
     else:
         # Otherwise create a new conversation
-        conversation = ChatConversation(user_id=request.user_id, title=request.message[:100])
+        conversation = ChatConversation(user_id=user_id, title=request.message[:100])
         db.add(conversation)
         await db.flush()
 
@@ -183,7 +258,7 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
         conversation_id=conversation.id, role="USER",
         content=request.message, timestamp=_now_ms(),
     ))
-    response_text = await _chain.ainvoke({"message": request.message})  # Generate the model's message
+    response_text = await _build_chain(request.model).ainvoke({"message": request.message})
 
     # Add the model's message to the conversation with the role "AGENT"
     db.add(ChatMessage(
