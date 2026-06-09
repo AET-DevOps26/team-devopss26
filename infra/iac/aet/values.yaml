@@ -67,4 +67,11 @@ ingress:
   enabled: true
   host: ""
   className: ""
-  annotations: {}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/hsts: "false"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/tls-acme: "true"
+  tls:
+    host: ""
+    secretName: ""
