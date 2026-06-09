@@ -1,7 +1,7 @@
 import os
 import time
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 import jwt
 from fastapi import FastAPI, HTTPException, Depends
@@ -97,8 +97,6 @@ _prompt = ChatPromptTemplate.from_messages([
     ("human", "{message}"),
 ])
 
-_SUPPORTED_MODELS = {"gemini", "groq-llama", "mistral", "cohere"}
-
 def _build_chain(model: str):
     if model == "groq-llama":
         llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.environ["GROQ_API_KEY"])
@@ -134,7 +132,7 @@ class ChatRequest(BaseModel):
     message: str
     user_id: int
     conversation_id: Optional[int] = None
-    model: str = "gemini"  # one of: gemini, groq-llama, mistral, cohere
+    model: Literal["gemini", "groq-llama", "mistral", "cohere"] = "gemini"
 
 
 class MessageOut(BaseModel):
@@ -232,8 +230,6 @@ async def chat(
 ):
     if not request.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
-    if request.model not in _SUPPORTED_MODELS:
-        raise HTTPException(status_code=400, detail=f"unsupported model '{request.model}'. Choose from: {sorted(_SUPPORTED_MODELS)}")
 
     user_id = jwt_user_id if jwt_user_id is not None else request.user_id
 
