@@ -12,6 +12,9 @@ x-db-template: &db-template
 
 x-app-template: &app-template
   env_file: .env
+  mem_limit: 450m
+  environment:
+    - JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=75.0 -XX:+UseSerialGC -Xss256k
 
 # --- SERVICES ---
 # Define the actual services using the templates above.
@@ -181,7 +184,7 @@ services:
 # --- VOLUMES & NETWORKS ---
 # Define the volumes and networks used by the services.
 volumes:
-  services-db: {}#
+  services-db: {}
 
 networks:
   user-service-net: {}

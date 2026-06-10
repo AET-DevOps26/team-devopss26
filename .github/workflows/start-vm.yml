@@ -1,9 +1,9 @@
 name: scheduled-start.yml
 
 on:
-  schedule:
-    - cron: '0 12 * * *'
-  workflow_dispatch:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
 
 jobs:
   start-vm:
