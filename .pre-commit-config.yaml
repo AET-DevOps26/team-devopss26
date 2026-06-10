@@ -1,0 +1,14 @@
+repos:
+  - repo: local
+    hooks:
+      - id: lint-openapi-specs
+        name: Lint OpenAPI specs
+        language: node
+        entry: npx @redocly/cli lint
+        args:
+          - api/note-service.yaml
+          - api/checklist-service.yaml
+          - api/calendar-service.yaml
+          - api/genai-service.yaml
+        pass_filenames: false
+        files: ^api/.*\.yaml$
