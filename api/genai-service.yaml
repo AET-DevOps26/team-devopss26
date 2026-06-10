@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: GenAI Service API
+  version: 1.0.0
+
+tags:
+  - name: GenAI
+    description: Operations for AI chat conversations
+
+paths:
+
+  /api/v1/health:
+    get:
+      tags: [GenAI]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/conversations:
+    post:
+      tags: [GenAI]
+      summary: Create a new chat conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationCreateRequest'
+      responses:
+        '200':
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+
+  /api/v1/conversations/{conversationId}:
+    get:
+      tags: [GenAI]
+      summary: Get a conversation by ID including all messages
+      parameters:
+        - $ref: '#/components/parameters/conversationId'
+      responses:
+        '200':
+          description: The conversation with its messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '403':
+          description: Access denied
+        '404':
+          description: Conversation not found
+
+    delete:
+      tags: [GenAI]
+      summary: Delete a conversation by ID
+      parameters:
+        - $ref: '#/components/parameters/conversationId'
+      responses:
+        '200':
+          description: Conversation deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Conversation deleted
+        '403':
+          description: Access denied
+        '404':
+          description: Conversation not found
+
+  /api/v1/chat:
+    post:
+      tags: [GenAI]
+      summary: Send a message and get an AI response
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: Message must not be empty
+        '403':
+          description: Access denied
+        '404':
+          description: Conversation not found
+
+components:
+
+  parameters:
+    conversationId:
+      name: conversationId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    ConversationCreateRequest:
+      type: object
+      required: [user_id]
+      properties:
+        user_id:
+          type: integer
+          format: int64
+
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        role:
+          type: string
+          enum: [USER, AGENT]
+        content:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        user_id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+
+    ChatRequest:
+      type: object
+      required: [message, user_id]
+      properties:
+        message:
+          type: string
+        user_id:
+          type: integer
+          format: int64
+        conversation_id:
+          type: integer
+          format: int64
+          nullable: true
+        model:
+          type: string
+          enum: [gemini, groq-llama, mistral, cohere]
+          default: gemini
+
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+        conversation_id:
+          type: integer
+          format: int64
