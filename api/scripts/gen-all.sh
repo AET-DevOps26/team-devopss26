@@ -36,6 +36,6 @@ for spec in api/*.yaml api/*.yml; do
   # 2. TypeScript Frontend Code
   echo "Generating TypeScript types for $service_name..."
   npx openapi-typescript "$spec" -o "web-client/src/$service_name.ts"
-  
+
   echo ""
 done

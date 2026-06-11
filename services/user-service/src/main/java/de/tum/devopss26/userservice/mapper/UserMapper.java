@@ -1,6 +1,7 @@
 package de.tum.devopss26.userservice.mapper;
 
 import de.tum.devopss26.userservice.entity.User;
+import lombok.RequiredArgsConstructor;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -8,6 +9,7 @@ import org.openapitools.model.RegisterUserRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+@RequiredArgsConstructor
 @Mapper(componentModel = "spring")
 public abstract class UserMapper {
 
