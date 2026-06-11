@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: User Service API
+  version: 1.0.0
+tags:
+  - name: UserAuthentication
+    description: Endpoints to manage user creation and authentication
+servers:
+  - url: /api/v1/users
+paths:
+  /auth/register:
+    post:
+      tags:
+        - UserAuthentication
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserRequest"
+      responses:
+        '201':
+          description: User created
+        '409':
+          description: User already exists
+components:
+  schemas:
+    RegisterUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string

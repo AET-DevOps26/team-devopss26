@@ -49,7 +49,8 @@ services:
     image: ghcr.io/aet-devops26/team-devopss26/user-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: user-service-app
     build:
-      context: ../services/user-service
+      context: ..
+      dockerfile: services/user-service/Dockerfile
     ports:
       - "${USER_SERVICE_APP_PORT}:${USER_SERVICE_APP_PORT}"
     networks:
@@ -66,7 +67,8 @@ services:
     image: ghcr.io/aet-devops26/team-devopss26/admin-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: admin-service-app
     build:
-      context: ../services/admin-service
+      context: ..
+      dockerfile: services/admin-service/Dockerfile
     ports:
       - "${ADMIN_SERVICE_APP_PORT}:${ADMIN_SERVICE_APP_PORT}"
     networks:
@@ -83,7 +85,8 @@ services:
     image: ghcr.io/aet-devops26/team-devopss26/checklist-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: checklist-service-app
     build:
-      context: ../services/checklist-service
+      context: ..
+      dockerfile: services/checklist-service/Dockerfile
     ports:
       - "${CHECKLIST_SERVICE_APP_PORT}:${CHECKLIST_SERVICE_APP_PORT}"
     networks:
@@ -100,7 +103,8 @@ services:
     image: ghcr.io/aet-devops26/team-devopss26/calendar-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: calendar-service-app
     build:
-      context: ../services/calendar-service
+      context: ..
+      dockerfile: services/calendar-service/Dockerfile
     ports:
       - "${CALENDAR_SERVICE_APP_PORT}:${CALENDAR_SERVICE_APP_PORT}"
     networks:
@@ -117,7 +121,8 @@ services:
     image: ghcr.io/aet-devops26/team-devopss26/note-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: note-service-app
     build:
-      context: ../services/note-service
+      context: ..
+      dockerfile: services/note-service/Dockerfile
     ports:
       - "${NOTE_SERVICE_APP_PORT}:${NOTE_SERVICE_APP_PORT}"
     networks:
@@ -173,7 +178,8 @@ services:
   client:
     container_name: client
     build:
-      context: ../web-client
+      context: ..
+      dockerfile: web-client/Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
     ports:

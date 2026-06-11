@@ -48,3 +48,27 @@ infra/iac/azure/hosts.ini
 # Crash Logs
 **/crash.log
 **/crash.*.log
+# ============== Security / Secrets =================
+.env
+*.tgz
+*secret*
+*credential*
+*.key
+*.pem
+*.cert
+kubeconfig
+stud.yaml
+
+# ============== OpenAPI Generated Files =================
+# Ignore generated code in backend services
+services/*/generated/
+
+# Ignore OpenAPI generator cache and CLI metadata
+.openapi-generator/
+.openapi-generator-cli/
+**/generated/.openapi-generator/
+**/generated/.openapi-generator-ignore
+
+# Ignore generated TypeScript models in web-client
+web-client/src/*-service.ts
+web-client/src/api.ts
