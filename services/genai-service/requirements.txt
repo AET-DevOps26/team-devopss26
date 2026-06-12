@@ -2,6 +2,10 @@ fastapi==0.115.0
 uvicorn[standard]==0.30.6
 langchain==0.3.0
 langchain-google-genai==2.0.0
+langchain-groq==0.2.0
+langchain-mistralai==0.2.0
+langchain-cohere==0.3.0
 pydantic==2.9.0
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.29.0
+PyJWT[crypto]==2.9.0
