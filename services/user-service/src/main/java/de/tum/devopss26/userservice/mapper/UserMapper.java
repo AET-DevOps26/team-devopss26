@@ -1,24 +1,28 @@
 package de.tum.devopss26.userservice.mapper;
 
 import de.tum.devopss26.userservice.entity.User;
-import lombok.RequiredArgsConstructor;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.openapitools.model.RegisterUserRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-@RequiredArgsConstructor
 @Mapper(componentModel = "spring")
 public abstract class UserMapper {
 
-    private final PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
 
-    // Maps the plain text 'password' from CreateUserRequest to 'passwordHash' in the User entity
-    @Mapping(source = "password", target = "passwordHash")
+    @Autowired
+    public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Mapping(source = "password", target = "passwordHash", qualifiedByName = "hashPassword")
     @Mapping(target = "id", ignore = true)
     public abstract User toEntity(RegisterUserRequest request);
 
-    // Custom helper method that MapStruct automatically calls to hash the password string
+    @Named("hashPassword")
     protected String hashPassword(String password) {
         if (password == null) {
             return null;
