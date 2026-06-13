@@ -78,7 +78,7 @@ jobs:
 
       - name: Deploy with Helm
         run: |
-          helm upgrade --install prod ./infra/iac/aet \
+          helm upgrade --install devopss26 ./infra/iac/aet \
             --namespace prod \
             --create-namespace \
             --set global.imageTag=${{ github.sha }} \
