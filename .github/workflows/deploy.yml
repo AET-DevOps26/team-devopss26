@@ -80,6 +80,7 @@ jobs:
         run: |
           helm upgrade --install devopss26 ./infra/iac/aet \
             --namespace prod \
+            --kubeconfig $HOME/.kube/config \
             --set global.imageTag=${{ github.sha }} \
             --set genaiService.geminiApiKey=${{ secrets.GEMINI_API_KEY }} \
             --set ingress.host=${{ vars.INGRESS_HOST }} \
