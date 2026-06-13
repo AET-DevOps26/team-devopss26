@@ -61,6 +61,8 @@ jobs:
   deploy-to-k8s:
     needs: build-and-push
     runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: ${{ runner.temp }}/kubeconfig
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,8 +75,8 @@ jobs:
 
       - name: Configure kubectl
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          mkdir -p $(dirname "${{ runner.temp }}/kubeconfig")
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > "${{ runner.temp }}/kubeconfig"
 
       - name: Deploy with Helm
         run: |
