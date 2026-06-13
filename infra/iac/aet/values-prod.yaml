@@ -5,7 +5,7 @@
 global:
   imagePullSecrets:
     - name: ghcr-secret
-  namespace: devopss26
+  namespace: prod
   imageTag: latest
   imagePullPolicy: Always
 
