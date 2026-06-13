@@ -85,3 +85,29 @@ jobs:
             --set ingress.host=${{ vars.INGRESS_HOST }} \
             -f infra/iac/aet/values-prod.yaml \
             --wait --timeout 5m
+
+      - name: Verify deployment
+        run: |
+          TAG="${{ github.sha }}"
+          echo "Checking pods are running image tag: $TAG"
+          kubectl get pods -n prod -o wide
+          echo ""
+          MISMATCH=0
+          for pod in $(kubectl get pods -n prod --no-headers -o name); do
+            IMAGES=$(kubectl get -n prod "$pod" -o jsonpath='{range .spec.containers[*]}{.image}{"\n"}{end}')
+            while IFS= read -r img; do
+              case "$img" in
+                *postgres*) ;;  # skip postgres (public Docker Hub image)
+                *:$TAG) ;;       # correct tag
+                *)
+                  echo "::warning::$pod has wrong image: $img (expected tag: $TAG)"
+                  MISMATCH=$((MISMATCH + 1))
+                  ;;
+              esac
+            done <<< "$IMAGES"
+          done
+          if [ "$MISMATCH" -gt 0 ]; then
+            echo "::error::$MISMATCH pods have wrong image tag"
+            exit 1
+          fi
+          echo "All pods running expected images!"
