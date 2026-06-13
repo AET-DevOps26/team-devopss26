@@ -1,4 +1,4 @@
-name: Build & Push Images
+name: Build & Deploy to AET
 
 on:
   push:
@@ -58,4 +58,33 @@ jobs:
             ${{ env.REGISTRY }}/aet-devops26/team-devopss26/${{ matrix.service }}:${{ github.sha }}
           build-args: ${{ matrix.build_args }}
 
-# add deploy-to-k8s job issue-#35
+  deploy-to-k8s:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/release'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install devopss26 ./infra/iac/aet \
+            --namespace devopss26 \
+            --create-namespace \
+            --set global.imageTag=${{ github.sha }} \
+            --set genaiService.geminiApiKey=${{ secrets.GEMINI_API_KEY }} \
+            --set ingress.host=${{ vars.INGRESS_HOST }} \
+            -f infra/iac/aet/values-prod.yaml \
+            --wait --timeout 5m
