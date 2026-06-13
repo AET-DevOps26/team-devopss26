@@ -61,8 +61,6 @@ jobs:
   deploy-to-k8s:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/release'
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,8 +78,8 @@ jobs:
 
       - name: Deploy with Helm
         run: |
-          helm upgrade --install devopss26 ./infra/iac/aet \
-            --namespace devopss26 \
+          helm upgrade --install prod ./infra/iac/aet \
+            --namespace prod \
             --create-namespace \
             --set global.imageTag=${{ github.sha }} \
             --set genaiService.geminiApiKey=${{ secrets.GEMINI_API_KEY }} \
