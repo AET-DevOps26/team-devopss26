@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Note Service API
+  version: 1.0.0
+
+tags:
+  - name: Notes
+    description: Operations for managing notes
+
+paths:
+
+  /api/v1/notes:
+    get:
+      tags: [Notes]
+      summary: Get all notes for a user
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+
+    post:
+      tags: [Notes]
+      summary: Create a new note
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Note'
+      responses:
+        '201':
+          description: Note created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+
+  /api/v1/notes/{id}:
+    get:
+      tags: [Notes]
+      summary: Get a note by ID
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: The note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          description: Note not found
+
+    put:
+      tags: [Notes]
+      summary: Update a note's title and content
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Note'
+      responses:
+        '200':
+          description: Updated note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          description: Note not found
+
+    delete:
+      tags: [Notes]
+      summary: Delete a note by ID
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '204':
+          description: Note deleted
+        '404':
+          description: Note not found
+
+components:
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    Note:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUpdatedAt:
+          type: string
+          format: date-time

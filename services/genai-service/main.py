@@ -110,7 +110,7 @@ def _build_chain(model: str):
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
-app = FastAPI(title="GenAI Chatbot Service")
+app = FastAPI(title="GenAI Chatbot Service", root_path="/api/v1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
