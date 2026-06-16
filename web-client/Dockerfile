@@ -3,7 +3,7 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 # Copy the API specifications (needed for npm run codegen)
-COPY api /api
+COPY api ./api
 
 # Copy package info and install dependencies
 COPY web-client/package.json web-client/package-lock.json ./web-client/

@@ -1,0 +1,94 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  # Job 1: Validate OpenAPI specifications using Redocly
+  openapi-lint:
+    name: Lint OpenAPI Specs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Redocly CLI
+        run: npm install -g @redocly/cli
+
+      - name: Run Redocly Lint
+        run: redocly lint api/*.yaml
+
+  # Job 2: Build, generate code, and run tests for Java Backends in parallel
+  backend-test:
+    name: Build & Test Backend - ${{ matrix.service }}
+    needs: openapi-lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - user-service
+          - admin-service
+          - checklist-service
+          - calendar-service
+          - note-service
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21 (Corretto)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+          cache: maven
+
+      - name: Build & Test with Maven
+        run: |
+          cd services/${{ matrix.service }}
+          mvn clean test
+
+  # Job 3: Generate TypeScript types, run tests and build frontend
+  frontend-test:
+    name: Build & Test Frontend
+    needs: openapi-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: web-client/package-lock.json
+
+      - name: Install Dependencies
+        run: |
+          cd web-client
+          npm ci
+
+      - name: Generate OpenAPI Types & Typecheck
+        run: |
+          cd web-client
+          npm run codegen
+          npm run typecheck
+
+      - name: Run Unit Tests
+        run: |
+          cd web-client
+          npm run test
+
+      - name: Build Frontend
+        run: |
+          cd web-client
+          npm run build
