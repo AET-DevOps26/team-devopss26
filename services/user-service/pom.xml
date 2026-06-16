@@ -90,6 +90,23 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>1.19.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>1.19.7</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -183,9 +200,9 @@
                             <apiPackage>org.openapitools.api</apiPackage>
                             <modelPackage>org.openapitools.model</modelPackage>
                             <globalProperties>
-                                <apis></apis>
-                                <models></models>
-                                <supportingFiles>false</supportingFiles>
+                                <apis />
+                                <models />
+                                <supportingFiles>ApiUtil.java</supportingFiles>
                             </globalProperties>
                             <configOptions>
                                 <interfaceOnly>true</interfaceOnly>

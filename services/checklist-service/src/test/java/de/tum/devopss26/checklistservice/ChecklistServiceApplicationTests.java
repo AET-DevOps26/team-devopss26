@@ -1,10 +1,8 @@
 package de.tum.devopss26.checklistservice;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class ChecklistServiceApplicationTests {
+class ChecklistServiceApplicationTests extends AbstractIntegrationTest {
 
 	@Test
 	void contextLoads() {

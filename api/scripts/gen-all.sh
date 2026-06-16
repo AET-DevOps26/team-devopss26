@@ -26,7 +26,7 @@ for spec in api/*.yaml api/*.yml; do
       echo "Generating Spring Boot code for $service_name..."
       npx @openapitools/openapi-generator-cli generate -i "$spec" -g spring \
         -o "$backend_dir/generated" --skip-validate-spec \
-        --global-property=apis,models \
+        --global-property=apis,models,supportingFiles=ApiUtil.java \
         --additional-properties=useTags=true,openApiNullable=false,interfaceOnly=true
     fi
   else
