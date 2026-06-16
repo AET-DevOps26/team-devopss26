@@ -12,4 +12,6 @@ info:
     - [User Service](user-service.yaml)
   version: 1.0.0
 
-paths: {}
+paths: { }
+servers:
+  - url: /

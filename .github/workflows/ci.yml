@@ -20,11 +20,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Redocly CLI
-        run: npm install -g @redocly/cli
-
       - name: Run Redocly Lint
-        run: redocly lint api/*.yaml
+        run: npm run lint:openapi
 
   # Job 2: Build, generate code, and run tests for Java Backends in parallel
   backend-test:
@@ -73,22 +70,7 @@ jobs:
           cache-dependency-path: web-client/package-lock.json
 
       - name: Install Dependencies
-        run: |
-          cd web-client
-          npm ci
+        run: npm --prefix web-client ci
 
-      - name: Generate OpenAPI Types & Typecheck
-        run: |
-          cd web-client
-          npm run codegen
-          npm run typecheck
-
-      - name: Run Unit Tests
-        run: |
-          cd web-client
-          npm run test
-
-      - name: Build Frontend
-        run: |
-          cd web-client
-          npm run build
+      - name: Build & Test Frontend
+        run: npm run test:frontend

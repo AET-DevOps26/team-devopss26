@@ -3,3 +3,5 @@ info:
   title: Admin Service API
   version: 1.0.0
 paths: {}
+servers:
+  - url: /

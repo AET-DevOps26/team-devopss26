@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
 
 # Loop through all yaml and yml files in the api directory
 for spec in api/*.yaml api/*.yml; do

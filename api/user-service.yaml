@@ -6,12 +6,13 @@ tags:
   - name: UserAuthentication
     description: Endpoints to manage user creation and authentication
 servers:
-  - url: /api/v1/users
+  - url: /
 paths:
-  /auth/register:
+  /api/v1/users/auth/register:
     post:
       tags:
         - UserAuthentication
+      summary: Register a new user
       operationId: registerUser
       requestBody:
         required: true
