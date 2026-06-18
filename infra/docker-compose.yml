@@ -104,6 +104,7 @@ services:
       - "${CHECKLIST_SERVICE_APP_PORT}:${CHECKLIST_SERVICE_APP_PORT}"
     networks:
       - checklist-service-net
+      - internal-net
     depends_on:
       checklist-service-db:
         condition: service_healthy
@@ -134,6 +135,7 @@ services:
       - "${CALENDAR_SERVICE_APP_PORT}:${CALENDAR_SERVICE_APP_PORT}"
     networks:
       - calendar-service-net
+      - internal-net
     depends_on:
       calendar-service-db:
         condition: service_healthy
@@ -164,6 +166,7 @@ services:
       - "${NOTE_SERVICE_APP_PORT}:${NOTE_SERVICE_APP_PORT}"
     networks:
       - note-service-net
+      - internal-net
     depends_on:
       note-service-db:
         condition: service_healthy
@@ -204,6 +207,24 @@ services:
       genai-service-db:
         condition: service_healthy
 
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.26.4
+    container_name: weaviate
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      PERSISTENCE_DATA_PATH: /var/lib/weaviate
+      DEFAULT_VECTORIZER_MODULE: none
+      ENABLE_MODULES: ""
+      CLUSTER_HOSTNAME: node1
+    volumes:
+      - weaviate-data:/var/lib/weaviate
+    networks:
+      - genai-service-net
+
   genai-service-app:
     <<: *app-template
     container_name: genai-service-app
@@ -213,9 +234,12 @@ services:
       - "${GENAI_SERVICE_APP_PORT}:${GENAI_SERVICE_APP_PORT}"
     networks:
       - genai-service-net
+      - internal-net
     depends_on:
       genai-service-liquibase:
         condition: service_completed_successfully
+      weaviate:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:${GENAI_SERVICE_APP_PORT}/health || exit 1"]
       interval: 10s
@@ -245,6 +269,7 @@ volumes:
   calendar-service-db: {}
   note-service-db: {}
   genai-service-db: {}
+  weaviate-data: {}
 
 networks:
   user-service-net: {}
@@ -254,3 +279,4 @@ networks:
   note-service-net: {}
   genai-service-net: {}
   client-net: {}
+  internal-net: {}

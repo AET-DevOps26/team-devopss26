@@ -17,7 +17,9 @@ public class NoteController {
     @Operation(summary = "Get all notes for a user", description = "Returns all notes belonging to the specified user")
     public ResponseEntity<List<Note>> getAllNotes(@RequestParam Long userId) {
         return ResponseEntity.ok(List.of(
-                new Note(1L, "Sample Note", "Sample content")
+                new Note(1L, "Car Service", "Need to take the car in for an oil change. Also ask them to check the tire pressure and brake pads."),
+                new Note(2L, "Post Office", "Send the birthday package to aunt Maria. Remember to use express shipping so it arrives before Saturday."),
+                new Note(3L, "Pharmacy", "Pick up prescription for blood pressure medication. Also grab some vitamin D supplements and a thermometer.")
         ));
     }
 
