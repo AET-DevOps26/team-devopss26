@@ -62,7 +62,7 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
   --font-mono: ui-monospace, 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
   --font-serif: Georgia, serif;
-  --radius: 1.55rem;
+  --radius: 0.5rem;
   --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
   --tracking-tight: calc(var(--tracking-normal) - 0.025em);
   --tracking-wide: calc(var(--tracking-normal) + 0.025em);
@@ -112,7 +112,7 @@ body {
   --chart-3: oklch(0.5107 0.1226 22.3963);
   --chart-4: oklch(0.5907 0.0672 155.9315);
   --chart-5: oklch(0.7038 0.0439 157.2884);
-  --radius: 1.55rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.9278 0.0104 158.475);
   --sidebar-foreground: oklch(0.3391 0.0346 156.2653);
   --sidebar-primary: oklch(0.5313 0.1014 153.3713);
@@ -177,7 +177,7 @@ body {
   --sidebar-border: oklch(0.2226 0.0146 157.2073);
   --sidebar-ring: oklch(0.6369 0.1241 153.2123);
   --destructive-foreground: oklch(0.9848 0 0);
-  --radius: 1.55rem;
+  --radius: 0.75rem;
   --font-sans: ui-monospace, 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
   --font-serif: Georgia, serif;
   --font-mono: ui-monospace, 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
