@@ -19,19 +19,19 @@ jobs:
       matrix:
         include:
           - service: user-service
-            context: ./services/user-service
+            context: ./
           - service: admin-service
-            context: ./services/admin-service
+            context: ./
           - service: checklist-service
-            context: ./services/checklist-service
+            context: ./
           - service: calendar-service
-            context: ./services/calendar-service
+            context: ./
           - service: note-service
-            context: ./services/note-service
+            context: ./
           - service: genai-service
             context: ./services/genai-service
           - service: client
-            context: ./web-client
+            context: ./
             build_args: VITE_API_URL=/api
 
     steps:

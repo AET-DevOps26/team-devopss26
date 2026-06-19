@@ -29,6 +29,6 @@ public class UserAuthenticationController implements UserAuthenticationApi {
 			LOG.atError().setCause(e).log();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
-		return ResponseEntity.ok(null);
+		return ResponseEntity.status(HttpStatus.CREATED).body(null);
 	}
 }
