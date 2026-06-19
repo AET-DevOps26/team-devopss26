@@ -17,11 +17,34 @@
 *.iws
 *.ipr
 
+# ============== VS Code =================
+.vscode/
+
 # ============== Maven / General =================
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# ============== VS Code =================
-.vscode/
+# ============== Secrets =================
+**/.env
+infra/iac/azure/hosts.ini
+
+# ============== Terraform =================
+# Ignore local tfvars files (they often contain secrets/passwords)
+**/*.tfvars
+**/*.auto.tfvars
+
+# Local Terraform working directories
+**/.terraform/
+
+# State Files (CRITICAL: THESE CONTAIN SECRETS IN PLAINTEXT!)
+**/*.tfstate
+**/*.tfstate.*
+
+# Provider Lock File (ignored for easier local cross-platform development)
+**/.terraform.lock.hcl
+
+# Crash Logs
+**/crash.log
+**/crash.*.log
