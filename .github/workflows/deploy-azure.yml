@@ -72,4 +72,4 @@ jobs:
           ansible-playbook playbook.yml \
             -i "${{ env.AZURE_VM_IP }}," \
             --user devops-admin \
-            --extra-vars "github_token='${{ secrets.AZURE_PULL_PAT }}'
+            --extra-vars "github_token='${{ secrets.AZURE_PULL_PAT }}'"
