@@ -55,6 +55,7 @@ jobs:
         with:
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
           if_key_exists: replace
+          known_hosts: ${{ secrets.AZURE_VM_KNOWN_HOSTS }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
