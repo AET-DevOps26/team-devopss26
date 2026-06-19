@@ -51,7 +51,7 @@ jobs:
       - name: Build & push ${{ matrix.service }}
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.context }}
+          context: services/${{ matrix.context }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/aet-devops26/team-devopss26/${{ matrix.service }}:latest
