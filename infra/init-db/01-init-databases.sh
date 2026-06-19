@@ -11,10 +11,11 @@ GRANT ALL PRIVILEGES ON DATABASE "$database" TO "$POSTGRES_USER";
 EOSQL
 }
 
-if [ -n "$POSTGRES_MULTIPLE_DATABASES" ]; then
-    echo "Multiple database creation requested: $POSTGRES_MULTIPLE_DATABASES"
-    for db in $(echo $POSTGRES_MULTIPLE_DATABASES | tr ',' ' '); do
-        create_database $db
-    done
-    echo "All databases created successfully!"
-fi
+if [ -n "$POSTGRES_MULTIPLE_DATABASES" ]; then   
+  IFS=',' read -ra DBS <<< "$POSTGRES_MULTIPLE_DATABASES"
+  echo "Multiple database creation requested: $POSTGRES_MULTIPLE_DATABASES"
+  for db in "${DBS[@]}"; do
+      create_database "$db"
+  done
+  echo "All databases created successfully!"                                                                                                                           
+fi                                         

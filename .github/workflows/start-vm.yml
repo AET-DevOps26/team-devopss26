@@ -2,8 +2,6 @@ name: scheduled-start.yml
 
 on:
   workflow_dispatch: {}
-  push:
-    branches: [ main ]
 
 jobs:
   start-vm:

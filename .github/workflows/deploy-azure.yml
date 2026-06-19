@@ -1,8 +1,10 @@
-name: deploy-azure.yml
+name: Deploy to Azure
 on:
   workflow_dispatch: {}
   push:
     branches: [ main ]
+concurrency:
+  group: deploy-azure
 
 jobs:
   deploy:
@@ -53,7 +55,6 @@ jobs:
         with:
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
           if_key_exists: replace
-          known_hosts: "placeholder"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -70,4 +71,4 @@ jobs:
           ansible-playbook playbook.yml \
             -i "${{ env.AZURE_VM_IP }}," \
             --user devops-admin \
-            --extra-vars "github_token='${{ secrets.AZURE_PULL_PAT }}' ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
+            --extra-vars "github_token='${{ secrets.AZURE_PULL_PAT }}'

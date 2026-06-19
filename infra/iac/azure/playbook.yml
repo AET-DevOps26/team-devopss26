@@ -126,6 +126,7 @@
         project_src: /home/devops-admin/app
         state: present
         pull: always
+        remove_orphans: true
       become: yes
       become_user: devops-admin
       environment:
