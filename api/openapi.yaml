@@ -9,4 +9,9 @@ info:
     - [Checklist Service](checklist-service.yaml)
     - [Calendar Service](calendar-service.yaml)
     - [GenAI Service](genai-service.yaml)
+    - [User Service](user-service.yaml)
   version: 1.0.0
+
+paths: { }
+servers:
+  - url: /

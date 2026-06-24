@@ -1,10 +1,8 @@
 package de.tum.devopss26.calendarservice;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class CalendarServiceApplicationTests {
+class CalendarServiceApplicationTests extends AbstractIntegrationTest {
 
 	@Test
 	void contextLoads() {

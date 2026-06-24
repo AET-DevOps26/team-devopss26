@@ -7,12 +7,16 @@ tags:
   - name: Calendar Events
     description: Operations for managing calendar events
 
+servers:
+  - url: /
+
 paths:
 
   /api/v1/events:
     get:
       tags: [Calendar Events]
       summary: Get all calendar events for a user
+      operationId: getEvents
       parameters:
         - name: userId
           in: query
@@ -33,6 +37,7 @@ paths:
     post:
       tags: [Calendar Events]
       summary: Create a new calendar event
+      operationId: createEvent
       requestBody:
         required: true
         content:
@@ -51,6 +56,7 @@ paths:
     get:
       tags: [Calendar Events]
       summary: Get a calendar event by ID
+      operationId: getEventById
       parameters:
         - $ref: '#/components/parameters/id'
       responses:
@@ -67,6 +73,7 @@ paths:
       tags: [Calendar Events]
       summary: Update a calendar event
       description: Updates title, description, startTime, endTime, and location
+      operationId: updateEvent
       parameters:
         - $ref: '#/components/parameters/id'
       requestBody:
@@ -88,6 +95,7 @@ paths:
     delete:
       tags: [Calendar Events]
       summary: Delete a calendar event by ID
+      operationId: deleteEvent
       parameters:
         - $ref: '#/components/parameters/id'
       responses:

@@ -6,8 +6,9 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
-    "build": "vite build",
+    "codegen": "node scripts/codegen.js",
+    "dev": "npm run codegen && vite dev --port 3000",
+    "build": "npm run codegen && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

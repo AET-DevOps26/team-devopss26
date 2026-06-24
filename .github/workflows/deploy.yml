@@ -19,19 +19,26 @@ jobs:
       matrix:
         include:
           - service: user-service
-            context: ./services/user-service
+            context: ./
+            dockerfile: ./services/user-service/Dockerfile
           - service: admin-service
-            context: ./services/admin-service
+            context: ./
+            dockerfile: ./services/admin-service/Dockerfile
           - service: checklist-service
-            context: ./services/checklist-service
+            context: ./
+            dockerfile: ./services/checklist-service/Dockerfile
           - service: calendar-service
-            context: ./services/calendar-service
+            context: ./
+            dockerfile: ./services/calendar-service/Dockerfile
           - service: note-service
-            context: ./services/note-service
+            context: ./
+            dockerfile: ./services/note-service/Dockerfile
           - service: genai-service
             context: ./services/genai-service
+            dockerfile: ./services/genai-service/Dockerfile
           - service: client
-            context: ./web-client
+            context: ./
+            dockerfile: ./web-client/Dockerfile
             build_args: VITE_API_URL=/api
 
     steps:
@@ -52,6 +59,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/aet-devops26/team-devopss26/${{ matrix.service }}:latest
