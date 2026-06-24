@@ -1,8 +1,8 @@
-name: Build & Deploy to AET
+name: Build & Deploy Dev
 
 on:
   push:
-    branches: [release]
+    branches-ignore: [release]
   workflow_dispatch:
 
 env:
@@ -19,27 +19,22 @@ jobs:
       matrix:
         include:
           - service: user-service
-            context: ./
-            dockerfile: ./services/user-service/Dockerfile
+            context: ./services/user-service
           - service: admin-service
-            context: ./
-            dockerfile: ./services/admin-service/Dockerfile
+            context: ./services/admin-service
           - service: checklist-service
-            context: ./
-            dockerfile: ./services/checklist-service/Dockerfile
+            context: ./services/checklist-service
           - service: calendar-service
-            context: ./
-            dockerfile: ./services/calendar-service/Dockerfile
+            context: ./services/calendar-service
           - service: note-service
-            context: ./
-            dockerfile: ./services/note-service/Dockerfile
+            context: ./services/note-service
           - service: genai-service
             context: ./services/genai-service
-            dockerfile: ./services/genai-service/Dockerfile
           - service: client
-            context: ./
-            dockerfile: ./web-client/Dockerfile
-            build_args: VITE_API_URL=/api
+            context: ./web-client
+            build_args: |
+              VITE_API_URL=/dev/api
+              VITE_BASE_PATH=/dev
 
     steps:
       - name: Checkout
@@ -59,7 +54,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/aet-devops26/team-devopss26/${{ matrix.service }}:latest
@@ -83,43 +77,40 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
-          echo "Kubeconfig written. Testing access..."
           kubectl auth can-i get namespaces 2>&1 || true
-          kubectl auth can-i get pods -n prod 2>&1 || true
 
       - name: Deploy with Helm
         run: |
-          helm upgrade --install devopss26 ./infra/iac/aet \
-            --namespace team-devopss26-prod \
+          helm upgrade --install devopss26-dev ./infra/iac/aet \
+            --namespace team-devopss26-dev \
             --set global.imageTag=${{ github.sha }} \
             --set genaiService.geminiApiKey=${{ secrets.GEMINI_API_KEY }} \
-            --set ingress.host=${{ vars.INGRESS_HOST }} \
-            -f infra/iac/aet/values-prod.yaml \
+            -f infra/iac/aet/values-dev.yaml \
             --timeout 5m
 
       - name: Wait for rollout
         run: |
           for deploy in admin-service calendar-service checklist-service note-service user-service genai-service client; do
             echo "Waiting for $deploy..."
-            kubectl rollout status deployment/$deploy -n team-devopss26-prod --timeout=5m
+            kubectl rollout status deployment/$deploy -n team-devopss26-dev --timeout=5m
           done
           echo "Waiting for postgres..."
-          kubectl rollout status statefulset/postgres -n team-devopss26-prod --timeout=5m
+          kubectl rollout status statefulset/postgres -n team-devopss26-dev --timeout=5m
           echo "All deployments rolled out!"
 
       - name: Verify deployment
         run: |
           TAG="${{ github.sha }}"
           echo "Checking pods are running image tag: $TAG"
-          kubectl get pods -n team-devopss26-prod -o wide
+          kubectl get pods -n team-devopss26-dev -o wide
           echo ""
           MISMATCH=0
-          for pod in $(kubectl get pods -n team-devopss26-prod --no-headers -o name); do
-            IMAGES=$(kubectl get -n team-devopss26-prod "$pod" -o jsonpath='{range .spec.containers[*]}{.image}{"\n"}{end}')
+          for pod in $(kubectl get pods -n team-devopss26-dev --no-headers -o name); do
+            IMAGES=$(kubectl get -n team-devopss26-dev "$pod" -o jsonpath='{range .spec.containers[*]}{.image}{"\n"}{end}')
             while IFS= read -r img; do
               case "$img" in
-                *postgres*) ;;  # skip postgres (public Docker Hub image)
-                *:$TAG) ;;       # correct tag
+                *postgres*) ;;
+                *:$TAG) ;;
                 *)
                   echo "::warning::$pod has wrong image: $img (expected tag: $TAG)"
                   MISMATCH=$((MISMATCH + 1))

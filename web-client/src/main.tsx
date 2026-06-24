@@ -6,6 +6,7 @@ import { queryClient } from './lib/queryClient';
 
 const router = createRouter({
   routeTree,
+  basepath: (import.meta as Record<string, any>).env?.VITE_BASE_PATH || '/',
   defaultPreload: 'intent',
   scrollRestoration: true,
 });

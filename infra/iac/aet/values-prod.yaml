@@ -1,11 +1,6 @@
-# Production overrides for AET Rancher — helm install -f values-prod.yaml
-# Only overrides what changes from local: registry, pull policy, and ingress.
-# All service ports, context paths, and db names inherit from values.yaml.
-
+# Production overrides for AET Rancher — namespace team-devopss26-prod
 global:
-  imagePullSecrets:
-    - name: ghcr-secret
-  namespace: prod
+  namespace: team-devopss26-prod
   imageTag: latest
   imagePullPolicy: Always
 
@@ -22,13 +17,8 @@ genaiService:
 ingress:
   enabled: true
   host: ""   # set via --set ingress.host=... at deploy time
-  className: ""
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/hsts: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    kubernetes.io/tls-acme: "true"
-
+  className: "traefik"
+  annotations: {}
   tls:
     host: ""
-    secretName: "devopss26-tls"
+    secretName: ""

@@ -21,8 +21,8 @@ spec:
       {{- end }}
       containers:
         - name: genai-service
-          image: "{{ .Values.genaiService.image.repository }}:{{ .Values.genaiService.image.tag }}"
-          imagePullPolicy: {{ .Values.genaiService.image.pullPolicy }}
+          image: "{{ .Values.genaiService.image.repository }}:{{ $.Values.global.imageTag }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
             - containerPort: {{ .Values.genaiService.appPort }}
           securityContext:

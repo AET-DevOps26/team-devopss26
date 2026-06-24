@@ -1,0 +1,18 @@
+# Dev overrides — deploys on every branch push, namespace team-devopss26-dev
+global:
+  namespace: team-devopss26-dev
+  imageTag: latest
+  imagePullPolicy: IfNotPresent
+
+imageRegistry: ghcr.io/aet-devops26/team-devopss26
+
+client:
+  image:
+    repository: ghcr.io/aet-devops26/team-devopss26/client
+
+genaiService:
+  image:
+    repository: ghcr.io/aet-devops26/team-devopss26/genai-service
+
+ingress:
+  enabled: false

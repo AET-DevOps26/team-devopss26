@@ -6,6 +6,30 @@ metadata:
 data:
   Caddyfile: |
     :80 {
+        # ── Dev routes (prefix-based, proxies cross-namespace to team-devopss26-dev) ──
+        handle_path /dev/api/user/* {
+            reverse_proxy http://user-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "user-service" "appPort" }}
+        }
+        handle_path /dev/api/admin/* {
+            reverse_proxy http://admin-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "admin-service" "appPort" }}
+        }
+        handle_path /dev/api/checklist/* {
+            reverse_proxy http://checklist-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "checklist-service" "appPort" }}
+        }
+        handle_path /dev/api/calendar/* {
+            reverse_proxy http://calendar-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "calendar-service" "appPort" }}
+        }
+        handle_path /dev/api/note/* {
+            reverse_proxy http://note-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "note-service" "appPort" }}
+        }
+        handle_path /dev/api/genai/* {
+            reverse_proxy http://genai-service.team-devopss26-dev.svc.cluster.local:{{ .Values.genaiService.appPort }}
+        }
+        handle_path /dev/* {
+            reverse_proxy http://client.team-devopss26-dev.svc.cluster.local:80
+        }
+
+        # ── Prod routes ──
         handle /api/user/* {
             reverse_proxy http://user-service:{{ index .Values.services "user-service" "appPort" }}
         }

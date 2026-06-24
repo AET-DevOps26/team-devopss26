@@ -210,13 +210,13 @@ _prompt = ChatPromptTemplate.from_messages([
 
 def _build_chain(model: str):
     if model == "groq-llama":
-        llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.environ["GROQ_API_KEY"])
+        llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.environ.get("GROQ_API_KEY", ""))
     elif model == "mistral":
-        llm = ChatMistralAI(model="mistral-small-latest", api_key=os.environ["MISTRAL_API_KEY"])
+        llm = ChatMistralAI(model="mistral-small-latest", api_key=os.environ.get("MISTRAL_API_KEY", ""))
     elif model == "cohere":
-        llm = ChatCohere(model="command-r", cohere_api_key=os.environ["COHERE_API_KEY"])
+        llm = ChatCohere(model="command-r", cohere_api_key=os.environ.get("COHERE_API_KEY", ""))
     else:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.environ["GEMINI_API_KEY"])
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.environ.get("GEMINI_API_KEY", ""))
     return _prompt | llm | StrOutputParser()
 
 
