@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: Calendar Service API
+  version: 1.0.0
+
+tags:
+  - name: Calendar Events
+    description: Operations for managing calendar events
+
+paths:
+
+  /api/v1/events:
+    get:
+      tags: [Calendar Events]
+      summary: Get all calendar events for a user
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of calendar events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarEvent'
+
+    post:
+      tags: [Calendar Events]
+      summary: Create a new calendar event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarEvent'
+      responses:
+        '201':
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarEvent'
+
+  /api/v1/events/{id}:
+    get:
+      tags: [Calendar Events]
+      summary: Get a calendar event by ID
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: The calendar event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarEvent'
+        '404':
+          description: Event not found
+
+    put:
+      tags: [Calendar Events]
+      summary: Update a calendar event
+      description: Updates title, description, startTime, endTime, and location
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarEvent'
+      responses:
+        '200':
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarEvent'
+        '404':
+          description: Event not found
+
+    delete:
+      tags: [Calendar Events]
+      summary: Delete a calendar event by ID
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '204':
+          description: Event deleted
+        '404':
+          description: Event not found
+
+components:
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    CalendarEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        location:
+          type: string
