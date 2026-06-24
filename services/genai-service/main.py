@@ -30,11 +30,11 @@ from weaviate.classes.config import Property, DataType, Configure
 
 # ── Database ─────────────────────────────────────────────────────────────────
 _db_url = (
-    f"postgresql+asyncpg://{os.environ['GENAI_SERVICE_POSTGRES_USER']}:"
-    f"{os.environ['GENAI_SERVICE_POSTGRES_PASSWORD']}@"
-    f"{os.environ['GENAI_SERVICE_POSTGRES_URL']}:"
-    f"{os.environ['GENAI_SERVICE_POSTGRES_PORT_INT']}/"
-    f"{os.environ['GENAI_SERVICE_POSTGRES_DB']}"
+    f"postgresql+asyncpg://{os.environ['SERVICES_POSTGRES_USER']}:"
+    f"{os.environ['SERVICES_POSTGRES_PASSWORD']}@"
+    f"{os.environ['SERVICES_POSTGRES_URL']}:"
+    f"{os.environ['SERVICES_POSTGRES_PORT_INT']}/"
+    f"genai_service_db"
 )
 _engine = create_async_engine(_db_url)
 _sessions = async_sessionmaker(_engine, expire_on_commit=False)
