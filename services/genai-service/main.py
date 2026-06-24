@@ -11,6 +11,7 @@ import jwt
 import weaviate
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from langchain_cohere import ChatCohere
 from langchain_core.output_parsers import StrOutputParser
@@ -223,6 +224,7 @@ def _build_chain(model: str):
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(title="GenAI Chatbot Service", root_path="/api/v1", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+Instrumentator().instrument(app).expose(app)
 
 
 async def get_db():
