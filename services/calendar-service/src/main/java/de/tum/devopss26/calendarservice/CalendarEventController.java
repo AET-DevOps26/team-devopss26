@@ -18,8 +18,12 @@ public class CalendarEventController {
     @Operation(summary = "Get all events for a user")
     public ResponseEntity<List<CalendarEvent>> getAllEvents(@RequestParam Long userId) {
         return ResponseEntity.ok(List.of(
-                new CalendarEvent(1L, "Sample Event", "Sample description",
-                        LocalDateTime.now(), LocalDateTime.now().plusHours(1), "Munich")
+                new CalendarEvent(1L, "Car Service Appointment", "Oil change and brake inspection",
+                        LocalDateTime.of(2026, 6, 19, 10, 0), LocalDateTime.of(2026, 6, 19, 11, 0), "AutoShop Central"),
+                new CalendarEvent(2L, "Dentist Appointment", "Routine cleaning and checkup",
+                        LocalDateTime.of(2026, 6, 21, 14, 30), LocalDateTime.of(2026, 6, 21, 15, 30), "City Dental Clinic"),
+                new CalendarEvent(3L, "Grocery Run", "Weekly grocery shopping",
+                        LocalDateTime.of(2026, 6, 20, 9, 0), LocalDateTime.of(2026, 6, 20, 10, 0), "Supermarket")
         ));
     }
 

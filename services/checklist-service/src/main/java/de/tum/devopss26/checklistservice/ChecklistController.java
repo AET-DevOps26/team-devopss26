@@ -16,7 +16,24 @@ public class ChecklistController {
     @GetMapping
     @Operation(summary = "Get all checklists for a user")
     public ResponseEntity<List<Checklist>> getAllChecklists(@RequestParam Long userId) {
-        return ResponseEntity.ok(List.of(new Checklist(1L, "Sample Checklist")));
+        Checklist groceries = new Checklist(1L, "Grocery Shopping");
+        groceries.setItems(List.of(
+                new ChecklistItem(1L, "Milk", true, 1),
+                new ChecklistItem(2L, "Eggs", false, 2),
+                new ChecklistItem(3L, "Bread", false, 3),
+                new ChecklistItem(4L, "Coffee", false, 4),
+                new ChecklistItem(5L, "Orange juice", false, 5)
+        ));
+
+        Checklist errands = new Checklist(2L, "Weekly Errands");
+        errands.setItems(List.of(
+                new ChecklistItem(6L, "Drop off dry cleaning", true, 1),
+                new ChecklistItem(7L, "Renew car insurance", false, 2),
+                new ChecklistItem(8L, "Pay electricity bill", false, 3),
+                new ChecklistItem(9L, "Return library books", false, 4)
+        ));
+
+        return ResponseEntity.ok(List.of(groceries, errands));
     }
 
     @GetMapping("/{id}")
