@@ -34,15 +34,18 @@ spec:
                 name: genai-service-config
             - secretRef:
                 name: genai-service-secret
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.genaiService.appPort }}
+            periodSeconds: 5
+            failureThreshold: 30
           livenessProbe:
             tcpSocket:
               port: {{ .Values.genaiService.appPort }}
-            initialDelaySeconds: 15
             periodSeconds: 10
           readinessProbe:
             tcpSocket:
               port: {{ .Values.genaiService.appPort }}
-            initialDelaySeconds: 10
             periodSeconds: 5
           resources:
             {{- toYaml .Values.genaiService.resources | nindent 12 }}

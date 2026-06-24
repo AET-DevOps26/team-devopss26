@@ -31,8 +31,7 @@ spec:
               add: ["NET_BIND_SERVICE"]
               drop: ["ALL"]
           resources:
-            requests: { memory: "32Mi", cpu: "25m" }
-            limits: { memory: "64Mi", cpu: "50m" }
+            {{- toYaml .Values.client.resources | nindent 12 }}
           volumeMounts:
             - name: caddyfile
               mountPath: /etc/caddy/Caddyfile

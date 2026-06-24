@@ -6,6 +6,11 @@ global:
 
 imageRegistry: team-devopss26
 
+# Default resources for Java microservices
+serviceResources:
+  requests: { memory: "128Mi", cpu: "50m" }
+  limits: { memory: "256Mi", cpu: "150m" }
+
 services:
   user-service:
     appPort: 8001
@@ -35,6 +40,9 @@ client:
     tag: latest    # still needed as fallback until template is fixed
     pullPolicy: IfNotPresent
   port: 80
+  resources:
+    requests: { memory: "32Mi", cpu: "25m" }
+    limits: { memory: "64Mi", cpu: "50m" }
 
 genaiService:
   replicaCount: 1
@@ -45,18 +53,18 @@ genaiService:
   appPort: 8006
   geminiApiKey: ""
   dbName: genaidb
-  # TODO: Weaviate vector DB not yet deployed. The genai-service RAG feature
-  # (sentence-transformers + weaviate-client) needs a Weaviate StatefulSet added
-  # to the Helm chart. The service handles its absence gracefully (no RAG).
   resources:
-    requests: { memory: "64Mi", cpu: "50m" }
-    limits: { memory: "128Mi", cpu: "100m" }
+    requests: { memory: "128Mi", cpu: "50m" }
+    limits: { memory: "256Mi", cpu: "100m" }
 
 postgres:
   user: admin
   password: admin
   persistence:
     size: 2Gi
+  resources:
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits: { memory: "512Mi", cpu: "200m" }
 
 ingress:
   enabled: true

@@ -64,12 +64,7 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
           resources:
-            requests:
-              memory: "256Mi"
-              cpu: "100m"
-            limits:
-              memory: "512Mi"
-              cpu: "200m"
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
       volumes:
         - name: init-scripts
           configMap:

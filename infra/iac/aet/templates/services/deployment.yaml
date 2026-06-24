@@ -38,17 +38,19 @@ spec:
                 name: {{ $name }}-config
             - secretRef:
                 name: {{ $name }}-secret
+          startupProbe:
+            tcpSocket:
+              port: {{ $cfg.appPort }}
+            periodSeconds: 5
+            failureThreshold: 30
           livenessProbe:
             tcpSocket:
               port: {{ $cfg.appPort }}
-            initialDelaySeconds: 90
             periodSeconds: 10
           readinessProbe:
             tcpSocket:
               port: {{ $cfg.appPort }}
-            initialDelaySeconds: 90
             periodSeconds: 5
           resources:
-            requests: { memory: "256Mi", cpu: "50m" }
-            limits: { memory: "384Mi", cpu: "150m" }
+            {{- toYaml $.Values.serviceResources | nindent 12 }}
 {{- end }}
