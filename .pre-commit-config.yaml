@@ -6,9 +6,12 @@ repos:
         language: node
         entry: npx @redocly/cli lint
         args:
-          - api/note-service.yaml
-          - api/checklist-service.yaml
+          - api/admin-service.yaml
           - api/calendar-service.yaml
+          - api/checklist-service.yaml
           - api/genai-service.yaml
+          - api/note-service.yaml
+          - api/openapi.yaml
+          - api/user-service.yaml
         pass_filenames: false
         files: ^api/.*\.yaml$

@@ -7,12 +7,16 @@ tags:
   - name: Notes
     description: Operations for managing notes
 
+servers:
+  - url: /
+
 paths:
 
   /api/v1/notes:
     get:
       tags: [Notes]
       summary: Get all notes for a user
+      operationId: getNotes
       parameters:
         - name: userId
           in: query
@@ -33,6 +37,7 @@ paths:
     post:
       tags: [Notes]
       summary: Create a new note
+      operationId: createNote
       requestBody:
         required: true
         content:
@@ -51,6 +56,7 @@ paths:
     get:
       tags: [Notes]
       summary: Get a note by ID
+      operationId: getNoteById
       parameters:
         - $ref: '#/components/parameters/id'
       responses:
@@ -66,6 +72,7 @@ paths:
     put:
       tags: [Notes]
       summary: Update a note's title and content
+      operationId: updateNote
       parameters:
         - $ref: '#/components/parameters/id'
       requestBody:
@@ -87,6 +94,7 @@ paths:
     delete:
       tags: [Notes]
       summary: Delete a note by ID
+      operationId: deleteNote
       parameters:
         - $ref: '#/components/parameters/id'
       responses:

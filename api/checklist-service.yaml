@@ -7,12 +7,16 @@ tags:
   - name: Checklists
     description: Operations for managing checklists and their items
 
+servers:
+  - url: /
+
 paths:
 
   /api/v1/checklists:
     get:
       tags: [Checklists]
       summary: Get all checklists for a user
+      operationId: getChecklists
       parameters:
         - name: userId
           in: query
@@ -33,6 +37,7 @@ paths:
     post:
       tags: [Checklists]
       summary: Create a new checklist
+      operationId: createChecklist
       requestBody:
         required: true
         content:
@@ -51,6 +56,7 @@ paths:
     get:
       tags: [Checklists]
       summary: Get a checklist by ID including its items
+      operationId: getChecklistById
       parameters:
         - $ref: '#/components/parameters/id'
       responses:
@@ -66,6 +72,7 @@ paths:
     put:
       tags: [Checklists]
       summary: Update a checklist's title
+      operationId: updateChecklist
       parameters:
         - $ref: '#/components/parameters/id'
       requestBody:
@@ -87,6 +94,7 @@ paths:
     delete:
       tags: [Checklists]
       summary: Delete a checklist by ID
+      operationId: deleteChecklist
       parameters:
         - $ref: '#/components/parameters/id'
       responses:
@@ -99,6 +107,7 @@ paths:
     post:
       tags: [Checklists]
       summary: Add an item to a checklist
+      operationId: addChecklistItem
       parameters:
         - $ref: '#/components/parameters/id'
       requestBody:
@@ -122,6 +131,7 @@ paths:
       tags: [Checklists]
       summary: Update a checklist item
       description: Can be used to change the text, toggle completed, or reorder
+      operationId: updateChecklistItem
       parameters:
         - $ref: '#/components/parameters/id'
         - name: itemId
@@ -149,6 +159,7 @@ paths:
     delete:
       tags: [Checklists]
       summary: Remove an item from a checklist
+      operationId: deleteChecklistItem
       parameters:
         - $ref: '#/components/parameters/id'
         - name: itemId

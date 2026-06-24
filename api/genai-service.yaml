@@ -7,12 +7,16 @@ tags:
   - name: GenAI
     description: Operations for AI chat conversations
 
+servers:
+  - url: /
+
 paths:
 
   /api/v1/health:
     get:
       tags: [GenAI]
       summary: Health check
+      operationId: health
       responses:
         '200':
           description: Service is healthy
@@ -29,6 +33,7 @@ paths:
     post:
       tags: [GenAI]
       summary: Create a new chat conversation
+      operationId: createConversation
       requestBody:
         required: true
         content:
@@ -47,6 +52,7 @@ paths:
     get:
       tags: [GenAI]
       summary: Get a conversation by ID including all messages
+      operationId: getConversation
       parameters:
         - $ref: '#/components/parameters/conversationId'
       responses:
@@ -64,6 +70,7 @@ paths:
     delete:
       tags: [GenAI]
       summary: Delete a conversation by ID
+      operationId: deleteConversation
       parameters:
         - $ref: '#/components/parameters/conversationId'
       responses:
@@ -86,6 +93,7 @@ paths:
     post:
       tags: [GenAI]
       summary: Send a message and get an AI response
+      operationId: chat
       requestBody:
         required: true
         content:

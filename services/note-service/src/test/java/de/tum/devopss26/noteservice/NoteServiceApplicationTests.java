@@ -1,10 +1,8 @@
 package de.tum.devopss26.noteservice;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class NoteServiceApplicationTests {
+class NoteServiceApplicationTests extends AbstractIntegrationTest {
 
 	@Test
 	void contextLoads() {
