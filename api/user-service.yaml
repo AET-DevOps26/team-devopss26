@@ -25,6 +25,8 @@ paths:
           description: User created
         '409':
           description: User already exists
+        '500':
+          description: Unhandled error occured
 components:
   schemas:
     RegisterUserRequest:
