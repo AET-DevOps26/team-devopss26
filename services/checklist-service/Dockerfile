@@ -6,7 +6,7 @@ COPY api ./api
 COPY services/checklist-service/pom.xml ./services/checklist-service/
 COPY services/checklist-service/src ./services/checklist-service/src
 WORKDIR /app/services/checklist-service
-RUN mvn clean package -DskipTests
+RUN mvn clean package -Dmaven.test.skip=true
 
 # Stage 2: Run
 FROM amazoncorretto:21

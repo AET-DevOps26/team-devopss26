@@ -69,6 +69,7 @@ jobs:
 
       - name: Build & Test with Maven
         run: |
+          mvn clean install -f services/shared/pom.xml
           cd services/${{ matrix.service }}
           mvn clean test
 

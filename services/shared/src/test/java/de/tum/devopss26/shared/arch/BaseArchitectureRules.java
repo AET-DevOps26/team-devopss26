@@ -1,6 +1,10 @@
 package de.tum.devopss26.shared.arch;
 
+import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.SimpleConditionEvent;
 import de.tum.devopss26.shared.it.AbstractIntegrationTest;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
@@ -45,4 +49,35 @@ public class BaseArchitectureRules {
                     .should().haveSimpleNameEndingWith("IT")
                     .as("Integration tests (extending AbstractIntegrationTest) must have a name ending with 'IT'")
                     .allowEmptyShould(true);
+
+    public static final ArchRule ENTITIES_MUST_RESIDE_IN_ENTITY_PACKAGE =
+            classes().that().areAnnotatedWith("jakarta.persistence.Entity")
+                    .should().resideInAPackage("..entity..")
+                    .as("Entities must reside in the entity package")
+                    .allowEmptyShould(true);
+
+    public static final ArchCondition<JavaClass> IMPLEMENTS_AN_API_INTERFACE =
+            new ArchCondition<>("implement an OpenAPI interface") {
+                @Override
+                public void check(JavaClass javaClass, ConditionEvents events) {
+                    boolean implementsApi = false;
+                    for (JavaClass interfaceClass : javaClass.getRawInterfaces()) {
+                        if (interfaceClass.getPackageName().startsWith("org.openapitools.api")) {
+                            implementsApi = true;
+                            break;
+                        }
+                    }
+                    if (!implementsApi) {
+                        String message = String.format("Class %s does not implement any interface in package org.openapitools.api", javaClass.getName());
+                        events.add(SimpleConditionEvent.violated(javaClass, message));
+                    }
+                }
+            };
+
+    public static final ArchRule CONTROLLERS_MUST_IMPLEMENT_API_INTERFACES =
+            classes().that().haveSimpleNameEndingWith("Controller")
+                    .should(IMPLEMENTS_AN_API_INTERFACE)
+                    .as("Controllers must implement OpenAPI API interfaces")
+                    .allowEmptyShould(true);
 }
+

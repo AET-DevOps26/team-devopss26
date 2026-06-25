@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 
 public abstract class AbstractArchitectureTest {
 
-    // Abstrakte Methode, die von jedem Service implementiert wird, um seine Klassen bereitzustellen
     protected abstract JavaClasses getClasses();
 
     @Test
@@ -43,5 +42,17 @@ public abstract class AbstractArchitectureTest {
     @DisplayName("Integration tests must have a name ending with 'IT'")
     void integrationTestsShouldHaveCorrectNaming() {
         BaseArchitectureRules.INTEGRATION_TESTS_SHOULD_HAVE_CORRECT_NAMING.check(getClasses());
+    }
+
+    @Test
+    @DisplayName("Entities must reside in the entity package")
+    void entitiesMustResideInEntityPackage() {
+        BaseArchitectureRules.ENTITIES_MUST_RESIDE_IN_ENTITY_PACKAGE.check(getClasses());
+    }
+
+    @Test
+    @DisplayName("Controllers must implement OpenAPI API interfaces")
+    void controllersMustImplementApiInterfaces() {
+        BaseArchitectureRules.CONTROLLERS_MUST_IMPLEMENT_API_INTERFACES.check(getClasses());
     }
 }
