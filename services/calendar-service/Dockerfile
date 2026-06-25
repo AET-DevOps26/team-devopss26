@@ -6,7 +6,7 @@ COPY api ./api
 COPY services/calendar-service/pom.xml ./services/calendar-service/
 COPY services/calendar-service/src ./services/calendar-service/src
 WORKDIR /app/services/calendar-service
-RUN mvn clean package -DskipTests
+RUN mvn clean package -Dmaven.test.skip=true
 
 # Stage 2: Run
 FROM amazoncorretto:21

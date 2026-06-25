@@ -6,7 +6,7 @@ COPY api ./api
 COPY services/admin-service/pom.xml ./services/admin-service/
 COPY services/admin-service/src ./services/admin-service/src
 WORKDIR /app/services/admin-service
-RUN mvn clean package -DskipTests
+RUN mvn clean package -Dmaven.test.skip=true
 
 # Stage 2: Run
 FROM amazoncorretto:21
