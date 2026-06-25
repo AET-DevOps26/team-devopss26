@@ -33,6 +33,12 @@ public abstract class AbstractArchitectureTest {
     }
 
     @Test
+    @DisplayName("Entities must reside in the entity package")
+    void entitiesMustResideInEntityPackage() {
+        BaseArchitectureRules.ENTITIES_MUST_RESIDE_IN_ENTITY_PACKAGE.check(getClasses());
+    }
+
+    @Test
     @DisplayName("Web slice tests must have a name ending with 'ControllerTest'")
     void webSliceTestsShouldHaveCorrectNaming() {
         BaseArchitectureRules.WEB_SLICE_TESTS_SHOULD_HAVE_CORRECT_NAMING.check(getClasses());
@@ -42,12 +48,6 @@ public abstract class AbstractArchitectureTest {
     @DisplayName("Integration tests must have a name ending with 'IT'")
     void integrationTestsShouldHaveCorrectNaming() {
         BaseArchitectureRules.INTEGRATION_TESTS_SHOULD_HAVE_CORRECT_NAMING.check(getClasses());
-    }
-
-    @Test
-    @DisplayName("Entities must reside in the entity package")
-    void entitiesMustResideInEntityPackage() {
-        BaseArchitectureRules.ENTITIES_MUST_RESIDE_IN_ENTITY_PACKAGE.check(getClasses());
     }
 
     @Test
