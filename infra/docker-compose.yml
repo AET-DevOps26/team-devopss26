@@ -205,11 +205,13 @@ services:
       context: ..
       dockerfile: web-client/Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+        VITE_API_URL: ${VITE_API_URL:-/}
     ports:
       - "${CLIENT_PORT:-80}:80"
     networks:
       - client-net
+      - user-service-net
+      - internal-net
 
 # --- VOLUMES & NETWORKS ---
 # Define the volumes and networks used by the services.
