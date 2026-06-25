@@ -7,17 +7,27 @@ import org.openapitools.model.RegisterUserRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import de.tum.devopss26.userservice.config.SecurityConfig;
+import org.springframework.context.annotation.Import;
+
+import java.util.Collections;
+
 import static com.atlassian.oai.validator.mockmvc.OpenApiValidationMatchers.openApi;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserAuthenticationController.class)
+@Import(SecurityConfig.class)
 class UserAuthenticationControllerTest {
 
     @Autowired
@@ -25,6 +35,14 @@ class UserAuthenticationControllerTest {
 
     @MockitoBean
     private UserAuthenticationService authService;
+
+    @MockitoBean
+    private de.tum.devopss26.userservice.service.JwtService jwtService;
+
+    @MockitoBean
+    private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
+
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
 
     @Test
     void registerUser_CREATED() throws Exception {
@@ -38,8 +56,8 @@ class UserAuthenticationControllerTest {
                 """;
 
         mockMvc.perform(post("/api/v1/users/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(registerRequestJson))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerRequestJson))
                 .andExpect(status().isCreated())
                 .andExpect(openApi().isValid("user-service.yaml"));
     }
@@ -77,6 +95,63 @@ class UserAuthenticationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerRequestJson))
                 .andExpect(status().isInternalServerError())
+                .andExpect(openApi().isValid("user-service.yaml"));
+    }
+
+    @Test
+    void loginUser_SUCCESS() throws Exception {
+        String rawPassword = "securepassword";
+        String passwordHash = passwordEncoder.encode(rawPassword);
+
+        var mockUser = User
+                .withUsername("testuser")
+                .password(passwordHash)
+                .authorities(Collections.emptyList())
+                .build();
+
+        when(userDetailsService.loadUserByUsername("testuser")).thenReturn(mockUser);
+        when(jwtService.generateToken("testuser")).thenReturn("mocked-jwt-token");
+
+        mockMvc.perform(post("/api/v1/users/auth/login")
+                        .with(httpBasic("testuser", rawPassword)))
+                .andExpect(status().isOk())
+                .andExpect(openApi().isValid("user-service.yaml"));
+    }
+
+    @Test
+    void loginUser_UNAUTHORIZED_wrongPassword() throws Exception {
+        String rawPassword = "securepassword";
+        String passwordHash = passwordEncoder.encode(rawPassword);
+
+        var mockUser = User
+                .withUsername("testuser")
+                .password(passwordHash)
+                .authorities(Collections.emptyList())
+                .build();
+
+        when(userDetailsService.loadUserByUsername("testuser")).thenReturn(mockUser);
+
+        mockMvc.perform(post("/api/v1/users/auth/login")
+                        .with(httpBasic("testuser", "wrongpassword")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(openApi().isValid("user-service.yaml"));
+    }
+
+    @Test
+    void loginUser_UNAUTHORIZED_unknownUser() throws Exception {
+        when(userDetailsService.loadUserByUsername("unknownuser"))
+                .thenThrow(new UsernameNotFoundException("User not found"));
+
+        mockMvc.perform(post("/api/v1/users/auth/login")
+                        .with(httpBasic("unknownuser", "somepassword")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(openApi().isValid("user-service.yaml"));
+    }
+
+    @Test
+    void loginUser_UNAUTHORIZED_noCredentials() throws Exception {
+        mockMvc.perform(post("/api/v1/users/auth/login"))
+                .andExpect(status().isUnauthorized())
                 .andExpect(openApi().isValid("user-service.yaml"));
     }
 }

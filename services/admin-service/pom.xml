@@ -98,6 +98,13 @@
             <version>1.19.7</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>de.tum.devopss26</groupId>
+            <artifactId>shared</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
