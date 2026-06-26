@@ -111,7 +111,7 @@ class UserAuthenticationControllerTest {
                 .build();
 
         when(userDetailsService.loadUserByUsername("testuser")).thenReturn(mockUser);
-        when(jwtService.generateToken("testuser")).thenReturn("mocked-jwt-token");
+        when(authService.loginUser()).thenReturn("mocked-jwt-token");
 
         mockMvc.perform(post("/api/v1/users/auth/login")
                         .with(httpBasic("testuser", rawPassword)))
@@ -158,8 +158,16 @@ class UserAuthenticationControllerTest {
 
     @Test
     void checkToken_SUCCESS() throws Exception {
+        var mockUser = User
+                .withUsername("testuser")
+                .password("password")
+                .authorities(Collections.emptyList())
+                .build();
+
         when(jwtService.extractUsername("valid-token")).thenReturn("testuser");
         when(jwtService.isTokenValid("valid-token", "testuser")).thenReturn(true);
+        when(userDetailsService.loadUserByUsername("testuser")).thenReturn(mockUser);
+        when(authService.checkToken("Bearer valid-token")).thenReturn(true);
 
         mockMvc.perform(get("/api/v1/users/auth/check-token")
                         .header("Authorization", "Bearer valid-token"))
@@ -170,6 +178,7 @@ class UserAuthenticationControllerTest {
     @Test
     void checkToken_NOT_ACCEPTABLE_invalidToken() throws Exception {
         when(jwtService.extractUsername("invalid-token")).thenThrow(new RuntimeException("invalid token"));
+        when(authService.checkToken("Bearer invalid-token")).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/users/auth/check-token")
                         .header("Authorization", "Bearer invalid-token"))
@@ -179,6 +188,8 @@ class UserAuthenticationControllerTest {
 
     @Test
     void checkToken_NOT_ACCEPTABLE_missingHeader() throws Exception {
+        when(authService.checkToken(null)).thenReturn(false);
+
         mockMvc.perform(get("/api/v1/users/auth/check-token"))
                 .andExpect(status().isNotAcceptable())
                 .andExpect(openApi().isValid("user-service.yaml"));
