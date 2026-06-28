@@ -55,6 +55,7 @@ services:
       - "${USER_SERVICE_APP_PORT}:${USER_SERVICE_APP_PORT}"
     networks:
       - user-service-net
+      - monitoring-net
     depends_on:
       services-db:
         condition: service_healthy
@@ -73,6 +74,7 @@ services:
       - "${ADMIN_SERVICE_APP_PORT}:${ADMIN_SERVICE_APP_PORT}"
     networks:
       - admin-service-net
+      - monitoring-net
     depends_on:
       services-db:
         condition: service_healthy
@@ -92,6 +94,7 @@ services:
     networks:
       - checklist-service-net
       - internal-net
+      - monitoring-net
     depends_on:
       services-db:
         condition: service_healthy
@@ -111,6 +114,7 @@ services:
     networks:
       - calendar-service-net
       - internal-net
+      - monitoring-net
     depends_on:
       services-db:
         condition: service_healthy
@@ -130,6 +134,7 @@ services:
     networks:
       - note-service-net
       - internal-net
+      - monitoring-net
     depends_on:
       services-db:
         condition: service_healthy
@@ -185,6 +190,7 @@ services:
     networks:
       - genai-service-net
       - internal-net
+      - monitoring-net
     depends_on:
       genai-service-liquibase:
         condition: service_completed_successfully
@@ -195,7 +201,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  
+
   #####################################################################################################
   # FRONTEND SERVICE
   #####################################################################################################
@@ -211,11 +217,38 @@ services:
     networks:
       - client-net
 
+  #####################################################################################################
+  # OBSERVABILITY
+  #####################################################################################################
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - monitoring-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - monitoring-net
+
 # --- VOLUMES & NETWORKS ---
 # Define the volumes and networks used by the services.
 volumes:
   weaviate-data: {}
   services-db: {}
+  prometheus-data: {}
+  grafana-data: {}
 
 networks:
   user-service-net: {}
@@ -226,3 +259,4 @@ networks:
   genai-service-net: {}
   client-net: {}
   internal-net: {}
+  monitoring-net: {}
