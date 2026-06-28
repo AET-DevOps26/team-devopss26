@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'user-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['user-service-app:8001']
+
+  - job_name: 'admin-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['admin-service-app:8002']
+
+  - job_name: 'checklist-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['checklist-service-app:8003']
+
+  - job_name: 'calendar-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['calendar-service-app:8004']
+
+  - job_name: 'note-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['note-service-app:8005']
+
+  - job_name: 'genai-service'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['genai-service-app:8006']
