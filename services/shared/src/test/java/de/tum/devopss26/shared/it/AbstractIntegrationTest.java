@@ -1,4 +1,4 @@
-package de.tum.devopss26.userservice;
+package de.tum.devopss26.shared.it;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;

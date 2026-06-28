@@ -6,4 +6,8 @@ public interface UserAuthenticationService {
 
 	void registerUser(RegisterUserRequest request);
 
+	String loginUser();
+
+	boolean checkToken(String authHeader);
+
 }
