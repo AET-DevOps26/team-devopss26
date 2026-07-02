@@ -180,4 +180,57 @@ class TokenValidationInterceptorTest {
         assertTrue(result2);
         verify(restClient, times(1)).get();
     }
+
+    @Test
+    void preHandle_PublicKeyChanged_RefetchesAndValidatesSuccessfully() throws Exception {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        HandlerMethod handlerMethod = mock(HandlerMethod.class);
+
+        // 1. Initial configuration with keyPair (old key)
+        String base64OldPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
+        when(responseSpec.body(String.class)).thenReturn(base64OldPublicKey);
+
+        // We mock Request and HandlerMethod for the warm-up call
+        HttpServletRequest warmUpRequest = mock(HttpServletRequest.class);
+        String warmUpToken = Jwts.builder()
+                .subject("testuser")
+                .expiration(new Date(System.currentTimeMillis() + 60000))
+                .signWith(keyPair.getPrivate())
+                .compact();
+        when(warmUpRequest.getHeader("Authorization")).thenReturn("Bearer " + warmUpToken);
+        when(handlerMethod.hasMethodAnnotation(RequireTokenValidation.class)).thenReturn(true);
+        when(handlerMethod.getBeanType()).thenAnswer(inv -> Object.class);
+
+        // Fetch it once (warm up cache)
+        interceptor.preHandle(warmUpRequest, response, handlerMethod);
+
+        // 2. Generate a new keyPair (representing user-service restart/key rotation)
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair newKeyPair = keyGen.generateKeyPair();
+
+        // Create token signed with new private key
+        String token = Jwts.builder()
+                .subject("testuser")
+                .expiration(new Date(System.currentTimeMillis() + 60000))
+                .signWith(newKeyPair.getPrivate())
+                .compact();
+
+        when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+
+        // Configure restClient to return new public key on next fetch
+        String base64NewPublicKey = Base64.getEncoder().encodeToString(newKeyPair.getPublic().getEncoded());
+        when(responseSpec.body(String.class)).thenReturn(base64NewPublicKey);
+
+        // We mock the lastFetchTime to be in the past so the rate limit allows refetching
+        ReflectionTestUtils.setField(interceptor, "lastFetchTime", java.time.Instant.now().minusSeconds(60));
+
+        // Call preHandle: it should fail with old cached key, trigger refetch, get new key, and validate successfully!
+        boolean result = interceptor.preHandle(request, response, handlerMethod);
+
+        assertTrue(result);
+        verify(request, times(1)).setAttribute(eq("username"), eq("testuser"));
+        verify(restClient, times(2)).get(); // verified that restClient was called twice (first fetch + refetch)
+    }
 }

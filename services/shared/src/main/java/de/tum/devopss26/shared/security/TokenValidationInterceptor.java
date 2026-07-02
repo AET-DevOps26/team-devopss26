@@ -16,6 +16,8 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Base64;
 
 @Component
@@ -24,6 +26,8 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 	private static final Logger LOG = LoggerFactory.getLogger(TokenValidationInterceptor.class);
 	private final RestClient restClient;
 	private PublicKey publicKey;
+	private Instant lastFetchTime = Instant.MIN;
+	private static final Duration MIN_REFETCH_INTERVAL = Duration.ofSeconds(30);
 
 	public TokenValidationInterceptor(@Value("${user-service.url:http://localhost:8001}") String userServiceUrl) {
 		this.restClient = RestClient.builder().baseUrl(userServiceUrl).build();
@@ -44,12 +48,29 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 				X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
 				KeyFactory kf = KeyFactory.getInstance("RSA");
 				this.publicKey = kf.generatePublic(spec);
+				this.lastFetchTime = Instant.now();
 			}
 		} catch (Exception e) {
 			// Self-healing: if fetch fails, print error and we'll retry on next request
 			LOG.atError().setCause(e).log("Failed to fetch JWT public key from user-service");
 		}
 		return publicKey;
+	}
+
+	private synchronized boolean tryClearCachedPublicKeyForRefetch() {
+		if (Duration.between(lastFetchTime, Instant.now()).compareTo(MIN_REFETCH_INTERVAL) > 0) {
+			this.publicKey = null;
+			return true;
+		}
+		return false;
+	}
+
+	private Claims validateToken(String token, PublicKey key) {
+		return Jwts.parser()
+				.verifyWith(key)
+				.build()
+				.parseSignedClaims(token)
+				.getPayload();
 	}
 
 	@Override
@@ -81,18 +102,32 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 		}
 
 		try {
-			// Validate signature, expiration date, and malformation using RSA public key
-			Claims claims = Jwts.parser()
-					.verifyWith(activePublicKey)
-					.build()
-					.parseSignedClaims(token)
-					.getPayload();
+			Claims claims = validateToken(token, activePublicKey);
 
 			// Inject attributes
 			request.setAttribute("username", claims.getSubject());
 			request.setAttribute("jwtClaims", claims);
 
 			return true;
+		} catch (io.jsonwebtoken.security.SignatureException e) {
+			// Signature failed. The public key might have changed (e.g. user-service restarted).
+			// Try to refetch the key if we haven't done so recently.
+			if (tryClearCachedPublicKeyForRefetch()) {
+				LOG.info("JWT signature verification failed. Attempting to refetch public key...");
+				PublicKey newPublicKey = getOrFetchPublicKey();
+				if (newPublicKey != null && newPublicKey != activePublicKey) {
+					try {
+						Claims claims = validateToken(token, newPublicKey);
+						request.setAttribute("username", claims.getSubject());
+						request.setAttribute("jwtClaims", claims);
+						return true;
+					} catch (Exception retryEx) {
+						// Fall through to 401
+					}
+				}
+			}
+			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT token");
+			return false;
 		} catch (Exception e) {
 			response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT token");
 			return false;
