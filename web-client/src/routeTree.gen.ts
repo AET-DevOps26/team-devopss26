@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as NotesIndexRouteImport } from './routes/notes/index'
+import { Route as DemoIndexRouteImport } from './routes/demo/index'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as CalendarIndexRouteImport } from './routes/calendar/index'
 
@@ -30,6 +31,11 @@ const NotesIndexRoute = NotesIndexRouteImport.update({
   path: '/notes/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoIndexRoute = DemoIndexRouteImport.update({
+  id: '/demo/',
+  path: '/demo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatIndexRoute = ChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/calendar/': typeof CalendarIndexRoute
   '/chat/': typeof ChatIndexRoute
+  '/demo/': typeof DemoIndexRoute
   '/notes/': typeof NotesIndexRoute
   '/settings/': typeof SettingsIndexRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/calendar': typeof CalendarIndexRoute
   '/chat': typeof ChatIndexRoute
+  '/demo': typeof DemoIndexRoute
   '/notes': typeof NotesIndexRoute
   '/settings': typeof SettingsIndexRoute
 }
@@ -60,21 +68,30 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/calendar/': typeof CalendarIndexRoute
   '/chat/': typeof ChatIndexRoute
+  '/demo/': typeof DemoIndexRoute
   '/notes/': typeof NotesIndexRoute
   '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/calendar/' | '/chat/' | '/notes/' | '/settings/'
+  fullPaths: '/' | '/calendar/' | '/chat/' | '/demo/' | '/notes/' | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calendar' | '/chat' | '/notes' | '/settings'
-  id: '__root__' | '/' | '/calendar/' | '/chat/' | '/notes/' | '/settings/'
+  to: '/' | '/calendar' | '/chat' | '/demo' | '/notes' | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/calendar/'
+    | '/chat/'
+    | '/demo/'
+    | '/notes/'
+    | '/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CalendarIndexRoute: typeof CalendarIndexRoute
   ChatIndexRoute: typeof ChatIndexRoute
+  DemoIndexRoute: typeof DemoIndexRoute
   NotesIndexRoute: typeof NotesIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
 }
@@ -102,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/': {
+      id: '/demo/'
+      path: '/demo'
+      fullPath: '/demo/'
+      preLoaderRoute: typeof DemoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat/': {
       id: '/chat/'
       path: '/chat'
@@ -123,6 +147,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CalendarIndexRoute: CalendarIndexRoute,
   ChatIndexRoute: ChatIndexRoute,
+  DemoIndexRoute: DemoIndexRoute,
   NotesIndexRoute: NotesIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
 }
