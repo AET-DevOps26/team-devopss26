@@ -8,6 +8,7 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.method.HandlerMethod;
@@ -30,7 +31,13 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 	private static final Duration MIN_REFETCH_INTERVAL = Duration.ofSeconds(30);
 
 	public TokenValidationInterceptor(@Value("${user-service.url:http://localhost:8001}") String userServiceUrl) {
-		this.restClient = RestClient.builder().baseUrl(userServiceUrl).build();
+		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+		requestFactory.setConnectTimeout(Duration.ofSeconds(2));
+		requestFactory.setReadTimeout(Duration.ofSeconds(2));
+		this.restClient = RestClient.builder()
+				.baseUrl(userServiceUrl)
+				.requestFactory(requestFactory)
+				.build();
 	}
 
 	private synchronized PublicKey getOrFetchPublicKey() {
