@@ -57,6 +57,21 @@ paths:
           description: Token either does not exist or is already expired
         '500':
           description: Unhandled error occurred
+  /api/v1/users/auth/public-key:
+    get:
+      tags:
+        - UserAuthentication
+      summary: Provides other services with public key for JWT validation
+      operationId: publicKey
+      responses:
+        '200':
+          description: Token exists and is not expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicKeyResponse"
+        '500':
+          description: Unhandled error occurred
 
 components:
   schemas:
@@ -71,4 +86,9 @@ components:
       type: object
       properties:
         token:
+          type: string
+    PublicKeyResponse:
+      type: object
+      properties:
+        publicKey:
           type: string

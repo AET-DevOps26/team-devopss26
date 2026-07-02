@@ -55,6 +55,7 @@ services:
       - "${USER_SERVICE_APP_PORT}:${USER_SERVICE_APP_PORT}"
     networks:
       - user-service-net
+      - internal-net
       - monitoring-net
     depends_on:
       services-db:
@@ -74,6 +75,7 @@ services:
       - "${ADMIN_SERVICE_APP_PORT}:${ADMIN_SERVICE_APP_PORT}"
     networks:
       - admin-service-net
+      - internal-net
       - monitoring-net
     depends_on:
       services-db:
