@@ -58,10 +58,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
             <scope>runtime</scope>
@@ -125,7 +121,6 @@
             <groupId>de.tum.devopss26</groupId>
             <artifactId>shared</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>

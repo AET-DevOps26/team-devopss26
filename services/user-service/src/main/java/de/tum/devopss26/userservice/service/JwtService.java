@@ -2,32 +2,43 @@ package de.tum.devopss26.userservice.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Date;
 import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    private final SecretKey secretKey;
+    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L;
+    private final PrivateKey privateKey;
+    @Getter
+    private final PublicKey publicKey;
 
-    public JwtService(@Value("${jwt.secret}") String secretString) {
-        this.secretKey = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
+    public JwtService() {
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048);
+            KeyPair kp = kpg.generateKeyPair();
+            this.privateKey = kp.getPrivate();
+            this.publicKey = kp.getPublic();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to initialize RSA key generator", e);
+        }
     }
 
-    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L;
-
-    public String generateToken(String username) {
+	public String generateToken(String username) {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-                .signWith(secretKey)
+                .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }
 
@@ -46,7 +57,7 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(secretKey)
+                .verifyWith(publicKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
