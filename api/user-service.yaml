@@ -65,7 +65,7 @@ paths:
       operationId: publicKey
       responses:
         '200':
-          description: Token exists and is not expired
+          description: Returns the base64-encoded public key used for JWT validation
           content:
             application/json:
               schema:
