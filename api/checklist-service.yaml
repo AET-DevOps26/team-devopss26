@@ -33,6 +33,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Checklist'
+        '400':
+          description: Invalid or missing userId parameter
+        '500':
+          description: Unhandled error occurred
 
     post:
       tags: [Checklists]
@@ -51,6 +55,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Checklist'
+        '400':
+          description: Invalid request body
+        '500':
+          description: Unhandled error occurred
 
   /api/v1/checklists/{id}:
     get:
@@ -66,8 +74,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Checklist'
+        '400':
+          description: Invalid id parameter
         '404':
           description: Checklist not found
+        '500':
+          description: Unhandled error occurred
 
     put:
       tags: [Checklists]
@@ -88,8 +100,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Checklist'
+        '400':
+          description: Invalid id parameter or request body
         '404':
           description: Checklist not found
+        '500':
+          description: Unhandled error occurred
 
     delete:
       tags: [Checklists]
@@ -100,8 +116,12 @@ paths:
       responses:
         '204':
           description: Checklist deleted
+        '400':
+          description: Invalid id parameter
         '404':
           description: Checklist not found
+        '500':
+          description: Unhandled error occurred
 
   /api/v1/checklists/{id}/items:
     post:
@@ -123,8 +143,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChecklistItem'
+        '400':
+          description: Invalid id parameter or request body
         '404':
           description: Checklist not found
+        '500':
+          description: Unhandled error occurred
 
   /api/v1/checklists/{id}/items/{itemId}:
     put:
@@ -153,8 +177,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChecklistItem'
+        '400':
+          description: Invalid id/itemId parameter or request body
         '404':
           description: Checklist or item not found
+        '500':
+          description: Unhandled error occurred
 
     delete:
       tags: [Checklists]
@@ -171,8 +199,12 @@ paths:
       responses:
         '204':
           description: Item removed
+        '400':
+          description: Invalid id/itemId parameter
         '404':
           description: Checklist or item not found
+        '500':
+          description: Unhandled error occurred
 
 components:
 

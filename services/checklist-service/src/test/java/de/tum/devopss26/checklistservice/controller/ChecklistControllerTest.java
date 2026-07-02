@@ -250,4 +250,100 @@ class ChecklistControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(openApi().isValid("checklist-service.yaml"));
     }
+
+    @Test
+    void getChecklists_BAD_REQUEST_missingUserId() throws Exception {
+        mockMvc.perform(get("/api/v1/checklists"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void createChecklist_BAD_REQUEST_malformedBody() throws Exception {
+        mockMvc.perform(post("/api/v1/checklists")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ not valid json "))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getChecklistById_BAD_REQUEST_nonNumericId() throws Exception {
+        mockMvc.perform(get("/api/v1/checklists/not-a-number"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateChecklist_BAD_REQUEST_nonNumericId() throws Exception {
+        mockMvc.perform(put("/api/v1/checklists/not-a-number")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Updated Title"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateChecklist_BAD_REQUEST_malformedBody() throws Exception {
+        mockMvc.perform(put("/api/v1/checklists/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ not valid json "))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteChecklist_BAD_REQUEST_nonNumericId() throws Exception {
+        mockMvc.perform(delete("/api/v1/checklists/not-a-number"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addChecklistItem_BAD_REQUEST_nonNumericId() throws Exception {
+        mockMvc.perform(post("/api/v1/checklists/not-a-number/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "text": "Milk",
+                                  "completed": false,
+                                  "position": 1
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addChecklistItem_BAD_REQUEST_malformedBody() throws Exception {
+        mockMvc.perform(post("/api/v1/checklists/1/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ not valid json "))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateChecklistItem_BAD_REQUEST_nonNumericItemId() throws Exception {
+        mockMvc.perform(put("/api/v1/checklists/1/items/not-a-number")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "text": "Oat Milk",
+                                  "completed": true,
+                                  "position": 1
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void updateChecklistItem_BAD_REQUEST_malformedBody() throws Exception {
+        mockMvc.perform(put("/api/v1/checklists/1/items/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ not valid json "))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void deleteChecklistItem_BAD_REQUEST_nonNumericItemId() throws Exception {
+        mockMvc.perform(delete("/api/v1/checklists/1/items/not-a-number"))
+                .andExpect(status().isBadRequest());
+    }
 }
