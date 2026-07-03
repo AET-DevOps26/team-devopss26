@@ -30,9 +30,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Checklist'
+                $ref: '#/components/schemas/GetChecklistsResponse'
         '400':
           description: Invalid or missing userId parameter
         '500':
@@ -47,14 +45,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Checklist'
+              $ref: '#/components/schemas/CreateChecklistRequest'
       responses:
         '201':
           description: Checklist created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Checklist'
+                $ref: '#/components/schemas/CreateChecklistResponse'
         '400':
           description: Invalid request body
         '500':
@@ -73,7 +71,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Checklist'
+                $ref: '#/components/schemas/GetChecklistByIdResponse'
         '400':
           description: Invalid id parameter
         '404':
@@ -92,14 +90,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Checklist'
+              $ref: '#/components/schemas/UpdateChecklistRequest'
       responses:
         '200':
           description: Updated checklist
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Checklist'
+                $ref: '#/components/schemas/UpdateChecklistResponse'
         '400':
           description: Invalid id parameter or request body
         '404':
@@ -135,14 +133,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChecklistItem'
+              $ref: '#/components/schemas/AddChecklistItemRequest'
       responses:
         '201':
           description: Item added
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChecklistItem'
+                $ref: '#/components/schemas/AddChecklistItemResponse'
         '400':
           description: Invalid id parameter or request body
         '404':
@@ -169,14 +167,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChecklistItem'
+              $ref: '#/components/schemas/UpdateChecklistItemRequest'
       responses:
         '200':
           description: Updated item
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChecklistItem'
+                $ref: '#/components/schemas/UpdateChecklistItemResponse'
         '400':
           description: Invalid id/itemId parameter or request body
         '404':
@@ -249,3 +247,66 @@ components:
           type: boolean
         position:
           type: integer
+
+    GetChecklistsResponse:
+      type: object
+      properties:
+        checklists:
+          type: array
+          items:
+            $ref: '#/components/schemas/Checklist'
+
+    GetChecklistByIdResponse:
+      allOf:
+        - $ref: '#/components/schemas/Checklist'
+
+    CreateChecklistRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        title:
+          type: string
+
+    CreateChecklistResponse:
+      allOf:
+        - $ref: '#/components/schemas/Checklist'
+
+    UpdateChecklistRequest:
+      type: object
+      properties:
+        title:
+          type: string
+
+    UpdateChecklistResponse:
+      allOf:
+        - $ref: '#/components/schemas/Checklist'
+
+    AddChecklistItemRequest:
+      type: object
+      properties:
+        text:
+          type: string
+        completed:
+          type: boolean
+        position:
+          type: integer
+
+    AddChecklistItemResponse:
+      allOf:
+        - $ref: '#/components/schemas/ChecklistItem'
+
+    UpdateChecklistItemRequest:
+      type: object
+      properties:
+        text:
+          type: string
+        completed:
+          type: boolean
+        position:
+          type: integer
+
+    UpdateChecklistItemResponse:
+      allOf:
+        - $ref: '#/components/schemas/ChecklistItem'
