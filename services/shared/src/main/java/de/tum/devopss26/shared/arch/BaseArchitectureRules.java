@@ -47,7 +47,7 @@ public class BaseArchitectureRules {
                     .allowEmptyShould(true);
 
     public static final ArchRule EXCEPTIONS_MUST_RESIDE_IN_EXCEPTION_PACKAGE =
-            classes().that().implement(Exception.class)
+            classes().that().areAssignableTo(Exception.class)
                     .should().resideInAPackage("..exception..")
                     .as("Exceptions must reside in the exception package")
                     .allowEmptyShould(true);

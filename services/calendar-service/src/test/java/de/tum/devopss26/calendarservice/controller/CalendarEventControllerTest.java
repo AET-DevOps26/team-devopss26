@@ -5,6 +5,7 @@ import de.tum.devopss26.calendarservice.service.CalendarEventService;
 import de.tum.devopss26.shared.exception.GlobalExceptionHandler;
 import de.tum.devopss26.shared.security.SecurityAutoConfiguration;
 import de.tum.devopss26.shared.security.TokenValidationInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.model.*;
@@ -25,11 +26,11 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@RequiredArgsConstructor
 @WebMvcTest(CalendarEventController.class)
 @Import({SecurityAutoConfiguration.class, GlobalExceptionHandler.class})
 class CalendarEventControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
@@ -59,6 +60,11 @@ class CalendarEventControllerTest {
             request.setAttribute("jwtClaims", null);
             return true;
         }).when(tokenValidationInterceptor).preHandle(any(), any(), any());
+    }
+
+    @Autowired
+    public void setMockMvc(MockMvc mockMvc) {
+        this.mockMvc = mockMvc;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
