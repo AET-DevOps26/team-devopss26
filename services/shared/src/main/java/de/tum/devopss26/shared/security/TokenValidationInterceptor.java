@@ -113,7 +113,7 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 			Claims claims = validateToken(token, activePublicKey);
 
 			// Inject attributes
-			request.setAttribute("username", claims.getSubject());
+			request.setAttribute("userId", claims.getSubject());
 			request.setAttribute("jwtClaims", claims);
 
 			return true;
@@ -126,7 +126,7 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 				if (newPublicKey != null && newPublicKey != activePublicKey) {
 					try {
 						Claims claims = validateToken(token, newPublicKey);
-						request.setAttribute("username", claims.getSubject());
+						request.setAttribute("userId", claims.getSubject());
 						request.setAttribute("jwtClaims", claims);
 						return true;
 					} catch (Exception retryEx) {

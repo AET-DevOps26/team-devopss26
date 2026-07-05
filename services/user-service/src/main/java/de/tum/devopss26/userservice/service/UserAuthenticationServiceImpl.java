@@ -8,46 +8,54 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.RegisterUserRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserAuthenticationServiceImpl implements UserAuthenticationService {
 
-	private final UserRepository repository;
-	private final UserMapper mapper;
-	private final JwtService jwtService;
+    private final UserRepository repository;
+    private final UserMapper mapper;
+    private final JwtService jwtService;
 
-	@Override
-	public void registerUser(RegisterUserRequest request) {
-		if (repository.existsByUsername(request.getUsername())) {
-			throw new UserAlreadyExistsException(request.getUsername());
-		}
+    @Override
+    public void registerUser(RegisterUserRequest request) {
+        if (repository.existsByUsername(request.getUsername())) {
+            throw new UserAlreadyExistsException(request.getUsername());
+        }
 
-		User mapped = mapper.toEntity(request);
-		repository.save(mapped);
-	}
+        User mapped = mapper.toEntity(request);
+        repository.save(mapped);
+    }
 
-	@Override
-	public String loginUser() {
-		String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
-		return jwtService.generateToken(username);
-	}
+    @Override
+    public String loginUser() {
+        String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
 
-	@Override
-	public boolean checkToken(String authHeader) {
-		try {
-			if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-				return false;
-			}
-			String jwt = authHeader.substring(7);
-			return jwtService.isTokenValid(jwt);
-		} catch (Exception e) {
-			log.atError().setCause(e).log("Error checking auth token");
-			return false;
-		}
-	}
+        Optional<User> opt = repository.findByUsername(username);
+        if (opt.isEmpty()) {
+            throw new UsernameNotFoundException(username);
+        }
+
+        return jwtService.generateToken(opt.get().getId());
+    }
+
+    @Override
+    public boolean checkToken(String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return false;
+            }
+            String jwt = authHeader.substring(7);
+            return jwtService.isTokenValid(jwt);
+        } catch (Exception e) {
+            log.atError().setCause(e).log("Error checking auth token");
+            return false;
+        }
+    }
 }
