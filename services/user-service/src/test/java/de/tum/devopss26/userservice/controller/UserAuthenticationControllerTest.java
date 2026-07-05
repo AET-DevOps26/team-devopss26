@@ -32,7 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({SecurityConfig.class, GlobalExceptionHandler.class})
 class UserAuthenticationControllerTest {
 
-    @Autowired
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
+
     private MockMvc mockMvc;
 
     @MockitoBean
@@ -44,7 +45,10 @@ class UserAuthenticationControllerTest {
     @MockitoBean
     private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
+    @Autowired
+    public void setMockMvc(MockMvc mockMvc) {
+        this.mockMvc = mockMvc;
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // POST /api/v1/users/auth/register  –  registerUser

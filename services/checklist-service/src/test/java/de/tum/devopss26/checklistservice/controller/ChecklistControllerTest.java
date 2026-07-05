@@ -25,11 +25,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ChecklistController.class)
 class ChecklistControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
     private ChecklistService checklistService;
+
+    @Autowired
+    public void setMockMvc(MockMvc mockMvc) {
+        this.mockMvc = mockMvc;
+    }
 
     @Test
     void getChecklists_OK() throws Exception {
