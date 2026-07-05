@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserAuthenticationController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, de.tum.devopss26.shared.exception.GlobalExceptionHandler.class})
 class UserAuthenticationControllerTest {
 
     @Autowired
@@ -157,6 +157,26 @@ class UserAuthenticationControllerTest {
     }
 
     @Test
+    void loginUser_INTERNAL_SERVER_ERROR() throws Exception {
+        String rawPassword = "testpassword";
+        String passwordHash = passwordEncoder.encode(rawPassword);
+
+        var mockUser = User
+                .withUsername("testuser")
+                .password(passwordHash)
+                .authorities(Collections.emptyList())
+                .build();
+
+        when(userDetailsService.loadUserByUsername("testuser")).thenReturn(mockUser);
+        doThrow(new RuntimeException("forced error")).when(authService).loginUser();
+
+        mockMvc.perform(post("/api/v1/users/auth/login")
+                        .with(httpBasic("testuser", rawPassword)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(openApi().isValid("user-service.yaml"));
+    }
+
+    @Test
     void checkToken_SUCCESS() throws Exception {
         var mockUser = User
                 .withUsername("testuser")
@@ -165,7 +185,7 @@ class UserAuthenticationControllerTest {
                 .build();
 
         when(jwtService.extractUsername("valid-token")).thenReturn("testuser");
-        when(jwtService.isTokenValid("valid-token", "testuser")).thenReturn(true);
+        when(jwtService.isTokenValid("valid-token")).thenReturn(true);
         when(userDetailsService.loadUserByUsername("testuser")).thenReturn(mockUser);
         when(authService.checkToken("Bearer valid-token")).thenReturn(true);
 
@@ -177,7 +197,6 @@ class UserAuthenticationControllerTest {
 
     @Test
     void checkToken_NOT_ACCEPTABLE_invalidToken() throws Exception {
-        when(jwtService.extractUsername("invalid-token")).thenThrow(new RuntimeException("invalid token"));
         when(authService.checkToken("Bearer invalid-token")).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/users/auth/check-token")
@@ -192,6 +211,36 @@ class UserAuthenticationControllerTest {
 
         mockMvc.perform(get("/api/v1/users/auth/check-token"))
                 .andExpect(status().isNotAcceptable())
+                .andExpect(openApi().isValid("user-service.yaml"));
+    }
+
+    @Test
+    void checkToken_INTERNAL_SERVER_ERROR() throws Exception {
+        doThrow(new RuntimeException("forced error")).when(authService).checkToken(anyString());
+
+        mockMvc.perform(get("/api/v1/users/auth/check-token")
+                        .header("Authorization", "Bearer ignored-token"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(openApi().isValid("user-service.yaml"));
+    }
+
+    @Test
+    void publicKey_SUCCESS() throws Exception {
+        java.security.PublicKey mockPublicKey = mock(java.security.PublicKey.class);
+        when(mockPublicKey.getEncoded()).thenReturn(new byte[]{1, 2, 3});
+        when(jwtService.getPublicKey()).thenReturn(mockPublicKey);
+
+        mockMvc.perform(get("/api/v1/users/auth/public-key"))
+                .andExpect(status().isOk())
+                .andExpect(openApi().isValid("user-service.yaml"));
+    }
+
+    @Test
+    void publicKey_INTERNAL_SERVER_ERROR() throws Exception {
+        doThrow(new RuntimeException("forced error")).when(jwtService).getPublicKey();
+
+        mockMvc.perform(get("/api/v1/users/auth/public-key"))
+                .andExpect(status().isInternalServerError())
                 .andExpect(openApi().isValid("user-service.yaml"));
     }
 }
