@@ -17,7 +17,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserAuthenticationServiceImpl implements UserAuthenticationService {
+class UserAuthenticationServiceImpl implements UserAuthenticationService {
 
     private final UserRepository repository;
     private final UserMapper mapper;
@@ -37,12 +37,12 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
     public String loginUser() {
         String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
 
-        Optional<User> opt = repository.findByUsername(username);
+        Optional<User> opt = repository.findByUsernameIgnoreCase(username);
         if (opt.isEmpty()) {
             throw new UsernameNotFoundException(username);
         }
 
-        return jwtService.generateToken(opt.get().getId());
+        return jwtService.generateToken(opt.get().getId(), opt.get().getUsername());
     }
 
     @Override

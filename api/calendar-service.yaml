@@ -72,6 +72,8 @@ paths:
                 $ref: '#/components/schemas/GetCalendarEventResponse'
         '401':
           description: Token either does not exist or is already expired
+        403:
+          description: Accessing event of someone else
         '404':
           description: Event not found
         '500':
@@ -101,6 +103,8 @@ paths:
                 $ref: '#/components/schemas/UpdateCalendarEventResponse'
         '401':
           description: Token either does not exist or is already expired
+        403:
+          description: Accessing event of someone else
         '404':
           description: Event not found
         '500':
@@ -119,6 +123,8 @@ paths:
           description: Event deleted
         '401':
           description: Token either does not exist or is already expired
+        403:
+          description: Accessing event of someone else
         '404':
           description: Event not found
         '500':
@@ -172,6 +178,7 @@ components:
             - endTime
     CalendarEvent:
       type: object
+      additionalProperties: true
       properties:
         title:
           type: string

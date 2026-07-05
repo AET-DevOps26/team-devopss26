@@ -172,7 +172,7 @@ class TokenValidationInterceptorTest {
         // First invocation: fetches public key
         boolean result1 = interceptor.preHandle(request, response, handlerMethod);
         assertTrue(result1);
-        verify(request).setAttribute(eq("username"), eq("testuser"));
+        verify(request).setAttribute(eq("userId"), eq("testuser"));
         verify(request).setAttribute(eq("jwtClaims"), any());
 
         // Second invocation: uses cached public key (verify restClient get was only called once)
@@ -230,7 +230,7 @@ class TokenValidationInterceptorTest {
         boolean result = interceptor.preHandle(request, response, handlerMethod);
 
         assertTrue(result);
-        verify(request, times(1)).setAttribute(eq("username"), eq("testuser"));
+        verify(request, times(1)).setAttribute(eq("userId"), eq("testuser"));
         verify(restClient, times(2)).get(); // verified that restClient was called twice (first fetch + refetch)
     }
 }

@@ -23,6 +23,7 @@ components:
   schemas:
     Identifier:
       type: object
+      additionalProperties: true
       properties: 
         id:
           type: integer
