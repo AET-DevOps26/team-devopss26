@@ -42,4 +42,10 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="2" author="ahmet-cskn">
+        <createIndex tableName="checklist_items" indexName="idx_checklist_items_checklist_id">
+            <column name="checklist_id"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
