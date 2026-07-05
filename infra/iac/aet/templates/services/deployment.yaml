@@ -23,6 +23,9 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: {{ $name }}
           image: "{{ $imageRegistry }}/{{ $name }}:{{ $global.imageTag }}"
@@ -39,16 +42,19 @@ spec:
             - secretRef:
                 name: {{ $name }}-secret
           startupProbe:
-            tcpSocket:
+            httpGet:
+              path: {{ $cfg.contextPath }}/actuator/health
               port: {{ $cfg.appPort }}
             periodSeconds: 5
             failureThreshold: 30
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: {{ $cfg.contextPath }}/actuator/health
               port: {{ $cfg.appPort }}
             periodSeconds: 10
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: {{ $cfg.contextPath }}/actuator/health
               port: {{ $cfg.appPort }}
             periodSeconds: 5
           resources:

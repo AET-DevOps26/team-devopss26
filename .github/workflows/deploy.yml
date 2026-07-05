@@ -69,9 +69,13 @@ jobs:
   deploy-to-k8s:
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
@@ -85,21 +89,29 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
           echo "Kubeconfig written. Testing access..."
           kubectl auth can-i get namespaces 2>&1 || true
-          kubectl auth can-i get pods -n prod 2>&1 || true
+          kubectl auth can-i get pods -n team-devopss26-prod 2>&1 || true
 
       - name: Deploy with Helm
+        env:
+          INGRESS_HOST: ${{ vars.INGRESS_HOST }}
         run: |
+          cat > /tmp/genai-values.yaml << EOF
+          genaiService:
+            geminiApiKey: ${{ secrets.GEMINI_API_KEY }}
+          EOF
           helm upgrade --install devopss26 ./infra/iac/aet \
             --namespace team-devopss26-prod \
+            --create-namespace \
             --set global.imageTag=${{ github.sha }} \
-            --set genaiService.geminiApiKey=${{ secrets.GEMINI_API_KEY }} \
-            --set ingress.host=${{ vars.INGRESS_HOST }} \
+            --set ingress.host="$INGRESS_HOST" \
             -f infra/iac/aet/values-prod.yaml \
+            -f /tmp/genai-values.yaml \
             --timeout 5m
 
       - name: Wait for rollout
         run: |
-          for deploy in admin-service calendar-service checklist-service note-service user-service genai-service client; do
+          DEPLOYMENTS=$(kubectl get deployment -n team-devopss26-prod --no-headers -o name | sed 's|deployment.apps/||' | sort)
+          for deploy in $DEPLOYMENTS; do
             echo "Waiting for $deploy..."
             kubectl rollout status deployment/$deploy -n team-devopss26-prod --timeout=5m
           done

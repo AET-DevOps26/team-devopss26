@@ -27,6 +27,8 @@ spec:
             - containerPort: {{ .Values.genaiService.appPort }}
           securityContext:
             allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
           envFrom:
@@ -35,16 +37,19 @@ spec:
             - secretRef:
                 name: genai-service-secret
           startupProbe:
-            tcpSocket:
+            httpGet:
+              path: /health
               port: {{ .Values.genaiService.appPort }}
             periodSeconds: 5
             failureThreshold: 30
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health
               port: {{ .Values.genaiService.appPort }}
             periodSeconds: 10
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health
               port: {{ .Values.genaiService.appPort }}
             periodSeconds: 5
           resources:

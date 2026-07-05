@@ -2,7 +2,7 @@
 global:
   namespace: team-devopss26-dev
   imageTag: latest
-  imagePullPolicy: IfNotPresent
+  imagePullPolicy: Always
 
 imageRegistry: ghcr.io/aet-devops26/team-devopss26
 

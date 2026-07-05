@@ -1,7 +1,7 @@
 # Production overrides for AET Rancher — namespace team-devopss26-prod
 global:
   namespace: team-devopss26-prod
-  imageTag: latest
+  imageTag: latest   # overridden by --set global.imageTag=${{ github.sha }} in CI
   imagePullPolicy: Always
 
 imageRegistry: ghcr.io/aet-devops26/team-devopss26

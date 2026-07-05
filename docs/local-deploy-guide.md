@@ -50,7 +50,7 @@ kubectl get pods -n devopss26
 ```
 
 Expected:
-```
+```text
 NAME                              READY   STATUS
 postgres-0                        1/1     Running
 user-service-xxx                  1/1     Running
@@ -92,7 +92,7 @@ kubectl delete namespace devopss26
 
 ## Architecture
 
-```
+```text
 ┌─────────────┐     ┌──────────────────────────────────────────────┐
 │   Browser   │────▶│  Caddy (client pod) :80                      │
 └─────────────┘     │  ├── /api/user/*  → user-service:8001        │

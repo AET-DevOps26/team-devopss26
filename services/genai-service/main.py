@@ -210,18 +210,30 @@ _prompt = ChatPromptTemplate.from_messages([
 
 def _build_chain(model: str):
     if model == "groq-llama":
-        llm = ChatGroq(model="llama-3.1-8b-instant", api_key=os.environ.get("GROQ_API_KEY", ""))
+        key = os.environ.get("GROQ_API_KEY")
+        if not key:
+            raise ValueError("GROQ_API_KEY environment variable is not set")
+        llm = ChatGroq(model="llama-3.1-8b-instant", api_key=key)
     elif model == "mistral":
-        llm = ChatMistralAI(model="mistral-small-latest", api_key=os.environ.get("MISTRAL_API_KEY", ""))
+        key = os.environ.get("MISTRAL_API_KEY")
+        if not key:
+            raise ValueError("MISTRAL_API_KEY environment variable is not set")
+        llm = ChatMistralAI(model="mistral-small-latest", api_key=key)
     elif model == "cohere":
-        llm = ChatCohere(model="command-r", cohere_api_key=os.environ.get("COHERE_API_KEY", ""))
+        key = os.environ.get("COHERE_API_KEY")
+        if not key:
+            raise ValueError("COHERE_API_KEY environment variable is not set")
+        llm = ChatCohere(model="command-r", cohere_api_key=key)
     else:
-        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=os.environ.get("GEMINI_API_KEY", ""))
+        key = os.environ.get("GEMINI_API_KEY")
+        if not key:
+            raise ValueError("GEMINI_API_KEY environment variable is not set")
+        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=key)
     return _prompt | llm | StrOutputParser()
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
-app = FastAPI(title="GenAI Chatbot Service", root_path="/api/v1", lifespan=lifespan)
+app = FastAPI(title="GenAI Chatbot Service", root_path="/api/genai", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 

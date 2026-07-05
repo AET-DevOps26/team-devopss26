@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Values.global.namespace }}
 data:
   GENAI_SERVICE_APP_PORT: "{{ .Values.genaiService.appPort }}"
-  GENAI_SERVICE_POSTGRES_URL: "postgres"
+  GENAI_SERVICE_POSTGRES_URL: "postgres.{{ .Values.global.namespace }}.svc.cluster.local"
   GENAI_SERVICE_POSTGRES_PORT_INT: "5432"
   GENAI_SERVICE_POSTGRES_DB: "{{ .Values.genaiService.dbName }}"
   GENAI_SERVICE_POSTGRES_USER: "{{ .Values.postgres.user }}"

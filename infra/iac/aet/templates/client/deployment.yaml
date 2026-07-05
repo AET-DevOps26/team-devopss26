@@ -27,6 +27,7 @@ spec:
             - containerPort: {{ .Values.client.port }}
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               add: ["NET_BIND_SERVICE"]
               drop: ["ALL"]
@@ -36,7 +37,19 @@ spec:
             - name: caddyfile
               mountPath: /etc/caddy/Caddyfile
               subPath: Caddyfile
+            - name: caddy-config
+              mountPath: /config
+            - name: caddy-data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
       volumes:
         - name: caddyfile
           configMap:
             name: client-caddyfile
+        - name: caddy-config
+          emptyDir: {}
+        - name: caddy-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
