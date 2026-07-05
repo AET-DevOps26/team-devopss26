@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as NotesIndexRouteImport } from './routes/notes/index'
@@ -16,6 +17,11 @@ import { Route as DemoIndexRouteImport } from './routes/demo/index'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as CalendarIndexRouteImport } from './routes/calendar/index'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -49,6 +55,7 @@ const CalendarIndexRoute = CalendarIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/calendar/': typeof CalendarIndexRoute
   '/chat/': typeof ChatIndexRoute
   '/demo/': typeof DemoIndexRoute
@@ -57,6 +64,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/calendar': typeof CalendarIndexRoute
   '/chat': typeof ChatIndexRoute
   '/demo': typeof DemoIndexRoute
@@ -66,6 +74,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/calendar/': typeof CalendarIndexRoute
   '/chat/': typeof ChatIndexRoute
   '/demo/': typeof DemoIndexRoute
@@ -74,12 +83,20 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/calendar/' | '/chat/' | '/demo/' | '/notes/' | '/settings/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/calendar/'
+    | '/chat/'
+    | '/demo/'
+    | '/notes/'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/calendar' | '/chat' | '/demo' | '/notes' | '/settings'
+  to: '/' | '/login' | '/calendar' | '/chat' | '/demo' | '/notes' | '/settings'
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/calendar/'
     | '/chat/'
     | '/demo/'
@@ -89,6 +106,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   CalendarIndexRoute: typeof CalendarIndexRoute
   ChatIndexRoute: typeof ChatIndexRoute
   DemoIndexRoute: typeof DemoIndexRoute
@@ -98,6 +116,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -145,6 +170,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   CalendarIndexRoute: CalendarIndexRoute,
   ChatIndexRoute: ChatIndexRoute,
   DemoIndexRoute: DemoIndexRoute,
