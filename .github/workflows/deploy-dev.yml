@@ -2,7 +2,7 @@ name: Build & Deploy Dev
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 on:
   push:
@@ -106,10 +106,12 @@ jobs:
           helm upgrade --install devopss26-dev ./infra/iac/aet \
             --namespace team-devopss26-dev \
             --create-namespace \
+            --atomic \
             --set global.imageTag=${{ github.sha }} \
             -f infra/iac/aet/values-dev.yaml \
             -f /tmp/genai-values.yaml \
             --timeout 5m
+          rm -f /tmp/genai-values.yaml
 
       - name: Wait for rollout
         run: |

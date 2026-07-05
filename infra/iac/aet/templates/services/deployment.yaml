@@ -47,19 +47,16 @@ spec:
             - secretRef:
                 name: {{ $name }}-secret
           startupProbe:
-            httpGet:
-              path: {{ $cfg.contextPath }}/actuator/health
+            tcpSocket:
               port: {{ $cfg.appPort }}
             periodSeconds: 5
             failureThreshold: 30
           livenessProbe:
-            httpGet:
-              path: {{ $cfg.contextPath }}/actuator/health
+            tcpSocket:
               port: {{ $cfg.appPort }}
             periodSeconds: 10
           readinessProbe:
-            httpGet:
-              path: {{ $cfg.contextPath }}/actuator/health
+            tcpSocket:
               port: {{ $cfg.appPort }}
             periodSeconds: 5
           resources:

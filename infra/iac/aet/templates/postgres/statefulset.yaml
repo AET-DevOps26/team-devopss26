@@ -109,11 +109,11 @@ metadata:
   namespace: {{ .Values.global.namespace }}
 data:
   init.sql: |
-    CREATE DATABASE userdb;
-    CREATE DATABASE admindb;
-    CREATE DATABASE checklistdb;
-    CREATE DATABASE calendardb;
-    CREATE DATABASE notedb;
+    CREATE DATABASE user_service_db;
+    CREATE DATABASE admin_service_db;
+    CREATE DATABASE checklist_service_db;
+    CREATE DATABASE calendar_service_db;
+    CREATE DATABASE note_service_db;
     CREATE DATABASE genaidb;
 ---
 apiVersion: v1

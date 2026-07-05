@@ -10,8 +10,7 @@ metadata:
   namespace: {{ $global.namespace }}
 data:
   {{ $prefix }}_APP_PORT: "{{ $cfg.appPort }}"
-  {{ $prefix }}_POSTGRES_URL: "postgres"
-  {{ $prefix }}_POSTGRES_PORT_INT: "5432"
-  {{ $prefix }}_POSTGRES_DB: "{{ $cfg.dbName }}"
-  {{ $prefix }}_POSTGRES_USER: "{{ $pg.user }}"
+  SERVICES_POSTGRES_URL: "postgres"
+  SERVICES_POSTGRES_PORT_INT: "5432"
+  SERVICES_POSTGRES_USER: "{{ $pg.user }}"
 {{- end }}
