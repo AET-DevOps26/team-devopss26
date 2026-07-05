@@ -1,6 +1,8 @@
 package de.tum.devopss26.checklistservice.exception;
 
-public class ChecklistNotFoundException extends RuntimeException {
+import de.tum.devopss26.shared.exception.NotFoundException;
+
+public class ChecklistNotFoundException extends NotFoundException {
 
     public ChecklistNotFoundException(Long id) {
         super("Checklist not found: " + id);

@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserAuthenticationController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, de.tum.devopss26.shared.exception.GlobalExceptionHandler.class})
 class UserAuthenticationControllerTest {
 
     @Autowired
@@ -185,7 +185,7 @@ class UserAuthenticationControllerTest {
                 .build();
 
         when(jwtService.extractUsername("valid-token")).thenReturn("testuser");
-        when(jwtService.isTokenValid("valid-token", "testuser")).thenReturn(true);
+        when(jwtService.isTokenValid("valid-token")).thenReturn(true);
         when(userDetailsService.loadUserByUsername("testuser")).thenReturn(mockUser);
         when(authService.checkToken("Bearer valid-token")).thenReturn(true);
 
@@ -197,7 +197,6 @@ class UserAuthenticationControllerTest {
 
     @Test
     void checkToken_NOT_ACCEPTABLE_invalidToken() throws Exception {
-        when(jwtService.extractUsername("invalid-token")).thenThrow(new RuntimeException("invalid token"));
         when(authService.checkToken("Bearer invalid-token")).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/users/auth/check-token")

@@ -1,1 +1,2 @@
 de.tum.devopss26.shared.security.SecurityAutoConfiguration
+de.tum.devopss26.shared.exception.ExceptionAutoConfiguration

@@ -1,7 +1,5 @@
 package de.tum.devopss26.checklistservice.controller;
 
-import de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundException;
-import de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException;
 import de.tum.devopss26.checklistservice.service.ChecklistService;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.api.ChecklistsApi;
@@ -9,7 +7,6 @@ import org.openapitools.model.Checklist;
 import org.openapitools.model.ChecklistItem;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -62,10 +59,5 @@ public class ChecklistController implements ChecklistsApi {
     public ResponseEntity<Void> deleteChecklistItem(Long id, Long itemId) {
         checklistService.deleteChecklistItem(id, itemId);
         return ResponseEntity.noContent().build();
-    }
-
-    @ExceptionHandler({ChecklistNotFoundException.class, ChecklistItemNotFoundException.class})
-    public ResponseEntity<Void> handleNotFound() {
-        return ResponseEntity.notFound().build();
     }
 }

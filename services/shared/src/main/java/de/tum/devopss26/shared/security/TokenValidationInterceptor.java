@@ -24,7 +24,8 @@ import java.util.Base64;
 @Component
 public class TokenValidationInterceptor implements HandlerInterceptor {
 
-	private static final Logger LOG = LoggerFactory.getLogger(TokenValidationInterceptor.class);
+	private static final Logger log = LoggerFactory.getLogger(TokenValidationInterceptor.class);
+
 	private final RestClient restClient;
 	private PublicKey publicKey;
 	private Instant lastFetchTime = Instant.MIN;
@@ -59,7 +60,7 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 			}
 		} catch (Exception e) {
 			// Self-healing: if fetch fails, print error and we'll retry on next request
-			LOG.atError().setCause(e).log("Failed to fetch JWT public key from user-service");
+			log.atError().setCause(e).log("Failed to fetch JWT public key from user-service");
 		}
 		return publicKey;
 	}
@@ -120,7 +121,7 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 			// Signature failed. The public key might have changed (e.g. user-service restarted).
 			// Try to refetch the key if we haven't done so recently.
 			if (tryClearCachedPublicKeyForRefetch()) {
-				LOG.info("JWT signature verification failed. Attempting to refetch public key...");
+				log.info("JWT signature verification failed. Attempting to refetch public key...");
 				PublicKey newPublicKey = getOrFetchPublicKey();
 				if (newPublicKey != null && newPublicKey != activePublicKey) {
 					try {
