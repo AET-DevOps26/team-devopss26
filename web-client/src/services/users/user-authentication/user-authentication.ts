@@ -8,28 +8,39 @@ import type { LoginResponse, RegisterUserRequest } from '../../../types/users';
 
 import { customInstance } from '../../../lib/api/client.ts';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * @summary Register a new user
  */
-export const registerUser = (registerUserRequest: RegisterUserRequest) => {
-  return customInstance<void>({
-    url: `/api/v1/users/auth/register`,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: registerUserRequest,
-  });
+export const registerUser = (
+  registerUserRequest: RegisterUserRequest,
+  options?: SecondParameter<typeof customInstance<void>>,
+) => {
+  return customInstance<void>(
+    {
+      url: `/api/v1/users/auth/register`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: registerUserRequest,
+    },
+    options,
+  );
 };
 /**
  * @summary Login to get a JWT token using Basic Auth
  */
-export const loginUser = () => {
-  return customInstance<LoginResponse>({ url: `/api/v1/users/auth/login`, method: 'POST' });
+export const loginUser = (options?: SecondParameter<typeof customInstance<LoginResponse>>) => {
+  return customInstance<LoginResponse>(
+    { url: `/api/v1/users/auth/login`, method: 'POST' },
+    options,
+  );
 };
 /**
  * @summary Check for the validity of a JWT
  */
-export const checkToken = () => {
-  return customInstance<void>({ url: `/api/v1/users/auth/check-token`, method: 'GET' });
+export const checkToken = (options?: SecondParameter<typeof customInstance<void>>) => {
+  return customInstance<void>({ url: `/api/v1/users/auth/check-token`, method: 'GET' }, options);
 };
 export type RegisterUserResult = NonNullable<Awaited<ReturnType<typeof registerUser>>>;
 export type LoginUserResult = NonNullable<Awaited<ReturnType<typeof loginUser>>>;

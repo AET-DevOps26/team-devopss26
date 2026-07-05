@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { server } from '../setup';
 import { health, createConversation, getConversation, deleteConversation, chat } from '../../services/genai/gen-a-i/gen-a-i';
 
 describe('genai service', () => {
@@ -27,5 +29,12 @@ describe('genai service', () => {
     const result = await chat({ message: 'Hello', user_id: 1 });
     expect(result).toHaveProperty('response');
     expect(result).toHaveProperty('conversation_id');
+  });
+
+  it('chat throws on 400 empty message', async () => {
+    server.use(
+      http.post('*/api/v1/chat', () => HttpResponse.json(null, { status: 400 })),
+    );
+    await expect(chat({ message: '', user_id: 1 })).rejects.toThrow();
   });
 });

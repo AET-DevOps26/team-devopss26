@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { server } from '../setup';
 import { getEvents, createEvent, getEventById, updateEvent, deleteEvent } from '../../services/calendar/calendar-events/calendar-events';
 
 describe('calendar service', () => {
@@ -25,5 +27,12 @@ describe('calendar service', () => {
 
   it('deleteEvent sends DELETE with path param', async () => {
     await expect(deleteEvent(1)).resolves.toBeUndefined();
+  });
+
+  it('getEvents throws on 500', async () => {
+    server.use(
+      http.get('*/api/v1/events', () => HttpResponse.json(null, { status: 500 })),
+    );
+    await expect(getEvents({ userId: 1 })).rejects.toThrow();
   });
 });

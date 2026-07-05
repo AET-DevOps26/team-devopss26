@@ -29,4 +29,8 @@ export const proxyConfig: Record<string, string | ProxyOptions> = {
     target: 'http://localhost:8006',
     changeOrigin: true,
   },
+  '/api/v1/chat': {
+    target: 'http://localhost:8006',
+    changeOrigin: true,
+  },
 };

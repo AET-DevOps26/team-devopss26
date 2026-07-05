@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { server } from '../setup';
 import {
   getChecklists,
   createChecklist,
@@ -50,5 +52,19 @@ describe('checklist service', () => {
 
   it('deleteChecklistItem sends DELETE with ids', async () => {
     await expect(deleteChecklistItem(1, 1)).resolves.toBeUndefined();
+  });
+
+  it('getChecklists throws on 500', async () => {
+    server.use(
+      http.get('*/api/v1/checklists', () => HttpResponse.json(null, { status: 500 })),
+    );
+    await expect(getChecklists({ userId: 1 })).rejects.toThrow();
+  });
+
+  it('addChecklistItem throws on 404 for missing checklist', async () => {
+    server.use(
+      http.post('*/api/v1/checklists/:id/items', () => HttpResponse.json(null, { status: 404 })),
+    );
+    await expect(addChecklistItem(999, { text: 'Item' })).rejects.toThrow();
   });
 });

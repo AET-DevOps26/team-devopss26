@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { server } from '../setup';
 import {
   getNotes,
   createNote,
@@ -35,5 +37,19 @@ describe('notes service', () => {
 
   it('deleteNote sends DELETE with path param', async () => {
     await expect(deleteNote(1)).resolves.toBeUndefined();
+  });
+
+  it('getNotes throws on 500 server error', async () => {
+    server.use(
+      http.get('*/api/v1/notes', () => HttpResponse.json({ message: 'Server error' }, { status: 500 })),
+    );
+    await expect(getNotes({ userId: 1 })).rejects.toThrow();
+  });
+
+  it('getNoteById throws on 404 not found', async () => {
+    server.use(
+      http.get('*/api/v1/notes/:id', () => HttpResponse.json(null, { status: 404 })),
+    );
+    await expect(getNoteById(999)).rejects.toThrow();
   });
 });

@@ -8,46 +8,67 @@ import type { CalendarEvent, GetEventsParams } from '../../../types/calendar';
 
 import { customInstance } from '../../../lib/api/client.ts';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * @summary Get all calendar events for a user
  */
-export const getEvents = (params: GetEventsParams) => {
-  return customInstance<CalendarEvent[]>({ url: `/api/v1/events`, method: 'GET', params });
+export const getEvents = (
+  params: GetEventsParams,
+  options?: SecondParameter<typeof customInstance<CalendarEvent[]>>,
+) => {
+  return customInstance<CalendarEvent[]>({ url: `/api/v1/events`, method: 'GET', params }, options);
 };
 /**
  * @summary Create a new calendar event
  */
-export const createEvent = (calendarEvent: CalendarEvent) => {
-  return customInstance<CalendarEvent>({
-    url: `/api/v1/events`,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: calendarEvent,
-  });
+export const createEvent = (
+  calendarEvent: CalendarEvent,
+  options?: SecondParameter<typeof customInstance<CalendarEvent>>,
+) => {
+  return customInstance<CalendarEvent>(
+    {
+      url: `/api/v1/events`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: calendarEvent,
+    },
+    options,
+  );
 };
 /**
  * @summary Get a calendar event by ID
  */
-export const getEventById = (id: number) => {
-  return customInstance<CalendarEvent>({ url: `/api/v1/events/${id}`, method: 'GET' });
+export const getEventById = (
+  id: number,
+  options?: SecondParameter<typeof customInstance<CalendarEvent>>,
+) => {
+  return customInstance<CalendarEvent>({ url: `/api/v1/events/${id}`, method: 'GET' }, options);
 };
 /**
  * Updates title, description, startTime, endTime, and location
  * @summary Update a calendar event
  */
-export const updateEvent = (id: number, calendarEvent: CalendarEvent) => {
-  return customInstance<CalendarEvent>({
-    url: `/api/v1/events/${id}`,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    data: calendarEvent,
-  });
+export const updateEvent = (
+  id: number,
+  calendarEvent: CalendarEvent,
+  options?: SecondParameter<typeof customInstance<CalendarEvent>>,
+) => {
+  return customInstance<CalendarEvent>(
+    {
+      url: `/api/v1/events/${id}`,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      data: calendarEvent,
+    },
+    options,
+  );
 };
 /**
  * @summary Delete a calendar event by ID
  */
-export const deleteEvent = (id: number) => {
-  return customInstance<void>({ url: `/api/v1/events/${id}`, method: 'DELETE' });
+export const deleteEvent = (id: number, options?: SecondParameter<typeof customInstance<void>>) => {
+  return customInstance<void>({ url: `/api/v1/events/${id}`, method: 'DELETE' }, options);
 };
 export type GetEventsResult = NonNullable<Awaited<ReturnType<typeof getEvents>>>;
 export type CreateEventResult = NonNullable<Awaited<ReturnType<typeof createEvent>>>;

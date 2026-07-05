@@ -8,77 +8,120 @@ import type { Checklist, ChecklistItem, GetChecklistsParams } from '../../../typ
 
 import { customInstance } from '../../../lib/api/client.ts';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * @summary Get all checklists for a user
  */
-export const getChecklists = (params: GetChecklistsParams) => {
-  return customInstance<Checklist[]>({ url: `/api/v1/checklists`, method: 'GET', params });
+export const getChecklists = (
+  params: GetChecklistsParams,
+  options?: SecondParameter<typeof customInstance<Checklist[]>>,
+) => {
+  return customInstance<Checklist[]>({ url: `/api/v1/checklists`, method: 'GET', params }, options);
 };
 /**
  * @summary Create a new checklist
  */
-export const createChecklist = (checklist: Checklist) => {
-  return customInstance<Checklist>({
-    url: `/api/v1/checklists`,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: checklist,
-  });
+export const createChecklist = (
+  checklist: Checklist,
+  options?: SecondParameter<typeof customInstance<Checklist>>,
+) => {
+  return customInstance<Checklist>(
+    {
+      url: `/api/v1/checklists`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: checklist,
+    },
+    options,
+  );
 };
 /**
  * @summary Get a checklist by ID including its items
  */
-export const getChecklistById = (id: number) => {
-  return customInstance<Checklist>({ url: `/api/v1/checklists/${id}`, method: 'GET' });
+export const getChecklistById = (
+  id: number,
+  options?: SecondParameter<typeof customInstance<Checklist>>,
+) => {
+  return customInstance<Checklist>({ url: `/api/v1/checklists/${id}`, method: 'GET' }, options);
 };
 /**
  * @summary Update a checklist's title
  */
-export const updateChecklist = (id: number, checklist: Checklist) => {
-  return customInstance<Checklist>({
-    url: `/api/v1/checklists/${id}`,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    data: checklist,
-  });
+export const updateChecklist = (
+  id: number,
+  checklist: Checklist,
+  options?: SecondParameter<typeof customInstance<Checklist>>,
+) => {
+  return customInstance<Checklist>(
+    {
+      url: `/api/v1/checklists/${id}`,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      data: checklist,
+    },
+    options,
+  );
 };
 /**
  * @summary Delete a checklist by ID
  */
-export const deleteChecklist = (id: number) => {
-  return customInstance<void>({ url: `/api/v1/checklists/${id}`, method: 'DELETE' });
+export const deleteChecklist = (
+  id: number,
+  options?: SecondParameter<typeof customInstance<void>>,
+) => {
+  return customInstance<void>({ url: `/api/v1/checklists/${id}`, method: 'DELETE' }, options);
 };
 /**
  * @summary Add an item to a checklist
  */
-export const addChecklistItem = (id: number, checklistItem: ChecklistItem) => {
-  return customInstance<ChecklistItem>({
-    url: `/api/v1/checklists/${id}/items`,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: checklistItem,
-  });
+export const addChecklistItem = (
+  id: number,
+  checklistItem: ChecklistItem,
+  options?: SecondParameter<typeof customInstance<ChecklistItem>>,
+) => {
+  return customInstance<ChecklistItem>(
+    {
+      url: `/api/v1/checklists/${id}/items`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: checklistItem,
+    },
+    options,
+  );
 };
 /**
  * Can be used to change the text, toggle completed, or reorder
  * @summary Update a checklist item
  */
-export const updateChecklistItem = (id: number, itemId: number, checklistItem: ChecklistItem) => {
-  return customInstance<ChecklistItem>({
-    url: `/api/v1/checklists/${id}/items/${itemId}`,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    data: checklistItem,
-  });
+export const updateChecklistItem = (
+  id: number,
+  itemId: number,
+  checklistItem: ChecklistItem,
+  options?: SecondParameter<typeof customInstance<ChecklistItem>>,
+) => {
+  return customInstance<ChecklistItem>(
+    {
+      url: `/api/v1/checklists/${id}/items/${itemId}`,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      data: checklistItem,
+    },
+    options,
+  );
 };
 /**
  * @summary Remove an item from a checklist
  */
-export const deleteChecklistItem = (id: number, itemId: number) => {
-  return customInstance<void>({
-    url: `/api/v1/checklists/${id}/items/${itemId}`,
-    method: 'DELETE',
-  });
+export const deleteChecklistItem = (
+  id: number,
+  itemId: number,
+  options?: SecondParameter<typeof customInstance<void>>,
+) => {
+  return customInstance<void>(
+    { url: `/api/v1/checklists/${id}/items/${itemId}`, method: 'DELETE' },
+    options,
+  );
 };
 export type GetChecklistsResult = NonNullable<Awaited<ReturnType<typeof getChecklists>>>;
 export type CreateChecklistResult = NonNullable<Awaited<ReturnType<typeof createChecklist>>>;

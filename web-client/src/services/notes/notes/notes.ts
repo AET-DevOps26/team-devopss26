@@ -8,45 +8,60 @@ import type { GetNotesParams, Note } from '../../../types/notes';
 
 import { customInstance } from '../../../lib/api/client.ts';
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * @summary Get all notes for a user
  */
-export const getNotes = (params: GetNotesParams) => {
-  return customInstance<Note[]>({ url: `/api/v1/notes`, method: 'GET', params });
+export const getNotes = (
+  params: GetNotesParams,
+  options?: SecondParameter<typeof customInstance<Note[]>>,
+) => {
+  return customInstance<Note[]>({ url: `/api/v1/notes`, method: 'GET', params }, options);
 };
 /**
  * @summary Create a new note
  */
-export const createNote = (note: Note) => {
-  return customInstance<Note>({
-    url: `/api/v1/notes`,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    data: note,
-  });
+export const createNote = (note: Note, options?: SecondParameter<typeof customInstance<Note>>) => {
+  return customInstance<Note>(
+    {
+      url: `/api/v1/notes`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      data: note,
+    },
+    options,
+  );
 };
 /**
  * @summary Get a note by ID
  */
-export const getNoteById = (id: number) => {
-  return customInstance<Note>({ url: `/api/v1/notes/${id}`, method: 'GET' });
+export const getNoteById = (id: number, options?: SecondParameter<typeof customInstance<Note>>) => {
+  return customInstance<Note>({ url: `/api/v1/notes/${id}`, method: 'GET' }, options);
 };
 /**
  * @summary Update a note's title and content
  */
-export const updateNote = (id: number, note: Note) => {
-  return customInstance<Note>({
-    url: `/api/v1/notes/${id}`,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    data: note,
-  });
+export const updateNote = (
+  id: number,
+  note: Note,
+  options?: SecondParameter<typeof customInstance<Note>>,
+) => {
+  return customInstance<Note>(
+    {
+      url: `/api/v1/notes/${id}`,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      data: note,
+    },
+    options,
+  );
 };
 /**
  * @summary Delete a note by ID
  */
-export const deleteNote = (id: number) => {
-  return customInstance<void>({ url: `/api/v1/notes/${id}`, method: 'DELETE' });
+export const deleteNote = (id: number, options?: SecondParameter<typeof customInstance<void>>) => {
+  return customInstance<void>({ url: `/api/v1/notes/${id}`, method: 'DELETE' }, options);
 };
 export type GetNotesResult = NonNullable<Awaited<ReturnType<typeof getNotes>>>;
 export type CreateNoteResult = NonNullable<Awaited<ReturnType<typeof createNote>>>;
