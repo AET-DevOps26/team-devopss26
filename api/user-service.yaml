@@ -25,6 +25,39 @@ paths:
           description: User created
         '409':
           description: User already exists
+        '500':
+          description: Unhandled error occurred
+  /api/v1/users/auth/login:
+    post:
+      tags:
+        - UserAuthentication
+      summary: Login to get a JWT token using Basic Auth
+      operationId: loginUser
+      responses:
+        '200':
+          description: Successfully authenticated, returns token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        '401':
+          description: Unauthorized
+        '500':
+          description: Unhandled error occurred
+  /api/v1/users/auth/check-token:
+    get:
+      tags:
+        - UserAuthentication
+      summary: Check for the validity of a JWT
+      operationId: checkToken
+      responses:
+        '200':
+          description: Token exists and is not expired
+        '406':
+          description: Token either does not exist or is already expired
+        '500':
+          description: Unhandled error occurred
+
 components:
   schemas:
     RegisterUserRequest:
@@ -33,4 +66,9 @@ components:
         username:
           type: string
         password:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        token:
           type: string

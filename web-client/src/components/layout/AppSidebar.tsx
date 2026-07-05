@@ -5,6 +5,7 @@ import {
   Calendar,
   MessageSquare,
   Settings,
+  Palette,
 } from 'lucide-react';
 
 import {
@@ -26,6 +27,7 @@ const navItems = [
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/demo', label: 'Demo', icon: Palette },
 ];
 
 export function AppSidebar() {

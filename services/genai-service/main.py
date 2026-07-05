@@ -11,6 +11,7 @@ import jwt
 import weaviate
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from langchain_cohere import ChatCohere
 from langchain_core.output_parsers import StrOutputParser
@@ -29,11 +30,11 @@ from weaviate.classes.config import Property, DataType, Configure
 
 # ── Database ─────────────────────────────────────────────────────────────────
 _db_url = (
-    f"postgresql+asyncpg://{os.environ['GENAI_SERVICE_POSTGRES_USER']}:"
-    f"{os.environ['GENAI_SERVICE_POSTGRES_PASSWORD']}@"
-    f"{os.environ['GENAI_SERVICE_POSTGRES_URL']}:"
-    f"{os.environ['GENAI_SERVICE_POSTGRES_PORT_INT']}/"
-    f"{os.environ['GENAI_SERVICE_POSTGRES_DB']}"
+    f"postgresql+asyncpg://{os.environ['SERVICES_POSTGRES_USER']}:"
+    f"{os.environ['SERVICES_POSTGRES_PASSWORD']}@"
+    f"{os.environ['SERVICES_POSTGRES_URL']}:"
+    f"{os.environ['SERVICES_POSTGRES_PORT_INT']}/"
+    f"genai_service_db"
 )
 _engine = create_async_engine(_db_url)
 _sessions = async_sessionmaker(_engine, expire_on_commit=False)
@@ -235,6 +236,7 @@ def _build_chain(model: str):
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(title="GenAI Chatbot Service", root_path="/api/genai", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+Instrumentator().instrument(app).expose(app)
 
 
 async def get_db():

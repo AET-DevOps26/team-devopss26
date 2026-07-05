@@ -78,3 +78,13 @@ services/*/generated/
 web-client/src/*-service.ts
 web-client/src/openapi.ts
 web-client/src/api.ts
+
+# ============== Postman =================
+# Ignore local Postman environments and globals (which may contain sensitive secrets)
+*.postman_environment.json
+*.postman_globals.json
+
+# Ignore local Postman working directories, backups and logs
+.postman/
+postman/
+

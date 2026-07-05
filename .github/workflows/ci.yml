@@ -1,10 +1,9 @@
-name: CI
+name: Continuous Integration
 
 on:
-  push: { }
+  push: {}
 
 jobs:
-  # Job 1: Validate OpenAPI specifications using Redocly
   openapi-lint:
     name: Lint OpenAPI Specs
     runs-on: ubuntu-latest
@@ -18,9 +17,32 @@ jobs:
           node-version: 22
 
       - name: Run Redocly Lint
-        run: npm run lint:openapi
+        run: npx @redocly/cli lint api/*.yaml --format=github-actions
 
-  # Job 2: Build, generate code, and run tests for Java Backends in parallel
+  python-lint:
+    name: Lint Python (GenAI Service)
+    needs: openapi-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/genai-service/requirements.txt
+
+      - name: Install Dependencies & Ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+          pip install -r services/genai-service/requirements.txt
+
+      - name: Run Ruff Linter
+        run: ruff check services/genai-service
+
   backend-test:
     name: Build & Test Backend - ${{ matrix.service }}
     needs: openapi-lint
@@ -47,10 +69,10 @@ jobs:
 
       - name: Build & Test with Maven
         run: |
+          mvn clean install -f services/shared/pom.xml
           cd services/${{ matrix.service }}
           mvn clean test
 
-  # Job 3: Generate TypeScript types, run tests and build frontend
   frontend-test:
     name: Build & Test Frontend
     needs: openapi-lint
@@ -69,5 +91,11 @@ jobs:
       - name: Install Dependencies
         run: npm --prefix web-client ci
 
-      - name: Build & Test Frontend
-        run: npm run test:frontend
+      - name: Run TypeScript Typecheck
+        run: npm --prefix web-client run typecheck
+
+      - name: Run Frontend Tests
+        run: npm --prefix web-client run test
+
+      - name: Build Production Bundle
+        run: npm --prefix web-client run build

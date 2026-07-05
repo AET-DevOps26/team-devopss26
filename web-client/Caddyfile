@@ -1,5 +1,19 @@
 :80 {
-    root * /usr/share/caddy
-    file_server
-    try_files {path} /index.html
+    # API Gateway routing to backend microservices
+    handle /api/v1/* {
+        reverse_proxy /api/v1/users* http://user-service-app:8001
+        reverse_proxy /api/v1/notes* http://note-service-app:8005
+        reverse_proxy /api/v1/checklists* http://checklist-service-app:8003
+        reverse_proxy /api/v1/events* http://calendar-service-app:8004
+        reverse_proxy /api/v1/chat* http://genai-service-app:8006
+        reverse_proxy /api/v1/conversations* http://genai-service-app:8006
+        reverse_proxy /api/v1/health* http://genai-service-app:8006
+    }
+
+    # Serve static frontend files for all other routes
+    handle {
+        root * /usr/share/caddy
+        file_server
+        try_files {path} /index.html
+    }
 }
