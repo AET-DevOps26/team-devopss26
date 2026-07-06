@@ -11,13 +11,10 @@ import org.openapitools.model.AddChecklistItemResponse;
 import org.openapitools.model.Checklist;
 import org.openapitools.model.ChecklistItem;
 import org.openapitools.model.CreateChecklistRequest;
-import org.openapitools.model.CreateChecklistResponse;
-import org.openapitools.model.GetChecklistByIdResponse;
 import org.openapitools.model.GetChecklistsResponse;
 import org.openapitools.model.UpdateChecklistItemRequest;
 import org.openapitools.model.UpdateChecklistItemResponse;
 import org.openapitools.model.UpdateChecklistRequest;
-import org.openapitools.model.UpdateChecklistResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -37,23 +34,23 @@ public class ChecklistController implements ChecklistsApi {
     }
 
     @Override
-    public ResponseEntity<GetChecklistByIdResponse> getChecklistById(Long id) {
+    public ResponseEntity<Checklist> getChecklistById(Long id) {
         Checklist checklist = checklistService.getChecklistById(id);
-        return ResponseEntity.ok(toGetChecklistByIdResponse(checklist));
+        return ResponseEntity.ok(checklist);
     }
 
     @Override
-    public ResponseEntity<CreateChecklistResponse> createChecklist(CreateChecklistRequest createChecklistRequest) {
+    public ResponseEntity<Checklist> createChecklist(CreateChecklistRequest createChecklistRequest) {
         Checklist toCreate = new Checklist().title(createChecklistRequest.getTitle());
         Checklist created = checklistService.createChecklist(createChecklistRequest.getUserId(), toCreate);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toCreateChecklistResponse(created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Override
-    public ResponseEntity<UpdateChecklistResponse> updateChecklist(Long id, UpdateChecklistRequest updateChecklistRequest) {
+    public ResponseEntity<Checklist> updateChecklist(Long id, UpdateChecklistRequest updateChecklistRequest) {
         Checklist toUpdate = new Checklist().title(updateChecklistRequest.getTitle());
         Checklist updated = checklistService.updateChecklist(id, toUpdate);
-        return ResponseEntity.ok(toUpdateChecklistResponse(updated));
+        return ResponseEntity.ok(updated);
     }
 
     @Override
@@ -92,33 +89,6 @@ public class ChecklistController implements ChecklistsApi {
             ChecklistItemNotInChecklistException.class})
     public ResponseEntity<Void> handleNotFound() {
         return ResponseEntity.notFound().build();
-    }
-
-    private GetChecklistByIdResponse toGetChecklistByIdResponse(Checklist checklist) {
-        return new GetChecklistByIdResponse()
-                .id(checklist.getId())
-                .userId(checklist.getUserId())
-                .title(checklist.getTitle())
-                .createdAt(checklist.getCreatedAt())
-                .items(checklist.getItems());
-    }
-
-    private CreateChecklistResponse toCreateChecklistResponse(Checklist checklist) {
-        return new CreateChecklistResponse()
-                .id(checklist.getId())
-                .userId(checklist.getUserId())
-                .title(checklist.getTitle())
-                .createdAt(checklist.getCreatedAt())
-                .items(checklist.getItems());
-    }
-
-    private UpdateChecklistResponse toUpdateChecklistResponse(Checklist checklist) {
-        return new UpdateChecklistResponse()
-                .id(checklist.getId())
-                .userId(checklist.getUserId())
-                .title(checklist.getTitle())
-                .createdAt(checklist.getCreatedAt())
-                .items(checklist.getItems());
     }
 
     private AddChecklistItemResponse toAddChecklistItemResponse(ChecklistItem item) {

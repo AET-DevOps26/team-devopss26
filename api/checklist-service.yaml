@@ -52,7 +52,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateChecklistResponse'
+                $ref: '#/components/schemas/Checklist'
         '400':
           description: Invalid request body
         '500':
@@ -71,7 +71,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetChecklistByIdResponse'
+                $ref: '#/components/schemas/Checklist'
         '400':
           description: Invalid id parameter
         '404':
@@ -97,7 +97,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UpdateChecklistResponse'
+                $ref: '#/components/schemas/Checklist'
         '400':
           description: Invalid id parameter or request body
         '404':
@@ -256,10 +256,6 @@ components:
           items:
             $ref: '#/components/schemas/Checklist'
 
-    GetChecklistByIdResponse:
-      allOf:
-        - $ref: '#/components/schemas/Checklist'
-
     CreateChecklistRequest:
       type: object
       properties:
@@ -269,19 +265,11 @@ components:
         title:
           type: string
 
-    CreateChecklistResponse:
-      allOf:
-        - $ref: '#/components/schemas/Checklist'
-
     UpdateChecklistRequest:
       type: object
       properties:
         title:
           type: string
-
-    UpdateChecklistResponse:
-      allOf:
-        - $ref: '#/components/schemas/Checklist'
 
     AddChecklistItemRequest:
       type: object
