@@ -5,11 +5,14 @@ import de.tum.devopss26.userservice.exception.UserAlreadyExistsException;
 import de.tum.devopss26.userservice.mapper.UserMapper;
 import de.tum.devopss26.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.openapitools.model.RegisterUserRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
-import java.util.Objects;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserAuthenticationServiceImpl implements UserAuthenticationService {
@@ -36,11 +39,15 @@ public class UserAuthenticationServiceImpl implements UserAuthenticationService 
 
 	@Override
 	public boolean checkToken(String authHeader) {
-		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+		try {
+			if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+				return false;
+			}
+			String jwt = authHeader.substring(7);
+			return jwtService.isTokenValid(jwt);
+		} catch (Exception e) {
+			log.atError().setCause(e).log("Error checking auth token");
 			return false;
 		}
-		String jwt = authHeader.substring(7);
-		String username = jwtService.extractUsername(jwt);
-		return username != null && jwtService.isTokenValid(jwt, username);
 	}
 }

@@ -16,8 +16,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from langchain_cohere import ChatCohere
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
-from sentence_transformers import SentenceTransformer
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_groq import ChatGroq
 from langchain_mistralai import ChatMistralAI
 from pydantic import BaseModel
@@ -100,7 +99,7 @@ def _get_current_user_id(credentials: Optional[HTTPAuthorizationCredentials] = D
 
 # ── RAG: Weaviate + embeddings ────────────────────────────────────────────────
 _weaviate_client: Optional[weaviate.WeaviateClient] = None
-_embedding_model: Optional[SentenceTransformer] = None
+_embedding_model: Optional[GoogleGenerativeAIEmbeddings] = None
 
 
 @asynccontextmanager
@@ -119,7 +118,10 @@ async def lifespan(app: FastAPI):
     except Exception:
         _weaviate_client = None
 
-    _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    _embedding_model = GoogleGenerativeAIEmbeddings(
+        model="models/text-embedding-004",
+        google_api_key=os.environ["GEMINI_API_KEY"],
+    )
 
     yield
 
@@ -168,9 +170,9 @@ async def _fetch_user_data(user_id: int) -> list[str]:
 
 
 def _rag_sync(query: str, chunks: list[str], top_k: int) -> str:
-    all_vecs = _embedding_model.encode(chunks + [query])
-    chunk_vecs = all_vecs[:-1].tolist()
-    query_vec = all_vecs[-1].tolist()
+    all_vecs = _embedding_model.embed_documents(chunks + [query])
+    chunk_vecs = all_vecs[:-1]
+    query_vec = all_vecs[-1]
 
     collection_name = f"Session{uuid.uuid4().hex}"
     try:
