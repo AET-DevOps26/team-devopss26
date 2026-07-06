@@ -1,6 +1,7 @@
 package de.tum.devopss26.checklistservice.controller;
 
 import de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundException;
+import de.tum.devopss26.checklistservice.exception.ChecklistItemNotInChecklistException;
 import de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException;
 import de.tum.devopss26.checklistservice.service.ChecklistService;
 import lombok.RequiredArgsConstructor;
@@ -87,7 +88,8 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.noContent().build();
     }
 
-    @ExceptionHandler({ChecklistNotFoundException.class, ChecklistItemNotFoundException.class})
+    @ExceptionHandler({ChecklistNotFoundException.class, ChecklistItemNotFoundException.class,
+            ChecklistItemNotInChecklistException.class})
     public ResponseEntity<Void> handleNotFound() {
         return ResponseEntity.notFound().build();
     }

@@ -3,6 +3,7 @@ package de.tum.devopss26.checklistservice.service;
 import de.tum.devopss26.checklistservice.entity.ChecklistEntity;
 import de.tum.devopss26.checklistservice.entity.ChecklistItemEntity;
 import de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundException;
+import de.tum.devopss26.checklistservice.exception.ChecklistItemNotInChecklistException;
 import de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException;
 import de.tum.devopss26.checklistservice.repository.ChecklistItemRepository;
 import de.tum.devopss26.checklistservice.repository.ChecklistRepository;
@@ -81,7 +82,7 @@ public class ChecklistServiceImpl implements ChecklistService {
         ChecklistItemEntity item = checklistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ChecklistItemNotFoundException(itemId));
         if (!item.getChecklist().getId().equals(checklistId)) {
-            throw new ChecklistItemNotFoundException(itemId);
+            throw new ChecklistItemNotInChecklistException(itemId, checklistId);
         }
         item.setText(dto.getText());
         item.setCompleted(Boolean.TRUE.equals(dto.getCompleted()));
@@ -96,7 +97,7 @@ public class ChecklistServiceImpl implements ChecklistService {
         ChecklistItemEntity item = checklistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ChecklistItemNotFoundException(itemId));
         if (!item.getChecklist().getId().equals(checklistId)) {
-            throw new ChecklistItemNotFoundException(itemId);
+            throw new ChecklistItemNotInChecklistException(itemId, checklistId);
         }
         checklistItemRepository.delete(item);
     }
