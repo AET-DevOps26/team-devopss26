@@ -80,4 +80,3 @@ public class BaseArchitectureRules {
                     .as("Controllers must implement OpenAPI API interfaces")
                     .allowEmptyShould(true);
 }
-

@@ -2,32 +2,69 @@ package de.tum.devopss26.userservice.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import org.springframework.beans.factory.annotation.Value;
+
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 import java.util.Date;
 import java.util.function.Function;
 
 @Service
 public class JwtService {
 
-    private final SecretKey secretKey;
+    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L;
+    private final PrivateKey privateKey;
+    @Getter
+    private final PublicKey publicKey;
 
-    public JwtService(@Value("${jwt.secret}") String secretString) {
-        this.secretKey = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
+    public JwtService(
+            @Value("${jwt.private-key:}") String privateKeyBase64,
+            @Value("${jwt.public-key:}") String publicKeyBase64) {
+        
+        if (privateKeyBase64 != null && !privateKeyBase64.trim().isEmpty() &&
+            publicKeyBase64 != null && !publicKeyBase64.trim().isEmpty()) {
+            try {
+                byte[] privateKeyBytes = Base64.getDecoder().decode(privateKeyBase64.trim());
+                PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                this.privateKey = keyFactory.generatePrivate(privateKeySpec);
+
+                byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyBase64.trim());
+                X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
+                this.publicKey = keyFactory.generatePublic(publicKeySpec);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load RSA key pair from configuration", e);
+            }
+        } else {
+            // Fallback to dynamic generation (e.g. for local testing without env vars)
+            try {
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+                kpg.initialize(2048);
+                KeyPair kp = kpg.generateKeyPair();
+                this.privateKey = kp.getPrivate();
+                this.publicKey = kp.getPublic();
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Failed to initialize RSA key generator", e);
+            }
+        }
     }
 
-    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L;
-
-    public String generateToken(String username) {
+	public String generateToken(String username) {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
-                .signWith(secretKey)
+                .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }
 
@@ -46,15 +83,15 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(secretKey)
+                .verifyWith(publicKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
     }
 
-    public boolean isTokenValid(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+    public boolean isTokenValid(String token) {
+        final String username = extractUsername(token);
+        return username != null && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {
