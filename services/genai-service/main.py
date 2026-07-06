@@ -118,10 +118,12 @@ async def lifespan(app: FastAPI):
     except Exception:
         _weaviate_client = None
 
-    _embedding_model = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004",
-        google_api_key=os.environ["GEMINI_API_KEY"],
-    )
+    gemini_api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if gemini_api_key:
+        _embedding_model = GoogleGenerativeAIEmbeddings(
+            model="models/text-embedding-004",
+            google_api_key=gemini_api_key,
+        )
 
     yield
 

@@ -28,6 +28,6 @@ public class ChecklistEntity {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("position ASC")
+    @OrderBy("completed ASC, position ASC")
     private List<ChecklistItemEntity> items = new ArrayList<>();
 }
