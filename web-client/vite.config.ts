@@ -8,6 +8,7 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
+  base: process.env.VITE_BASE_PATH || '/',
   resolve: { tsconfigPaths: true },
   plugins: [
     devtools(),

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: client
+spec:
+  replicas: {{ .Values.client.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: client
+          image: "{{ .Values.client.image.repository }}:{{ $.Values.global.imageTag }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.client.port }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              add: ["NET_BIND_SERVICE"]
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.client.resources | nindent 12 }}
+          volumeMounts:
+            - name: caddyfile
+              mountPath: /etc/caddy/Caddyfile
+              subPath: Caddyfile
+            - name: caddy-config
+              mountPath: /config
+            - name: caddy-data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: caddyfile
+          configMap:
+            name: client-caddyfile
+        - name: caddy-config
+          emptyDir: {}
+        - name: caddy-data
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

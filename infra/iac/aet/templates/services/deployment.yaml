@@ -1,0 +1,64 @@
+{{- $global := .Values.global }}
+{{- $imageRegistry := .Values.imageRegistry }}
+{{- range $name, $cfg := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $global.namespace }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      {{- with $global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: {{ $name }}
+          image: "{{ $imageRegistry }}/{{ $name }}:{{ $global.imageTag }}"
+          imagePullPolicy: {{ $global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ $cfg.appPort }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - configMapRef:
+                name: {{ $name }}-config
+            - secretRef:
+                name: {{ $name }}-secret
+          startupProbe:
+            tcpSocket:
+              port: {{ $cfg.appPort }}
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            tcpSocket:
+              port: {{ $cfg.appPort }}
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: {{ $cfg.appPort }}
+            periodSeconds: 5
+          resources:
+            {{- toYaml $.Values.serviceResources | nindent 12 }}
+{{- end }}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: genai-service-config
+  namespace: {{ .Values.global.namespace }}
+data:
+  GENAI_SERVICE_APP_PORT: "{{ .Values.genaiService.appPort }}"
+  SERVICES_POSTGRES_URL: "postgres"
+  SERVICES_POSTGRES_PORT_INT: "5432"
+  SERVICES_POSTGRES_DB: "{{ .Values.genaiService.dbName }}"
+  SERVICES_POSTGRES_USER: "{{ .Values.postgres.user }}"

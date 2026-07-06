@@ -20,6 +20,11 @@
 # ============== VS Code =================
 .vscode/
 
+# ============== OpenCode Agents =================
+.agents/
+.opencode/
+openspec/
+
 # ============== Maven / General =================
 target/
 .mvn/wrapper/maven-wrapper.jar

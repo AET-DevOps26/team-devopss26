@@ -1,0 +1,83 @@
+# ── Global ──────────────────────────────────────────────────────
+global:
+  namespace: team-devopss26-dev
+  imageTag: latest
+  imagePullPolicy: IfNotPresent
+
+imageRegistry: team-devopss26
+
+# Default resources for Java microservices
+serviceResources:
+  requests: { memory: "256Mi", cpu: "50m" }
+  limits: { memory: "320Mi", cpu: "150m" }
+
+services:
+  user-service:
+    appPort: 8001
+    contextPath: /api/user
+    dbName: userdb
+  admin-service:
+    appPort: 8002
+    contextPath: /api/admin
+    dbName: admindb
+  checklist-service:
+    appPort: 8003
+    contextPath: /api/checklist
+    dbName: checklistdb
+  calendar-service:
+    appPort: 8004
+    contextPath: /api/calendar
+    dbName: calendardb
+  note-service:
+    appPort: 8005
+    contextPath: /api/note
+    dbName: notedb
+
+client:
+  replicaCount: 1
+  image:
+    repository: team-devopss26/client
+    # NOTE: tag is unused — templates use .Values.global.imageTag
+    pullPolicy: IfNotPresent
+  port: 80
+  resources:
+    requests: { memory: "32Mi", cpu: "25m" }
+    limits: { memory: "64Mi", cpu: "50m" }
+
+genaiService:
+  replicaCount: 1
+  image:
+    repository: team-devopss26/genai-service
+    # NOTE: tag is unused — templates use .Values.global.imageTag
+    pullPolicy: IfNotPresent
+  appPort: 8006
+  geminiApiKey: ""
+  dbName: genaidb
+  resources:
+    requests: { memory: "128Mi", cpu: "50m" }
+    limits: { memory: "256Mi", cpu: "100m" }
+
+# ── Postgres ──
+# WARNING: Override these credentials via --set or external secrets for any non-local deployment.
+#          The defaults below are weak placeholders and MUST NOT be used in production.
+postgres:
+  user: admin
+  password: admin
+  persistence:
+    size: 2Gi
+  resources:
+    requests: { memory: "128Mi", cpu: "50m" }
+    limits: { memory: "256Mi", cpu: "100m" }
+
+ingress:
+  enabled: true
+  host: ""
+  className: ""
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/hsts: "false"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    kubernetes.io/tls-acme: "true"
+  tls:
+    host: ""
+    secretName: ""

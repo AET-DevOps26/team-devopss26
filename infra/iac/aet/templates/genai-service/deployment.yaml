@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: genai-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: genai-service
+spec:
+  replicas: {{ .Values.genaiService.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: genai-service
+  template:
+    metadata:
+      labels:
+        app: genai-service
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: genai-service
+          image: "{{ .Values.genaiService.image.repository }}:{{ $.Values.global.imageTag }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.genaiService.appPort }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - configMapRef:
+                name: genai-service-config
+            - secretRef:
+                name: genai-service-secret
+          startupProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.genaiService.appPort }}
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.genaiService.appPort }}
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.genaiService.appPort }}
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.genaiService.resources | nindent 12 }}
