@@ -1,18 +1,12 @@
 package de.tum.devopss26.calendarservice.exception;
 
+import de.tum.devopss26.shared.exception.ForbiddenException;
 import org.jspecify.annotations.NonNull;
 
-import java.util.List;
-
-public class IllegalCalendarEventAccessException extends RuntimeException {
+public class IllegalCalendarEventAccessException extends ForbiddenException {
 
     public IllegalCalendarEventAccessException(long accessorId, IllegalAccessPair pair) {
         super(accessorId + " tried to illegally access calendar event " + pair.eventId + " of owner " + pair.ownerId);
-    }
-
-    public IllegalCalendarEventAccessException(long accessorId, List<IllegalAccessPair> pairs) {
-        super(accessorId + " tried to illegally access calendar event pairs [(ownerId, eventId), ...]=["
-                + String.join(", ", pairs.stream().map(IllegalAccessPair::toString).toList()) + "]");
     }
 
     public record IllegalAccessPair(long ownerId, long eventId) {

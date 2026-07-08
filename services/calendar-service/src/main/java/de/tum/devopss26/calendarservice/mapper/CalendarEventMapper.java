@@ -5,6 +5,7 @@ import org.mapstruct.Mapper;
 import org.openapitools.model.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @Mapper(componentModel = "spring")
 public interface CalendarEventMapper {
@@ -22,10 +23,7 @@ public interface CalendarEventMapper {
     GetCalendarEventResponse toGetResponse(CalendarEvent event);
 
     default ListCalendarEventResponse toListResponse(List<IdentifiedCalendarEvent> events) {
-        if (events == null) {
-            return null;
-        }
-        return new ListCalendarEventResponse().events(events);
+        return new ListCalendarEventResponse().events(Objects.requireNonNullElseGet(events, List::of));
     }
 
     UpdateCalendarEventResponse toUpdateResponse(CalendarEvent event);

@@ -32,15 +32,6 @@ class CalendarEventServiceImpl implements CalendarEventService {
     @Override
     public ListCalendarEventResponse getEvents(long userId) {
         List<CalendarEvent> eventEntities = repository.findAllByUserId(userId);
-        List<CalendarEvent> illegalAccesses = eventEntities.stream()
-                .filter(entity -> entity.getUserId() != userId)
-                .toList();
-        if (!illegalAccesses.isEmpty()) {
-            List<IllegalAccessPair> pairs = illegalAccesses.stream()
-                    .map(entity -> new IllegalAccessPair(entity.getUserId(), entity.getId()))
-                    .toList();
-            throw new IllegalCalendarEventAccessException(userId, pairs);
-        }
 
         List<IdentifiedCalendarEvent> events = eventEntities
                 .stream().map(mapper::toIdentified)
