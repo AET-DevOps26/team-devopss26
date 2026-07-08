@@ -59,12 +59,13 @@ public class JwtService {
         }
     }
 
-	public String generateToken(String username) {
+	public String generateToken(long userId, String username) {
         return Jwts.builder()
-                .subject(username)
+                .subject(Long.toString(userId))
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
                 .signWith(privateKey, Jwts.SIG.RS256)
+                .claim("name", username)
                 .compact();
     }
 

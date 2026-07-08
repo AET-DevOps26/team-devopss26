@@ -22,6 +22,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).build();
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Void> handleForbiddenException(ForbiddenException ex) {
+        log.atError().setCause(ex).log("Forbidden error");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Void> handleBadRequestException(BadRequestException ex) {
         log.atError().setCause(ex).log("Bad request");

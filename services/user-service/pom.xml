@@ -153,6 +153,7 @@
                 <directory>${project.basedir}/../../api</directory>
                 <includes>
                     <include>user-service.yaml</include>
+                    <include>common.yaml</include>
                 </includes>
             </testResource>
         </testResources>

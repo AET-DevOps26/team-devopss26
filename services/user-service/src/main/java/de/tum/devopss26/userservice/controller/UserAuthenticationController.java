@@ -44,7 +44,7 @@ public class UserAuthenticationController implements UserAuthenticationApi {
         if (authService.checkToken(authHeader)) {
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     @Override

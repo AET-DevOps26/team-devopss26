@@ -6,10 +6,12 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import de.tum.devopss26.shared.it.AbstractIntegrationTest;
+import org.mapstruct.Mapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 
 public class BaseArchitectureRules {
 
@@ -36,6 +38,18 @@ public class BaseArchitectureRules {
                     .or().haveSimpleNameEndingWith("Service")
                     .should().resideInAPackage("..service..")
                     .as("Services must reside in the service package")
+                    .allowEmptyShould(true);
+
+    public static final ArchRule MAPPERS_MUST_RESIDE_IN_MAPPER_PACKAGE =
+            classes().that().areAnnotatedWith(Mapper.class)
+                    .should().resideInAPackage("..mapper..")
+                    .as("Mappers must reside in the mapper package")
+                    .allowEmptyShould(true);
+
+    public static final ArchRule EXCEPTIONS_MUST_RESIDE_IN_EXCEPTION_PACKAGE =
+            classes().that().areAssignableTo(Exception.class)
+                    .should().resideInAPackage("..exception..")
+                    .as("Exceptions must reside in the exception package")
                     .allowEmptyShould(true);
 
     public static final ArchRule WEB_SLICE_TESTS_SHOULD_HAVE_CORRECT_NAMING =
@@ -78,5 +92,12 @@ public class BaseArchitectureRules {
             classes().that().haveSimpleNameEndingWith("Controller")
                     .should(IMPLEMENTS_AN_API_INTERFACE)
                     .as("Controllers must implement OpenAPI API interfaces")
+                    .allowEmptyShould(true);
+
+    public static final ArchRule NO_FIELD_INJECTION =
+            noFields()
+                    .should().beAnnotatedWith(Autowired.class)
+                    .orShould().beAnnotatedWith(Value.class)
+                    .as("Field injection is discouraged; use constructor or method injection instead")
                     .allowEmptyShould(true);
 }

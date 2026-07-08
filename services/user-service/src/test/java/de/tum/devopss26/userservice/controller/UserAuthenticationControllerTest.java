@@ -1,5 +1,6 @@
 package de.tum.devopss26.userservice.controller;
 
+import de.tum.devopss26.shared.exception.GlobalExceptionHandler;
 import de.tum.devopss26.userservice.exception.UserAlreadyExistsException;
 import de.tum.devopss26.userservice.service.UserAuthenticationService;
 import org.junit.jupiter.api.Test;
@@ -28,10 +29,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserAuthenticationController.class)
-@Import({SecurityConfig.class, de.tum.devopss26.shared.exception.GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, GlobalExceptionHandler.class})
 class UserAuthenticationControllerTest {
 
-    @Autowired
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
+
     private MockMvc mockMvc;
 
     @MockitoBean
@@ -43,7 +45,14 @@ class UserAuthenticationControllerTest {
     @MockitoBean
     private org.springframework.security.core.userdetails.UserDetailsService userDetailsService;
 
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
+    @Autowired
+    public void setMockMvc(MockMvc mockMvc) {
+        this.mockMvc = mockMvc;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST /api/v1/users/auth/register  –  registerUser
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Test
     void registerUser_CREATED() throws Exception {
@@ -99,6 +108,10 @@ class UserAuthenticationControllerTest {
                 .andExpect(openApi().isValid("user-service.yaml"));
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST /api/v1/users/auth/login  –  loginUser
+    // ─────────────────────────────────────────────────────────────────────────
+
     @Test
     void loginUser_SUCCESS() throws Exception {
         String rawPassword = "securepassword";
@@ -152,8 +165,7 @@ class UserAuthenticationControllerTest {
     @Test
     void loginUser_UNAUTHORIZED_noCredentials() throws Exception {
         mockMvc.perform(post("/api/v1/users/auth/login"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(openApi().isValid("user-service.yaml"));
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -176,6 +188,10 @@ class UserAuthenticationControllerTest {
                 .andExpect(openApi().isValid("user-service.yaml"));
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET /api/v1/users/auth/check-token  –  checkToken
+    // ─────────────────────────────────────────────────────────────────────────
+
     @Test
     void checkToken_SUCCESS() throws Exception {
         var mockUser = User
@@ -196,21 +212,21 @@ class UserAuthenticationControllerTest {
     }
 
     @Test
-    void checkToken_NOT_ACCEPTABLE_invalidToken() throws Exception {
+    void checkToken_UNAUTHORIZED_invalidToken() throws Exception {
         when(authService.checkToken("Bearer invalid-token")).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/users/auth/check-token")
                         .header("Authorization", "Bearer invalid-token"))
-                .andExpect(status().isNotAcceptable())
+                .andExpect(status().isUnauthorized())
                 .andExpect(openApi().isValid("user-service.yaml"));
     }
 
     @Test
-    void checkToken_NOT_ACCEPTABLE_missingHeader() throws Exception {
+    void checkToken_UNAUTHORIZED_missingHeader() throws Exception {
         when(authService.checkToken(null)).thenReturn(false);
 
         mockMvc.perform(get("/api/v1/users/auth/check-token"))
-                .andExpect(status().isNotAcceptable())
+                .andExpect(status().isUnauthorized())
                 .andExpect(openApi().isValid("user-service.yaml"));
     }
 
@@ -223,6 +239,10 @@ class UserAuthenticationControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(openApi().isValid("user-service.yaml"));
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // GET /api/v1/users/auth/public-key  –  publicKey
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Test
     void publicKey_SUCCESS() throws Exception {

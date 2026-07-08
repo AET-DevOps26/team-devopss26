@@ -11,71 +11,83 @@ servers:
   - url: /
 
 paths:
-
   /api/v1/events:
     get:
       tags: [Calendar Events]
       summary: Get all calendar events for a user
       operationId: getEvents
-      parameters:
-        - name: userId
-          in: query
-          required: true
-          schema:
-            type: integer
-            format: int64
+      security:
+        - JWTAuth: []
       responses:
         '200':
           description: List of calendar events
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CalendarEvent'
+                $ref: '#/components/schemas/ListCalendarEventResponse'
+        '401':
+          description: Token either does not exist or is already expired
+        '500':
+          description: Unhandled error occurred
 
     post:
       tags: [Calendar Events]
       summary: Create a new calendar event
       operationId: createEvent
+      security:
+        - JWTAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CalendarEvent'
+              $ref: '#/components/schemas/CreateCalendarEventRequest'
       responses:
         '201':
           description: Event created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CalendarEvent'
+                $ref: '#/components/schemas/CreateCalendarEventResponse'
+        '401':
+          description: Token either does not exist or is already expired
+        '500':
+          description: Unhandled error occurred
 
   /api/v1/events/{id}:
     get:
       tags: [Calendar Events]
       summary: Get a calendar event by ID
       operationId: getEventById
+      security:
+        - JWTAuth: []
       parameters:
-        - $ref: '#/components/parameters/id'
+        - $ref: "./common.yaml#/components/parameters/id"
       responses:
         '200':
           description: The calendar event
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CalendarEvent'
+                $ref: '#/components/schemas/GetCalendarEventResponse'
+        '401':
+          description: Token either does not exist or is already expired
+        '403':
+          description: Accessing event of someone else
         '404':
           description: Event not found
+        '500':
+          description: Unhandled error occurred
 
     put:
       tags: [Calendar Events]
       summary: Update a calendar event
       description: Updates title, description, startTime, endTime, and location
       operationId: updateEvent
+      security:
+        - JWTAuth: []
       parameters:
-        - $ref: '#/components/parameters/id'
+        - $ref: "./common.yaml#/components/parameters/id"
       requestBody:
         required: true
         content:
@@ -88,40 +100,86 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CalendarEvent'
+                $ref: '#/components/schemas/UpdateCalendarEventResponse'
+        '401':
+          description: Token either does not exist or is already expired
+        '403':
+          description: Accessing event of someone else
         '404':
           description: Event not found
+        '500':
+          description: Unhandled error occurred
 
     delete:
       tags: [Calendar Events]
       summary: Delete a calendar event by ID
       operationId: deleteEvent
+      security:
+        - JWTAuth: []
       parameters:
-        - $ref: '#/components/parameters/id'
+        - $ref: "./common.yaml#/components/parameters/id"
       responses:
         '204':
           description: Event deleted
+        '401':
+          description: Token either does not exist or is already expired
+        '403':
+          description: Accessing event of someone else
         '404':
           description: Event not found
+        '500':
+          description: Unhandled error occurred
 
 components:
-
-  parameters:
-    id:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int64
-
+  securitySchemes:
+    JWTAuth:
+      $ref: './common.yaml#/components/securitySchemes/JWTAuth'
   schemas:
+    ListCalendarEventResponse:
+      type: object
+      properties: 
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdentifiedCalendarEvent"
+      required: 
+        - events
+    CreateCalendarEventRequest:
+      allOf:
+        - $ref: '#/components/schemas/CalendarEvent'
+        - type: object
+          required: 
+            - title
+            - startTime
+            - endTime
+    CreateCalendarEventResponse:
+      allOf:
+        - $ref: '#/components/schemas/IdentifiedCalendarEvent'
+        - type: object
+          required:
+            - title
+            - startTime
+            - endTime
+    GetCalendarEventResponse:
+      allOf:
+        - $ref: '#/components/schemas/IdentifiedCalendarEvent'
+        - type: object
+          required:
+            - title
+            - startTime
+            - endTime
+    UpdateCalendarEventResponse:
+      allOf:
+        - $ref: '#/components/schemas/IdentifiedCalendarEvent'
+        - type: object
+          required:
+            - title
+            - startTime
+            - endTime
     CalendarEvent:
       type: object
+      additionalProperties: true
       properties:
-        id:
-          type: integer
-          format: int64
         title:
           type: string
         description:
@@ -134,3 +192,8 @@ components:
           format: date-time
         location:
           type: string
+    IdentifiedCalendarEvent:
+      type: object
+      allOf:
+        - $ref: './common.yaml#/components/schemas/Identifier'
+        - $ref: "#/components/schemas/CalendarEvent"

@@ -39,6 +39,18 @@ public abstract class AbstractArchitectureTest {
     }
 
     @Test
+    @DisplayName("Mappers must reside in the mapper package")
+    void mappersMustResideInMapperPackage() {
+        BaseArchitectureRules.MAPPERS_MUST_RESIDE_IN_MAPPER_PACKAGE.check(getClasses());
+    }
+
+    @Test
+    @DisplayName("Exceptions must reside in the exception package")
+    void exceptionsMustResideInExceptionPackage() {
+        BaseArchitectureRules.EXCEPTIONS_MUST_RESIDE_IN_EXCEPTION_PACKAGE.check(getClasses());
+    }
+
+    @Test
     @DisplayName("Web slice tests must have a name ending with 'ControllerTest'")
     void webSliceTestsShouldHaveCorrectNaming() {
         BaseArchitectureRules.WEB_SLICE_TESTS_SHOULD_HAVE_CORRECT_NAMING.check(getClasses());
@@ -54,5 +66,11 @@ public abstract class AbstractArchitectureTest {
     @DisplayName("Controllers must implement OpenAPI API interfaces")
     void controllersMustImplementApiInterfaces() {
         BaseArchitectureRules.CONTROLLERS_MUST_IMPLEMENT_API_INTERFACES.check(getClasses());
+    }
+
+    @Test
+    @DisplayName("Field injection is discouraged; use constructor or method injection instead")
+    void noFieldInjection() {
+        BaseArchitectureRules.NO_FIELD_INJECTION.check(getClasses());
     }
 }
