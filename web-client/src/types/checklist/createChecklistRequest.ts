@@ -4,12 +4,8 @@
  * Checklist Service API
  * OpenAPI spec version: 1.0.0
  */
-import type { ChecklistItem } from './checklistItem.ts';
 
-export interface Checklist {
-  id?: number;
+export interface CreateChecklistRequest {
   userId?: number;
   title?: string;
-  createdAt?: string;
-  items?: ChecklistItem[];
 }

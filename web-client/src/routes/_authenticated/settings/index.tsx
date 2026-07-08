@@ -37,7 +37,7 @@ import {
   Loader2Icon,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/settings/')({ component: SettingsPage });
+export const Route = createFileRoute('/_authenticated/settings/')({ component: SettingsPage });
 
 // ── Mock data ──────────────────────────────────────────────────
 

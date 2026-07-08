@@ -1,9 +1,9 @@
 {
   "scripts": {
     "start": "docker compose -f infra/docker-compose.yml up --build",
-    "openapi:generate": "bash api/scripts/gen-all.sh",
-    "openapi:clean": "node scripts/clean.js",
-    "openapi": "npm run openapi:clean && npm run openapi:generate",
+    "openapi:generate": "npm --prefix web-client run codegen",
+    "openapi:clean": "npm --prefix web-client run codegen",
+    "openapi": "npm run openapi:generate",
     "lint:openapi": "npx @redocly/cli lint api/*.yaml",
     "test:backend": "node scripts/test-backends.js",
     "test:frontend": "npm --prefix web-client run typecheck && npm --prefix web-client run test && npm --prefix web-client run build",

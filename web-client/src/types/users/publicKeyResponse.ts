@@ -5,6 +5,6 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export * from './loginResponse.ts';
-export * from './publicKeyResponse.ts';
-export * from './registerUserRequest.ts';
+export interface PublicKeyResponse {
+  publicKey?: string;
+}

@@ -16,7 +16,7 @@ import {
   LayoutTemplateIcon,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/demo/')({ component: DemoPage });
+export const Route = createFileRoute('/_authenticated/demo/')({ component: DemoPage });
 
 function Code({ children }: { children: string }) {
   return <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">{children}</code>;

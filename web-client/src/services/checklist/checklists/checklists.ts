@@ -4,7 +4,17 @@
  * Checklist Service API
  * OpenAPI spec version: 1.0.0
  */
-import type { Checklist, ChecklistItem, GetChecklistsParams } from '../../../types/checklist';
+import type {
+  AddChecklistItemRequest,
+  AddChecklistItemResponse,
+  Checklist,
+  CreateChecklistRequest,
+  GetChecklistsParams,
+  GetChecklistsResponse,
+  UpdateChecklistItemRequest,
+  UpdateChecklistItemResponse,
+  UpdateChecklistRequest,
+} from '../../../types/checklist';
 
 import { customInstance } from '../../../lib/api/client.ts';
 
@@ -15,15 +25,18 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  */
 export const getChecklists = (
   params: GetChecklistsParams,
-  options?: SecondParameter<typeof customInstance<Checklist[]>>,
+  options?: SecondParameter<typeof customInstance<GetChecklistsResponse>>,
 ) => {
-  return customInstance<Checklist[]>({ url: `/api/v1/checklists`, method: 'GET', params }, options);
+  return customInstance<GetChecklistsResponse>(
+    { url: `/api/v1/checklists`, method: 'GET', params },
+    options,
+  );
 };
 /**
  * @summary Create a new checklist
  */
 export const createChecklist = (
-  checklist: Checklist,
+  createChecklistRequest: CreateChecklistRequest,
   options?: SecondParameter<typeof customInstance<Checklist>>,
 ) => {
   return customInstance<Checklist>(
@@ -31,7 +44,7 @@ export const createChecklist = (
       url: `/api/v1/checklists`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      data: checklist,
+      data: createChecklistRequest,
     },
     options,
   );
@@ -50,7 +63,7 @@ export const getChecklistById = (
  */
 export const updateChecklist = (
   id: number,
-  checklist: Checklist,
+  updateChecklistRequest: UpdateChecklistRequest,
   options?: SecondParameter<typeof customInstance<Checklist>>,
 ) => {
   return customInstance<Checklist>(
@@ -58,7 +71,7 @@ export const updateChecklist = (
       url: `/api/v1/checklists/${id}`,
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      data: checklist,
+      data: updateChecklistRequest,
     },
     options,
   );
@@ -77,15 +90,15 @@ export const deleteChecklist = (
  */
 export const addChecklistItem = (
   id: number,
-  checklistItem: ChecklistItem,
-  options?: SecondParameter<typeof customInstance<ChecklistItem>>,
+  addChecklistItemRequest: AddChecklistItemRequest,
+  options?: SecondParameter<typeof customInstance<AddChecklistItemResponse>>,
 ) => {
-  return customInstance<ChecklistItem>(
+  return customInstance<AddChecklistItemResponse>(
     {
       url: `/api/v1/checklists/${id}/items`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      data: checklistItem,
+      data: addChecklistItemRequest,
     },
     options,
   );
@@ -97,15 +110,15 @@ export const addChecklistItem = (
 export const updateChecklistItem = (
   id: number,
   itemId: number,
-  checklistItem: ChecklistItem,
-  options?: SecondParameter<typeof customInstance<ChecklistItem>>,
+  updateChecklistItemRequest: UpdateChecklistItemRequest,
+  options?: SecondParameter<typeof customInstance<UpdateChecklistItemResponse>>,
 ) => {
-  return customInstance<ChecklistItem>(
+  return customInstance<UpdateChecklistItemResponse>(
     {
       url: `/api/v1/checklists/${id}/items/${itemId}`,
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      data: checklistItem,
+      data: updateChecklistItemRequest,
     },
     options,
   );

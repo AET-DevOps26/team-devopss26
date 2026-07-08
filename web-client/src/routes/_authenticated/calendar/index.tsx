@@ -20,7 +20,7 @@ import {
   CalendarDaysIcon,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/calendar/')({ component: CalendarPage });
+export const Route = createFileRoute('/_authenticated/calendar/')({ component: CalendarPage });
 
 // ── Types ──────────────────────────────────────────────────────
 
