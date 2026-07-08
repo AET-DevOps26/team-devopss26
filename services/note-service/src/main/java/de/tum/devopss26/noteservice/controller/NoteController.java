@@ -1,59 +1,65 @@
 package de.tum.devopss26.noteservice.controller;
 
+import de.tum.devopss26.noteservice.service.NoteService;
+import de.tum.devopss26.shared.security.JWTHelper;
+import de.tum.devopss26.shared.security.RequireTokenValidation;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.openapitools.api.NotesApi;
-import org.openapitools.model.Note;
+import org.openapitools.model.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
+@RequiredArgsConstructor
 public class NoteController implements NotesApi {
 
+    private final HttpServletRequest servletRequest;
+    private final NoteService service;
+
+    @RequireTokenValidation
     @Override
-    public ResponseEntity<List<Note>> getNotes(Long userId) {
-        Note note1 = new Note();
-        note1.setId(1L);
-        note1.setTitle("Car Service");
-        note1.setContent("Need to take the car in for an oil change. Also ask them to check the tire pressure and brake pads.");
+    public ResponseEntity<ListNotesResponse> getNotes() {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
 
-        Note note2 = new Note();
-        note2.setId(2L);
-        note2.setTitle("Post Office");
-        note2.setContent("Send the birthday package to aunt Maria. Remember to use express shipping so it arrives before Saturday.");
-
-        Note note3 = new Note();
-        note3.setId(3L);
-        note3.setTitle("Pharmacy");
-        note3.setContent("Pick up prescription for blood pressure medication. Also grab some vitamin D supplements and a thermometer.");
-
-        return ResponseEntity.ok(List.of(note1, note2, note3));
+        ListNotesResponse response = service.getNotes(userId);
+        return ResponseEntity.ok(response);
     }
 
+    @RequireTokenValidation
     @Override
-    public ResponseEntity<Note> getNoteById(Long id) {
-        Note note = new Note();
-        note.setId(id);
-        note.setTitle("Sample Note");
-        note.setContent("Sample content");
-        return ResponseEntity.ok(note);
+    public ResponseEntity<GetNoteResponse> getNoteById(Long id) {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
+        GetNoteResponse response = service.getNote(userId, id);
+        return ResponseEntity.ok(response);
     }
 
+    @RequireTokenValidation
     @Override
-    public ResponseEntity<Note> createNote(Note note) {
-        note.setId(1L);
-        return ResponseEntity.status(HttpStatus.CREATED).body(note);
+    public ResponseEntity<CreateNoteResponse> createNote(CreateNoteRequest request) {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
+        CreateNoteResponse response = service.createNote(request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @RequireTokenValidation
     @Override
-    public ResponseEntity<Note> updateNote(Long id, Note note) {
-        note.setId(id);
-        return ResponseEntity.ok(note);
+    public ResponseEntity<UpdateNoteResponse> updateNote(Long id, Note note) {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
+        UpdateNoteResponse response = service.updateNote(userId, id, note);
+        return ResponseEntity.ok(response);
     }
 
+    @RequireTokenValidation
     @Override
     public ResponseEntity<Void> deleteNote(Long id) {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
+        service.deleteNote(userId, id);
         return ResponseEntity.noContent().build();
     }
 }
