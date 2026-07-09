@@ -1,8 +1,9 @@
-import { Link, Outlet, useRouterState } from '@tanstack/react-router';
-import { User } from 'lucide-react';
+import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router';
+import { LogOutIcon } from 'lucide-react';
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from 'src/components/ui/sidebar';
 import { TooltipProvider } from 'src/components/ui/tooltip';
 import { Avatar, AvatarFallback } from 'src/components/ui/avatar';
+import { Button } from 'src/components/ui/button';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,6 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from 'src/components/ui/breadcrumb';
+import { useAuthStore } from 'src/stores/authStore';
 import { AppSidebar } from './AppSidebar';
 
 function HeaderBreadcrumb() {
@@ -50,17 +52,31 @@ function HeaderBreadcrumb() {
 
 function HeaderContent() {
   const { open } = useSidebar();
+  const username = useAuthStore((s) => s.username);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const router = useRouter();
+
+  const initials = username ? username.slice(0, 2).toUpperCase() : '?';
+
+  function handleLogout() {
+    clearAuth();
+    router.navigate({ to: '/login' });
+  }
 
   return (
     <>
       {open && <SidebarTrigger className="-ml-1 mr-4" />}
       <div className="flex flex-1 items-center justify-between">
         <HeaderBreadcrumb />
-        <Avatar>
-          <AvatarFallback>
-            <User className="size-4" />
-          </AvatarFallback>
-        </Avatar>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">{username}</span>
+          <Avatar>
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+          <Button variant="ghost" size="icon" onClick={handleLogout} title="Sign out">
+            <LogOutIcon className="size-4" />
+          </Button>
+        </div>
       </div>
     </>
   );

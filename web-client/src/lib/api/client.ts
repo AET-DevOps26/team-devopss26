@@ -1,4 +1,6 @@
 import axios, { type AxiosRequestConfig, type AxiosInstance, type AxiosResponse } from 'axios';
+import { useAuthStore } from 'src/stores/authStore';
+import { getRouter } from 'src/router';
 
 export const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -6,7 +8,16 @@ export const api: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Response interceptor: redirect to /login on 401 (but not for auth endpoints)
+// Request interceptor: attach Bearer token from auth store
+api.interceptors.request.use((config) => {
+  const { token } = useAuthStore.getState();
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response interceptor: clear auth state and redirect to /login on 401 (but not for auth endpoints)
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: unknown) => {
@@ -14,7 +25,9 @@ api.interceptors.response.use(
       const requestUrl = error.config?.url ?? '';
       const isAuthRoute = requestUrl.includes('/users/auth/');
       if (!isAuthRoute) {
-        window.location.href = '/login';
+        useAuthStore.getState().clearAuth();
+        const router = getRouter();
+        router.navigate({ to: '/login' });
       }
     }
     return Promise.reject(error instanceof Error ? error : new Error(String(error)));

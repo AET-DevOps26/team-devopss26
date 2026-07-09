@@ -30,7 +30,7 @@ import {
   XIcon,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/notes/')({ component: NotesPage });
+export const Route = createFileRoute('/_authenticated/notes/')({ component: NotesPage });
 
 // ── Types ──────────────────────────────────────────────────────
 

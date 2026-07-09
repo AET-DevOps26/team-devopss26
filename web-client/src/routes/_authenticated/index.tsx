@@ -17,7 +17,7 @@ import {
   RefreshCwIcon,
 } from 'lucide-react';
 
-export const Route = createFileRoute('/')({ component: Home });
+export const Route = createFileRoute('/_authenticated/')({ component: Home });
 
 // ── Mock data ──────────────────────────────────────────────────
 

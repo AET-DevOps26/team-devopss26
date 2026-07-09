@@ -1,14 +1,19 @@
 import {createRouter as createTanStackRouter} from '@tanstack/react-router';
 import {routeTree} from './routeTree.gen';
 
+let router: ReturnType<typeof createTanStackRouter> | null = null;
+
 export function getRouter() {
-  return createTanStackRouter({
-    routeTree,
-    basepath: import.meta.env.VITE_BASE_PATH || '/',
-    scrollRestoration: true,
-    defaultPreload: 'intent',
-    defaultPreloadStaleTime: 0,
-  });
+  if (!router) {
+    router = createTanStackRouter({
+      routeTree,
+      basepath: import.meta.env.VITE_BASE_PATH || '/',
+      scrollRestoration: true,
+      defaultPreload: 'intent',
+      defaultPreloadStaleTime: 0,
+    });
+  }
+  return router;
 }
 
 declare module '@tanstack/react-router' {

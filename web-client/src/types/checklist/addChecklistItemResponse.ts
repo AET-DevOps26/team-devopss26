@@ -6,10 +6,4 @@
  */
 import type { ChecklistItem } from './checklistItem.ts';
 
-export interface Checklist {
-  id?: number;
-  userId?: number;
-  title?: string;
-  createdAt?: string;
-  items?: ChecklistItem[];
-}
+export type AddChecklistItemResponse = ChecklistItem;

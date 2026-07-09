@@ -7,7 +7,7 @@ import { Skeleton } from '#/components/ui/skeleton.tsx';
 import { Avatar, AvatarImage, AvatarFallback } from '#/components/ui/avatar.tsx';
 import { BotIcon, SendIcon, RefreshCwIcon, UserIcon, SparklesIcon } from 'lucide-react';
 
-export const Route = createFileRoute('/chat/')({ component: ChatPage });
+export const Route = createFileRoute('/_authenticated/chat/')({ component: ChatPage });
 
 // ── Types ──────────────────────────────────────────────────────
 
