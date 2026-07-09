@@ -48,7 +48,6 @@ jobs:
           - service: client
             context: ./
             dockerfile: ./web-client/Dockerfile
-            build_args: VITE_API_URL=/api
 
     steps:
       - name: Checkout

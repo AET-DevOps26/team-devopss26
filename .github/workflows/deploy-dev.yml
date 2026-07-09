@@ -44,7 +44,6 @@ jobs:
             context: ./
             dockerfile: ./web-client/Dockerfile
             build_args: |
-              VITE_API_URL=/dev/api
               VITE_BASE_PATH=/dev
 
     steps:
