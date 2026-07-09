@@ -2,6 +2,7 @@ package de.tum.devopss26.calendarservice.mapper;
 
 import de.tum.devopss26.calendarservice.entity.CalendarEvent;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.openapitools.model.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public interface CalendarEventMapper {
 
     // Specific mappers
 
+    @Mapping(target = "userId", source = "userId")
     CalendarEvent toCalendarEvent(CreateCalendarEventRequest request, long userId);
 
     CreateCalendarEventResponse toCreateResponse(CalendarEvent event);

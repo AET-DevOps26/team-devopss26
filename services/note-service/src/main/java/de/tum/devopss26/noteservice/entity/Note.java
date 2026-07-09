@@ -1,6 +1,8 @@
 package de.tum.devopss26.noteservice.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,10 +26,12 @@ public class Note {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @NotBlank
+    @Size(max = 255)
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "created_at", nullable = false)

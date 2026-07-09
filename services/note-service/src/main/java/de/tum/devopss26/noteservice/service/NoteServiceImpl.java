@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static de.tum.devopss26.noteservice.exception.IllegalNoteAccessException.IllegalAccessPair;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +24,7 @@ public class NoteServiceImpl implements NoteService {
     private final NoteRepository repository;
     private final NoteMapper mapper;
 
+    @Transactional
     @Override
     public CreateNoteResponse createNote(CreateNoteRequest request, long userId) {
         Note note = mapper.toNote(request, userId);
@@ -33,6 +35,7 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toCreateResponse(note);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public ListNotesResponse getNotes(long userId) {
         List<Note> noteEntities = repository.findAllByUserId(userId);
@@ -58,6 +61,7 @@ public class NoteServiceImpl implements NoteService {
         return note;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public GetNoteResponse getNote(long userId, long id) {
         Note note = getNoteEntity(userId, id);
@@ -65,6 +69,7 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toGetResponse(note);
     }
 
+    @Transactional
     @Override
     public UpdateNoteResponse updateNote(long userId, long id, org.openapitools.model.Note diff) {
         Note note = getNoteEntity(userId, id);
@@ -86,6 +91,7 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toUpdateResponse(note);
     }
 
+    @Transactional
     @Override
     public void deleteNote(long userId, long id) {
         Note note = getNoteEntity(userId, id);

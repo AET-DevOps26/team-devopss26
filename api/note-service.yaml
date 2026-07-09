@@ -149,6 +149,8 @@ components:
       properties:
         title:
           type: string
+          pattern: '.*\S.*'
+          maxLength: 255
         content:
           type: string
     ListNotesResponse:
@@ -170,15 +172,12 @@ components:
     CreateNoteResponse:
       allOf:
         - $ref: '#/components/schemas/IdentifiedTimestampedNote'
-        - type: object
     GetNoteResponse:
       allOf:
         - $ref: "#/components/schemas/IdentifiedTimestampedNote"
-        - type: object
     UpdateNoteResponse:
       allOf:
         - $ref: "#/components/schemas/IdentifiedTimestampedNote"
-        - type: object
     IdentifiedNote:
       type: object
       allOf:
