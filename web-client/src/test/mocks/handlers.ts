@@ -33,9 +33,11 @@ export const handlers = [
 
   // ── Checklist Service ───────────────────────────────────────
   http.get(`${API_BASE}/api/v1/checklists`, () =>
-    HttpResponse.json([
-      { id: 1, title: 'Test Checklist', createdAt: '2024-01-01T00:00:00Z', items: [] },
-    ]),
+    HttpResponse.json({
+      checklists: [
+        { id: 1, title: 'Test Checklist', createdAt: '2024-01-01T00:00:00Z', items: [] },
+      ],
+    }),
   ),
   http.post(`${API_BASE}/api/v1/checklists`, () =>
     HttpResponse.json({ id: 2, title: 'New Checklist', createdAt: '2024-01-01T00:00:00Z', items: [] }, { status: 201 }),
