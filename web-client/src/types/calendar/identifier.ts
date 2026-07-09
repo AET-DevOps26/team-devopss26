@@ -5,6 +5,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type GetEventsParams = {
-  userId: number;
-};
+export interface Identifier {
+  id: number;
+  [key: string]: unknown;
+}

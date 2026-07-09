@@ -1,5 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import {
+  useSuspenseQuery,
+  useMutation,
+  useQueryClient,
+  useQueryErrorResetBoundary,
+  queryOptions,
+} from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Card, CardContent } from '#/components/ui/card.tsx';
 import { Button } from '#/components/ui/button.tsx';
 import { Input } from '#/components/ui/input.tsx';
@@ -18,35 +26,49 @@ import {
   PlusIcon,
   Trash2Icon,
   CalendarDaysIcon,
+  AlertCircleIcon,
 } from 'lucide-react';
+import { Skeleton } from '#/components/ui/skeleton.tsx';
+import { getEvents, createEvent, updateEvent, deleteEvent } from '#/services/calendar/calendar-events/calendar-events.ts';
+import type { IdentifiedCalendarEvent, CreateCalendarEventRequest } from '#/types/calendar';
 
-export const Route = createFileRoute('/_authenticated/calendar/')({ component: CalendarPage });
+export const Route = createFileRoute('/_authenticated/calendar/')({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(calendarQueries.all()),
+  pendingComponent: CalendarSkeleton,
+  errorComponent: CalendarError,
+  component: CalendarPage,
+});
 
-// ── Types ──────────────────────────────────────────────────────
+const calendarKeys = {
+  all: ['calendar'] as const,
+  events: () => [...calendarKeys.all, 'events'] as const,
+};
 
-interface CalendarEvent {
-  id: string;
-  title: string;
-  date: string; // YYYY-MM-DD
-  startTime: string;
-  endTime: string;
-  description: string;
+const calendarQueries = {
+  all: () =>
+    queryOptions({
+      queryKey: calendarKeys.events(),
+      queryFn: async () => {
+        const response = await getEvents();
+        return response.events;
+      },
+      staleTime: 30_000,
+    }),
+};
+
+function localDateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-// ── Mock data ──────────────────────────────────────────────────
-
 const today = new Date();
-const todayStr = today.toISOString().slice(0, 10);
+const todayStr = localDateStr(today);
 
-const mockEvents: CalendarEvent[] = [
-  { id: 'e1', title: 'Team standup', date: todayStr, startTime: '10:00', endTime: '10:30', description: 'Daily sync with the team.' },
-  { id: 'e2', title: 'Design review', date: todayStr, startTime: '14:00', endTime: '15:00', description: 'Review the new mockups.' },
-  { id: 'e3', title: 'Deploy window', date: todayStr, startTime: '16:30', endTime: '17:00', description: 'Deploy to staging.' },
-  { id: 'e4', title: 'Sprint planning', date: '2026-06-22', startTime: '11:00', endTime: '12:00', description: 'Plan sprint 27.' },
-  { id: 'e5', title: 'Client call', date: '2026-06-25', startTime: '15:00', endTime: '16:00', description: 'Quarterly review.' },
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
-
-// ── Helpers ────────────────────────────────────────────────────
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
@@ -56,29 +78,110 @@ function getFirstDayOfMonth(year: number, month: number) {
   return new Date(year, month, 1).getDay(); // 0 = Sun
 }
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function getDateStr(isoString: string | undefined): string {
+  if (!isoString) return '';
+  return isoString.slice(0, 10);
+}
 
-// ── Sub-components ─────────────────────────────────────────────
+function getTimeStr(isoString: string | undefined): string {
+  if (!isoString) return '';
+  return isoString.slice(11, 16);
+}
+
+interface CalendarFormEvent {
+  id?: number;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  description?: string;
+}
+
+function toApiEvent(form: CalendarFormEvent): CreateCalendarEventRequest {
+  return {
+    title: form.title,
+    startTime: `${form.date}T${form.startTime}:00Z`,
+    endTime: `${form.date}T${form.endTime}:00Z`,
+    description: form.description || undefined,
+  };
+}
+
+function fromApiEvent(event: IdentifiedCalendarEvent): CalendarFormEvent {
+  return {
+    id: event.id,
+    title: event.title ?? '',
+    date: getDateStr(event.startTime),
+    startTime: getTimeStr(event.startTime),
+    endTime: getTimeStr(event.endTime),
+    description: event.description ?? '',
+  };
+}
+
+function CalendarError({ error, reset }: { error: Error; reset: () => void }) {
+  const { reset: resetQuery } = useQueryErrorResetBoundary();
+
+  const handleRetry = () => {
+    resetQuery();
+    reset();
+  };
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center" role="alert">
+      <AlertCircleIcon className="size-10 text-destructive" />
+      <h2 className="text-xl font-bold tracking-tight">Failed to load events</h2>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        {error.message || 'Something went wrong while loading your calendar.'}
+      </p>
+      <Button onClick={handleRetry}>Try Again</Button>
+    </div>
+  );
+}
 
 function EventSheet({
   event,
   isOpen,
   onOpenChange,
-  onSave,
-  onDelete,
 }: {
-  event: CalendarEvent | null;
+  event: CalendarFormEvent | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (e: CalendarEvent) => void;
-  onDelete: (id: string) => void;
 }) {
   const [title, setTitle] = useState(event?.title ?? '');
   const [date, setDate] = useState(event?.date ?? todayStr);
   const [startTime, setStartTime] = useState(event?.startTime ?? '09:00');
   const [endTime, setEndTime] = useState(event?.endTime ?? '10:00');
   const [description, setDescription] = useState(event?.description ?? '');
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: (form: CalendarFormEvent) => createEvent(toApiEvent(form)),
+    onError: () => toast.error('Failed to create event'),
+    onSuccess: () => {
+      toast.success('Event created');
+      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, form }: { id: number; form: CalendarFormEvent }) =>
+      updateEvent(id, toApiEvent(form)),
+    onError: () => toast.error('Failed to update event'),
+    onSuccess: () => {
+      toast.success('Event updated');
+      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteEvent(id),
+    onError: () => toast.error('Failed to delete event'),
+    onSuccess: () => {
+      toast.success('Event deleted');
+      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+    },
+  });
+
+  const isPending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   // Reset form when sheet opens with new event
   const handleOpenChange = (open: boolean) => {
@@ -92,26 +195,51 @@ function EventSheet({
     onOpenChange(open);
   };
 
+  // Sync form when editing event changes while sheet is open
+  useEffect(() => {
+    if (isOpen && event) {
+      setTitle(event.title);
+      setDate(event.date);
+      setStartTime(event.startTime);
+      setEndTime(event.endTime);
+      setDescription(event.description ?? '');
+    }
+  }, [isOpen, event]);
+
   const handleSave = () => {
-    if (!title.trim()) return;
-    onSave({
-      id: event?.id ?? crypto.randomUUID(),
+    if (!title.trim() || isPending) return;
+
+    const form: CalendarFormEvent = {
+      id: event?.id,
       title: title.trim(),
       date,
       startTime,
       endTime,
-      description: description.trim(),
-    });
+      description: description.trim() || undefined,
+    };
+
+    if (event?.id && event.id > 0) {
+      updateMutation.mutate({ id: event.id, form });
+    } else {
+      createMutation.mutate(form);
+    }
     onOpenChange(false);
+  };
+
+  const handleDelete = () => {
+    if (event?.id && event.id > 0 && !isPending) {
+      deleteMutation.mutate(event.id);
+      onOpenChange(false);
+    }
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetContent side="right">
         <SheetHeader>
-          <SheetTitle>{event ? 'Edit Event' : 'New Event'}</SheetTitle>
+          <SheetTitle>{event?.id ? 'Edit Event' : 'New Event'}</SheetTitle>
           <SheetDescription>
-            {event ? 'Update the event details.' : 'Fill in the event details.'}
+            {event?.id ? 'Update the event details.' : 'Fill in the event details.'}
           </SheetDescription>
         </SheetHeader>
 
@@ -141,26 +269,65 @@ function EventSheet({
         </div>
 
         <SheetFooter className="flex-row gap-2 p-4">
-          {event && (
-            <Button variant="destructive" size="sm" onClick={() => { onDelete(event.id); onOpenChange(false); }} className="mr-auto">
+          {event?.id && event.id > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isPending}
+              className="mr-auto"
+            >
               <Trash2Icon data-icon="inline-start" />Delete
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleSave} disabled={!title.trim()}>{event ? 'Update' : 'Create'}</Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={isPending}>Cancel</Button>
+          <Button size="sm" onClick={handleSave} disabled={!title.trim() || isPending}>
+            {isPending ? 'Saving...' : event?.id ? 'Update' : 'Create'}
+          </Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
   );
 }
 
-// ── Main page component ────────────────────────────────────────
+function CalendarSkeleton() {
+  return (
+    <div className="p-4 sm:p-6 lg:p-8" aria-busy="true" aria-label="Loading calendar">
+      <div className="flex items-center justify-between mb-6">
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="h-9 w-20" />
+      </div>
+      <div className="flex items-center justify-between mb-4">
+        <Skeleton className="size-9 rounded-md" />
+        <Skeleton className="h-7 w-40" />
+        <Skeleton className="size-9 rounded-md" />
+      </div>
+      <Card>
+        <CardContent className="p-0">
+          <div className="grid grid-cols-7 border-b">
+            {WEEKDAYS.map((d) => (
+              <div key={d} className="p-2 text-center text-xs font-medium text-muted-foreground">{d}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <div key={i} className="min-h-[60px] border-b border-r p-1.5 sm:min-h-[80px] sm:p-2">
+                <Skeleton className="size-6 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
-function CalendarPage() {
+export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(today);
-  const [events, setEvents] = useState<CalendarEvent[]>(mockEvents);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarFormEvent | null>(null);
+
+  const { data: events, isFetching } = useSuspenseQuery(calendarQueries.all());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -177,63 +344,106 @@ function CalendarPage() {
     return cells;
   }, [year, month, daysInMonth, firstDay]);
 
-  // Events mapped by date string
+  // Events mapped by date string (derived from startTime ISO string)
   const eventsByDate = useMemo(() => {
-    const map = new Map<string, CalendarEvent[]>();
+    const map = new Map<string, IdentifiedCalendarEvent[]>();
     for (const ev of events) {
-      const list = map.get(ev.date) ?? [];
+      const dateKey = getDateStr(ev.startTime);
+      if (!dateKey) continue;
+      const list = map.get(dateKey) ?? [];
       list.push(ev);
-      map.set(ev.date, list);
+      map.set(dateKey, list);
     }
     return map;
   }, [events]);
 
-  const todayEvents = useMemo(() => {
-    return events.filter((ev) => ev.date === todayStr);
-  }, [events]);
+  // Currently selected day
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+
+  // Events for the selected day
+  const selectedDayEvents = useMemo(() => {
+    return events.filter((ev) => getDateStr(ev.startTime) === selectedDate);
+  }, [events, selectedDate]);
 
   const navigateMonth = (delta: number) => {
     setCurrentDate(new Date(year, month + delta, 1));
   };
 
+  const goToToday = () => {
+    const now = new Date();
+    setCurrentDate(now);
+    setSelectedDate(localDateStr(now));
+  };
+
   const openCreateSheet = () => {
-    setEditingEvent(null);
-    setSheetOpen(true);
-  };
-
-  const openEditSheet = (event: CalendarEvent) => {
-    setEditingEvent(event);
-    setSheetOpen(true);
-  };
-
-  const handleSave = (event: CalendarEvent) => {
-    setEvents((prev) => {
-      const idx = prev.findIndex((e) => e.id === event.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = event;
-        return next;
-      }
-      return [...prev, event];
+    setEditingEvent({
+      title: '',
+      date: selectedDate,
+      startTime: '09:00',
+      endTime: '10:00',
     });
+    setSheetOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+  const openEditSheet = (event: IdentifiedCalendarEvent) => {
+    setEditingEvent(fromApiEvent(event));
+    setSheetOpen(true);
   };
 
   const isToday = (day: number) => {
     const d = new Date(year, month, day);
-    return d.toISOString().slice(0, 10) === todayStr;
+    return localDateStr(d) === todayStr;
   };
+
+  const handleDayClick = (day: number) => {
+    const dateStr = localDateStr(new Date(year, month, day));
+    setSelectedDate(dateStr);
+  };
+
+  // Empty state: no events at all
+  if (events.length === 0) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Calendar</h1>
+        </div>
+        <div className="flex items-center justify-center py-16">
+          <Empty>
+            <EmptyMedia>
+              <CalendarDaysIcon className="size-10 text-muted-foreground" />
+            </EmptyMedia>
+            <EmptyContent>
+              <EmptyTitle>No events yet</EmptyTitle>
+              <EmptyDescription>Create your first event to get started.</EmptyDescription>
+              <Button className="mt-2" onClick={openCreateSheet}>
+                <PlusIcon data-icon="inline-start" />Create Event
+              </Button>
+            </EmptyContent>
+          </Empty>
+        </div>
+
+        <EventSheet
+          event={null}
+          isOpen={sheetOpen}
+          onOpenChange={setSheetOpen}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Calendar</h1>
-        <Button onClick={openCreateSheet}>
-          <PlusIcon data-icon="inline-start" />Event
-        </Button>
+        <div className="flex items-center gap-2">
+          {isFetching && (
+            <span className="text-xs text-muted-foreground">Updating...</span>
+          )}
+          <Button onClick={openCreateSheet}>
+            <PlusIcon data-icon="inline-start" />Event
+          </Button>
+        </div>
       </div>
 
       {/* Month navigation */}
@@ -241,9 +451,12 @@ function CalendarPage() {
         <Button variant="ghost" size="icon-sm" onClick={() => navigateMonth(-1)}>
           <ChevronLeftIcon className="size-5" />
         </Button>
-        <h2 className="text-lg font-semibold">
-          {MONTHS[month]} {year}
-        </h2>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
+          <h2 className="text-lg font-semibold">
+            {MONTHS[month]} {year}
+          </h2>
+        </div>
         <Button variant="ghost" size="icon-sm" onClick={() => navigateMonth(1)}>
           <ChevronRightIcon className="size-5" />
         </Button>
@@ -263,18 +476,25 @@ function CalendarPage() {
           {/* Day cells */}
           <div className="grid grid-cols-7">
             {gridDays.map((day, i) => {
-              const dateStr = day ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : '';
+              const dateStr = day
+                ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                : '';
               const dayEvents = dateStr ? eventsByDate.get(dateStr) ?? [] : [];
               const isCurrent = day !== null && isToday(day);
+
+              const isSelected = day !== null && dateStr === selectedDate;
 
               return (
                 <div
                   key={i}
+                  onClick={() => day && handleDayClick(day)}
                   className={`relative min-h-[60px] border-b border-r p-1.5 text-sm transition-colors sm:min-h-[80px] sm:p-2 ${
                     isCurrent
                       ? 'bg-primary/10 ring-1 ring-inset ring-primary'
-                      : 'hover:bg-muted/50'
-                  } ${!day ? 'bg-muted/20' : ''}`}
+                      : isSelected
+                        ? 'bg-muted ring-1 ring-inset ring-muted-foreground/30'
+                        : 'hover:bg-muted/50'
+                  } ${!day ? 'bg-muted/20' : day ? 'cursor-pointer' : ''}`}
                 >
                   {day && (
                     <>
@@ -302,32 +522,34 @@ function CalendarPage() {
         </CardContent>
       </Card>
 
-      {/* Today's events list */}
+      {/* Selected day's events list */}
       <div className="mt-6">
-        <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">Today's Events</h3>
+        <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          Events for {selectedDate === todayStr ? 'Today' : selectedDate}
+        </h3>
 
-        {todayEvents.length === 0 ? (
+        {selectedDayEvents.length === 0 ? (
           <Empty>
             <EmptyMedia>
               <CalendarDaysIcon className="size-8 text-muted-foreground" />
             </EmptyMedia>
             <EmptyContent>
-              <EmptyTitle>Nothing scheduled today</EmptyTitle>
-              <EmptyDescription>Your day is clear. Enjoy the free time!</EmptyDescription>
+              <EmptyTitle>Nothing scheduled{selectedDate === todayStr ? ' today' : ''}</EmptyTitle>
+              <EmptyDescription>Click +Event to create one.</EmptyDescription>
             </EmptyContent>
           </Empty>
         ) : (
           <div className="space-y-2">
-            {todayEvents.map((ev) => (
+            {selectedDayEvents.map((ev) => (
               <div
                 key={ev.id}
                 className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors hover:border-ring/30"
                 onClick={() => openEditSheet(ev)}
               >
                 <div className="flex flex-col items-center text-xs">
-                  <span className="font-medium text-primary">{ev.startTime}</span>
+                  <span className="font-medium text-primary">{getTimeStr(ev.startTime)}</span>
                   <span className="text-muted-foreground">-</span>
-                  <span className="text-muted-foreground">{ev.endTime}</span>
+                  <span className="text-muted-foreground">{getTimeStr(ev.endTime)}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{ev.title}</p>
@@ -335,9 +557,6 @@ function CalendarPage() {
                     <p className="text-xs text-muted-foreground truncate">{ev.description}</p>
                   )}
                 </div>
-                <Button variant="ghost" size="icon-sm" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleDelete(ev.id); }}>
-                  <Trash2Icon className="size-4 text-muted-foreground hover:text-destructive" />
-                </Button>
               </div>
             ))}
           </div>
@@ -349,8 +568,6 @@ function CalendarPage() {
         event={editingEvent}
         isOpen={sheetOpen}
         onOpenChange={setSheetOpen}
-        onSave={handleSave}
-        onDelete={handleDelete}
       />
     </div>
   );
