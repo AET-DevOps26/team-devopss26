@@ -72,17 +72,14 @@ class ChatMessage(Base):
 
 # ── JWT auth ──────────────────────────────────────────────────────────────────
 _JWT_PUBLIC_KEY = os.environ.get("JWT_PUBLIC_KEY", "").strip()
-_bearer = HTTPBearer(auto_error=False)
+_bearer = HTTPBearer(auto_error=True)
 
 
-def _get_current_user_id(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer)) -> Optional[int]:
-    if credentials is None:
-        return None
+def _get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) -> int:
+    if not _JWT_PUBLIC_KEY:
+        raise HTTPException(status_code=500, detail="Token validation is not configured (public key unavailable)")
     try:
-        if _JWT_PUBLIC_KEY:
-            payload = jwt.decode(credentials.credentials, _JWT_PUBLIC_KEY, algorithms=["RS256"])
-        else:
-            payload = jwt.decode(credentials.credentials, options={"verify_signature": False}, algorithms=["RS256"])
+        payload = jwt.decode(credentials.credentials, _JWT_PUBLIC_KEY, algorithms=["RS256"])
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError as exc:
@@ -295,11 +292,10 @@ def health():
 @app.post("/conversations", response_model=ConversationOut)
 async def create_conversation(
     request: ConversationCreateRequest,
-    jwt_user_id: Optional[int] = Depends(_get_current_user_id),
+    jwt_user_id: int = Depends(_get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
-    user_id = jwt_user_id if jwt_user_id is not None else request.user_id
-    conversation = ChatConversation(user_id=user_id)
+    conversation = ChatConversation(user_id=jwt_user_id)
     db.add(conversation)
     await db.commit()
     result = await db.execute(
@@ -313,7 +309,7 @@ async def create_conversation(
 @app.get("/conversations/{conversation_id}", response_model=ConversationOut)
 async def get_conversation(
     conversation_id: int,
-    jwt_user_id: Optional[int] = Depends(_get_current_user_id),
+    jwt_user_id: int = Depends(_get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -324,7 +320,7 @@ async def get_conversation(
     conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    if jwt_user_id is not None and conversation.user_id != jwt_user_id:
+    if conversation.user_id != jwt_user_id:
         raise HTTPException(status_code=403, detail="Access denied")
     return conversation
 
@@ -332,14 +328,14 @@ async def get_conversation(
 @app.delete("/conversations/{conversation_id}")
 async def delete_conversation(
     conversation_id: int,
-    jwt_user_id: Optional[int] = Depends(_get_current_user_id),
+    jwt_user_id: int = Depends(_get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(ChatConversation).where(ChatConversation.id == conversation_id))
     conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    if jwt_user_id is not None and conversation.user_id != jwt_user_id:
+    if conversation.user_id != jwt_user_id:
         raise HTTPException(status_code=403, detail="Access denied")
     await db.delete(conversation)
     await db.commit()
@@ -349,13 +345,13 @@ async def delete_conversation(
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
-    jwt_user_id: Optional[int] = Depends(_get_current_user_id),
+    jwt_user_id: int = Depends(_get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     if not request.message.strip():
         raise HTTPException(status_code=400, detail="message must not be empty")
 
-    user_id = jwt_user_id if jwt_user_id is not None else request.user_id
+    user_id = jwt_user_id
 
     if request.conversation_id:
         result = await db.execute(
@@ -364,7 +360,7 @@ async def chat(
         conversation = result.scalar_one_or_none()
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found")
-        if jwt_user_id is not None and conversation.user_id != user_id:
+        if conversation.user_id != user_id:
             raise HTTPException(status_code=403, detail="Access denied")
     else:
         conversation = ChatConversation(user_id=user_id, title=request.message[:100])
