@@ -1,32 +1,49 @@
 import asyncio
 import base64
 import os
+import sys
 import time
 import uuid
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from datetime import datetime
-from typing import Optional, List, Literal
+from pathlib import Path
+from typing import Optional, List
 
 import httpx
 import jwt
 import weaviate
 from cryptography.hazmat.primitives.serialization import load_der_public_key
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from langchain_cohere import ChatCohere
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_groq import ChatGroq
 from langchain_mistralai import ChatMistralAI
-from pydantic import BaseModel
 from sqlalchemy import String, Text, ForeignKey, DateTime, BigInteger, CheckConstraint, func
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.future import select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, selectinload
 from weaviate.classes.config import Property, DataType, Configure
+
+# The generated OpenAPI client (services/genai-service/generated/) is gitignored and
+# regenerated via `npm run openapi:generate`; it isn't an installed package, so make it
+# importable as `openapi_server` without requiring a separate pip install step.
+sys.path.insert(0, str(Path(__file__).parent / "generated" / "src"))
+
+from openapi_server.apis.gen_ai_api import router as genai_router  # noqa: E402
+from openapi_server.apis.gen_ai_api_base import BaseGenAIApi  # noqa: E402
+from openapi_server.models.chat_message import ChatMessage as ChatMessageModel  # noqa: E402
+from openapi_server.models.chat_request import ChatRequest  # noqa: E402
+from openapi_server.models.chat_response import ChatResponse  # noqa: E402
+from openapi_server.models.conversation import Conversation  # noqa: E402
+from openapi_server.models.conversation_create_request import ConversationCreateRequest  # noqa: E402
+from openapi_server.models.delete_conversation200_response import DeleteConversation200Response  # noqa: E402
+from openapi_server.models.health200_response import Health200Response  # noqa: E402
 
 
 # ── Database ─────────────────────────────────────────────────────────────────
@@ -82,10 +99,16 @@ _USER_SERVICE_URL = os.environ.get("USER_SERVICE_URL", "http://user-service-app:
 _PUBLIC_KEY_PATH = "/api/user/api/v1/users/auth/public-key"
 _MIN_REFETCH_INTERVAL_S = 30.0
 
-_bearer = HTTPBearer(auto_error=True)
 _public_key = None
 _last_fetch_time = 0.0
 _public_key_lock = asyncio.Lock()
+
+# The generated BaseGenAIApi methods have a fixed signature (dictated by the OpenAPI
+# spec) and can't take a FastAPI `Depends(...)` parameter, so authentication happens in
+# HTTP middleware instead, which stashes the resolved user id here for the duration of
+# the request.
+_current_user_id: ContextVar[Optional[int]] = ContextVar("_current_user_id", default=None)
+_PUBLIC_PATHS = {"/api/v1/health"}
 
 
 async def _fetch_public_key_locked():
@@ -124,13 +147,13 @@ def _decode(token: str, key) -> dict:
     return jwt.decode(token, key=key, algorithms=["RS256"])
 
 
-async def _get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) -> int:
+async def _authenticate(token: str) -> int:
     active_key = await _get_or_fetch_public_key()
     if active_key is None:
         raise HTTPException(status_code=500, detail="Token validation service unavailable (public key not fetched)")
 
     try:
-        payload = _decode(credentials.credentials, active_key)
+        payload = _decode(token, active_key)
     except jwt.InvalidSignatureError:
         # Public key may have rotated (e.g. user-service restarted). Refetch and retry once.
         payload = None
@@ -138,7 +161,7 @@ async def _get_current_user_id(credentials: HTTPAuthorizationCredentials = Depen
             new_key = await _get_or_fetch_public_key()
             if new_key is not None and new_key != active_key:
                 try:
-                    payload = _decode(credentials.credentials, new_key)
+                    payload = _decode(token, new_key)
                 except jwt.InvalidTokenError:
                     payload = None
         if payload is None:
@@ -155,6 +178,13 @@ async def _get_current_user_id(credentials: HTTPAuthorizationCredentials = Depen
         return int(raw_id)
     except (TypeError, ValueError):
         raise HTTPException(status_code=401, detail="Token user identity is not a valid integer")
+
+
+def _require_user_id() -> int:
+    user_id = _current_user_id.get()
+    if user_id is None:
+        raise HTTPException(status_code=500, detail="User identity not resolved")
+    return user_id
 
 
 # ── RAG: Weaviate + embeddings ────────────────────────────────────────────────
@@ -303,154 +333,139 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 Instrumentator().instrument(app).expose(app)
 
 
-async def get_db():
-    async with _sessions() as db:
-        yield db
+@app.middleware("http")
+async def _auth_middleware(request: Request, call_next):
+    if request.url.path in _PUBLIC_PATHS:
+        return await call_next(request)
+
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.lower().startswith("bearer "):
+        return JSONResponse(status_code=401, content={"detail": "Missing bearer token"})
+
+    try:
+        user_id = await _authenticate(auth_header[len("bearer "):])
+    except HTTPException as exc:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+    reset_token = _current_user_id.set(user_id)
+    try:
+        return await call_next(request)
+    finally:
+        _current_user_id.reset(reset_token)
 
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
 
 
-# ── Schemas ───────────────────────────────────────────────────────────────────
-class ConversationCreateRequest(BaseModel):
-    user_id: int
-
-
-class ChatRequest(BaseModel):
-    message: str
-    user_id: int
-    conversation_id: Optional[int] = None
-    model: Literal["gemini", "groq-llama", "mistral", "cohere"] = "gemini"
-
-
-class MessageOut(BaseModel):
-    id: int
-    role: str
-    content: str
-    timestamp: int
-    model_config = {"from_attributes": True}
-
-
-class ConversationOut(BaseModel):
-    id: int
-    user_id: int
-    title: Optional[str]
-    created_at: datetime
-    messages: List[MessageOut] = []
-    model_config = {"from_attributes": True}
-
-
-class ChatResponse(BaseModel):
-    response: str
-    conversation_id: int
+def _to_conversation_model(conversation: ChatConversation) -> Conversation:
+    return Conversation(
+        id=conversation.id,
+        user_id=conversation.user_id,
+        title=conversation.title,
+        created_at=conversation.created_at,
+        messages=[
+            ChatMessageModel(id=m.id, role=m.role, content=m.content, timestamp=m.timestamp)
+            for m in conversation.messages
+        ],
+    )
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+# Routes, request/response models, and their FastAPI signatures come from the
+# generated OpenAPI client (services/genai-service/generated/), not from hand-written
+# routes here, so the implementation can't silently drift from api/genai-service.yaml.
+class GenAIApiImpl(BaseGenAIApi):
+    async def health(self) -> Health200Response:
+        return Health200Response(status="ok")
+
+    async def create_conversation(self, conversation_create_request: ConversationCreateRequest) -> Conversation:
+        user_id = _require_user_id()
+        async with _sessions() as db:
+            conversation = ChatConversation(user_id=user_id)
+            db.add(conversation)
+            await db.commit()
+            result = await db.execute(
+                select(ChatConversation)
+                .where(ChatConversation.id == conversation.id)
+                .options(selectinload(ChatConversation.messages))
+            )
+            return _to_conversation_model(result.scalar_one())
+
+    async def get_conversation(self, conversationId: int) -> Conversation:
+        user_id = _require_user_id()
+        async with _sessions() as db:
+            result = await db.execute(
+                select(ChatConversation)
+                .where(ChatConversation.id == conversationId)
+                .options(selectinload(ChatConversation.messages))
+            )
+            conversation = result.scalar_one_or_none()
+            if not conversation:
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            if conversation.user_id != user_id:
+                raise HTTPException(status_code=403, detail="Access denied")
+            return _to_conversation_model(conversation)
+
+    async def delete_conversation(self, conversationId: int) -> DeleteConversation200Response:
+        user_id = _require_user_id()
+        async with _sessions() as db:
+            result = await db.execute(select(ChatConversation).where(ChatConversation.id == conversationId))
+            conversation = result.scalar_one_or_none()
+            if not conversation:
+                raise HTTPException(status_code=404, detail="Conversation not found")
+            if conversation.user_id != user_id:
+                raise HTTPException(status_code=403, detail="Access denied")
+            await db.delete(conversation)
+            await db.commit()
+            return DeleteConversation200Response(message="Conversation deleted")
+
+    async def chat(self, chat_request: ChatRequest) -> ChatResponse:
+        user_id = _require_user_id()
+        if not chat_request.message.strip():
+            raise HTTPException(status_code=400, detail="message must not be empty")
+
+        async with _sessions() as db:
+            if chat_request.conversation_id:
+                result = await db.execute(
+                    select(ChatConversation).where(ChatConversation.id == chat_request.conversation_id)
+                )
+                conversation = result.scalar_one_or_none()
+                if not conversation:
+                    raise HTTPException(status_code=404, detail="Conversation not found")
+                if conversation.user_id != user_id:
+                    raise HTTPException(status_code=403, detail="Access denied")
+            else:
+                conversation = ChatConversation(user_id=user_id, title=chat_request.message[:100])
+                db.add(conversation)
+                await db.flush()
+
+            db.add(ChatMessage(
+                conversation_id=conversation.id, role="USER",
+                content=chat_request.message, timestamp=_now_ms(),
+            ))
+
+            context = ""
+            try:
+                chunks = await _fetch_user_data(user_id)
+                context = await _rag_retrieve(chat_request.message, chunks)
+            except Exception:
+                pass
+
+            response_text = await _build_chain(chat_request.model).ainvoke({
+                "message": chat_request.message,
+                "context": context or "No relevant data found in the user's notes, calendar, or checklists.",
+            })
+
+            db.add(ChatMessage(
+                conversation_id=conversation.id, role="AGENT",
+                content=response_text, timestamp=_now_ms(),
+            ))
+            await db.commit()
+
+            return ChatResponse(response=response_text, conversation_id=conversation.id)
 
 
-@app.post("/conversations", response_model=ConversationOut)
-async def create_conversation(
-    request: ConversationCreateRequest,
-    jwt_user_id: int = Depends(_get_current_user_id),
-    db: AsyncSession = Depends(get_db),
-):
-    conversation = ChatConversation(user_id=jwt_user_id)
-    db.add(conversation)
-    await db.commit()
-    result = await db.execute(
-        select(ChatConversation)
-        .where(ChatConversation.id == conversation.id)
-        .options(selectinload(ChatConversation.messages))
-    )
-    return result.scalar_one()
-
-
-@app.get("/conversations/{conversation_id}", response_model=ConversationOut)
-async def get_conversation(
-    conversation_id: int,
-    jwt_user_id: int = Depends(_get_current_user_id),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(ChatConversation)
-        .where(ChatConversation.id == conversation_id)
-        .options(selectinload(ChatConversation.messages))
-    )
-    conversation = result.scalar_one_or_none()
-    if not conversation:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    if conversation.user_id != jwt_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    return conversation
-
-
-@app.delete("/conversations/{conversation_id}")
-async def delete_conversation(
-    conversation_id: int,
-    jwt_user_id: int = Depends(_get_current_user_id),
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(select(ChatConversation).where(ChatConversation.id == conversation_id))
-    conversation = result.scalar_one_or_none()
-    if not conversation:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    if conversation.user_id != jwt_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    await db.delete(conversation)
-    await db.commit()
-    return {"message": "Conversation deleted"}
-
-
-@app.post("/chat", response_model=ChatResponse)
-async def chat(
-    request: ChatRequest,
-    jwt_user_id: int = Depends(_get_current_user_id),
-    db: AsyncSession = Depends(get_db),
-):
-    if not request.message.strip():
-        raise HTTPException(status_code=400, detail="message must not be empty")
-
-    user_id = jwt_user_id
-
-    if request.conversation_id:
-        result = await db.execute(
-            select(ChatConversation).where(ChatConversation.id == request.conversation_id)
-        )
-        conversation = result.scalar_one_or_none()
-        if not conversation:
-            raise HTTPException(status_code=404, detail="Conversation not found")
-        if conversation.user_id != user_id:
-            raise HTTPException(status_code=403, detail="Access denied")
-    else:
-        conversation = ChatConversation(user_id=user_id, title=request.message[:100])
-        db.add(conversation)
-        await db.flush()
-
-    db.add(ChatMessage(
-        conversation_id=conversation.id, role="USER",
-        content=request.message, timestamp=_now_ms(),
-    ))
-
-    context = ""
-    try:
-        chunks = await _fetch_user_data(user_id)
-        context = await _rag_retrieve(request.message, chunks)
-    except Exception:
-        pass
-
-    response_text = await _build_chain(request.model).ainvoke({
-        "message": request.message,
-        "context": context or "No relevant data found in the user's notes, calendar, or checklists.",
-    })
-
-    db.add(ChatMessage(
-        conversation_id=conversation.id, role="AGENT",
-        content=response_text, timestamp=_now_ms(),
-    ))
-    await db.commit()
-
-    return ChatResponse(response=response_text, conversation_id=conversation.id)
+# Defining the class above already registers it as BaseGenAIApi.subclasses[0]
+# (via __init_subclass__); the generated router instantiates it per-request.
+app.include_router(genai_router)
