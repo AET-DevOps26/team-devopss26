@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import time
 import uuid
@@ -9,6 +10,7 @@ from typing import Optional, List, Literal
 import httpx
 import jwt
 import weaviate
+from cryptography.hazmat.primitives.serialization import load_der_public_key
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -71,21 +73,82 @@ class ChatMessage(Base):
 
 
 # ── JWT auth ──────────────────────────────────────────────────────────────────
-_JWT_PUBLIC_KEY = os.environ.get("JWT_PUBLIC_KEY", "").strip()
+# Mirrors services/shared/.../TokenValidationInterceptor.java: fetch the shared
+# RSA public key from user-service, cache it, and refetch on signature failure
+# (e.g. user-service restarted with a new key) at most once per interval.
+_USER_SERVICE_URL = os.environ.get("USER_SERVICE_URL", "http://user-service-app:8001").rstrip("/")
+# user-service mounts its API under this Spring context-path; the shared
+# USER_SERVICE_URL env var only carries scheme+host+port, so we append it here.
+_PUBLIC_KEY_PATH = "/api/user/api/v1/users/auth/public-key"
+_MIN_REFETCH_INTERVAL_S = 30.0
+
 _bearer = HTTPBearer(auto_error=True)
+_public_key = None
+_last_fetch_time = 0.0
+_public_key_lock = asyncio.Lock()
 
 
-def _get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) -> int:
-    if not _JWT_PUBLIC_KEY:
-        raise HTTPException(status_code=500, detail="Token validation is not configured (public key unavailable)")
+async def _fetch_public_key_locked():
+    global _public_key, _last_fetch_time
     try:
-        payload = jwt.decode(credentials.credentials, _JWT_PUBLIC_KEY, algorithms=["RS256"])
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{_USER_SERVICE_URL}{_PUBLIC_KEY_PATH}")
+            resp.raise_for_status()
+            base64_key = resp.json()["publicKey"]
+        _public_key = load_der_public_key(base64.b64decode(base64_key))
+        _last_fetch_time = time.monotonic()
+    except Exception:
+        _public_key = None
+    return _public_key
+
+
+async def _get_or_fetch_public_key():
+    if _public_key is not None:
+        return _public_key
+    async with _public_key_lock:
+        if _public_key is not None:
+            return _public_key
+        return await _fetch_public_key_locked()
+
+
+async def _try_clear_cached_key_for_refetch() -> bool:
+    global _public_key
+    async with _public_key_lock:
+        if time.monotonic() - _last_fetch_time > _MIN_REFETCH_INTERVAL_S:
+            _public_key = None
+            return True
+        return False
+
+
+def _decode(token: str, key) -> dict:
+    return jwt.decode(token, key=key, algorithms=["RS256"])
+
+
+async def _get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(_bearer)) -> int:
+    active_key = await _get_or_fetch_public_key()
+    if active_key is None:
+        raise HTTPException(status_code=500, detail="Token validation service unavailable (public key not fetched)")
+
+    try:
+        payload = _decode(credentials.credentials, active_key)
+    except jwt.InvalidSignatureError:
+        # Public key may have rotated (e.g. user-service restarted). Refetch and retry once.
+        payload = None
+        if await _try_clear_cached_key_for_refetch():
+            new_key = await _get_or_fetch_public_key()
+            if new_key is not None and new_key != active_key:
+                try:
+                    payload = _decode(credentials.credentials, new_key)
+                except jwt.InvalidTokenError:
+                    payload = None
+        if payload is None:
+            raise HTTPException(status_code=401, detail="Invalid or expired JWT token")
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError as exc:
         raise HTTPException(status_code=401, detail=f"Invalid token: {exc}")
 
-    raw_id = payload.get("user_id")
+    raw_id = payload.get("sub")
     if raw_id is None:
         raise HTTPException(status_code=401, detail="Token does not contain a user identity")
     try:
