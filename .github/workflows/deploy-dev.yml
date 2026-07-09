@@ -38,7 +38,7 @@ jobs:
             context: ./
             dockerfile: ./services/note-service/Dockerfile
           - service: genai-service
-            context: ./services/genai-service
+            context: ./
             dockerfile: ./services/genai-service/Dockerfile
           - service: client
             context: ./

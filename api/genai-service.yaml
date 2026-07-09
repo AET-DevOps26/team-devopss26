@@ -124,6 +124,8 @@ components:
       schema:
         type: integer
         format: int64
+        minimum: -9223372036854775808
+        maximum: 9223372036854775807
 
   schemas:
     ConversationCreateRequest:
@@ -133,6 +135,8 @@ components:
         user_id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
 
     ChatMessage:
       type: object
@@ -140,6 +144,8 @@ components:
         id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
         role:
           type: string
           enum: [USER, AGENT]
@@ -148,6 +154,8 @@ components:
         timestamp:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
 
     Conversation:
       type: object
@@ -155,11 +163,16 @@ components:
         id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
         user_id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
         title:
           type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -177,9 +190,13 @@ components:
         user_id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
         conversation_id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
           nullable: true
         model:
           type: string
@@ -194,3 +211,5 @@ components:
         conversation_id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807

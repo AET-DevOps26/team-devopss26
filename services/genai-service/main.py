@@ -108,7 +108,11 @@ _public_key_lock = asyncio.Lock()
 # HTTP middleware instead, which stashes the resolved user id here for the duration of
 # the request.
 _current_user_id: ContextVar[Optional[int]] = ContextVar("_current_user_id", default=None)
-_PUBLIC_PATHS = {"/api/v1/health"}
+# The Caddy gateway forwards /api/genai/* to this service without stripping the
+# prefix (mirroring how Spring's server.servlet.context-path works for the other
+# services), so routes must actually be mounted under it; see
+# app.include_router(genai_router, prefix="/api/genai") below.
+_PUBLIC_PATHS = {"/api/genai/api/v1/health"}
 
 
 async def _fetch_public_key_locked():
@@ -328,14 +332,16 @@ def _build_chain(model: str):
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
-app = FastAPI(title="GenAI Chatbot Service", root_path="/api/genai", lifespan=lifespan)
+app = FastAPI(title="GenAI Chatbot Service", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 Instrumentator().instrument(app).expose(app)
 
 
 @app.middleware("http")
 async def _auth_middleware(request: Request, call_next):
-    if request.url.path in _PUBLIC_PATHS:
+    # request.url.path incorporates root_path (for building external URLs), but
+    # routing matches on the raw ASGI scope path, so compare against that instead.
+    if request.scope["path"] in _PUBLIC_PATHS:
         return await call_next(request)
 
     auth_header = request.headers.get("authorization", "")
@@ -468,4 +474,4 @@ class GenAIApiImpl(BaseGenAIApi):
 
 # Defining the class above already registers it as BaseGenAIApi.subclasses[0]
 # (via __init_subclass__); the generated router instantiates it per-request.
-app.include_router(genai_router)
+app.include_router(genai_router, prefix="/api/genai")
