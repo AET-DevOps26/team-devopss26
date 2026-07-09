@@ -43,6 +43,10 @@ data:
             uri strip_prefix /dev
             reverse_proxy http://client.team-devopss26-dev.svc.cluster.local:80
         }
+        handle /dev/* {
+            uri strip_prefix /dev
+            reverse_proxy http://client.team-devopss26-dev.svc.cluster.local:80
+        }
 
         # ── Prod routes ──
         handle /api/v1/users/* {
