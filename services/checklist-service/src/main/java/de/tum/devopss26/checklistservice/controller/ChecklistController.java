@@ -4,6 +4,9 @@ import de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundExceptio
 import de.tum.devopss26.checklistservice.exception.ChecklistItemNotInChecklistException;
 import de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException;
 import de.tum.devopss26.checklistservice.service.ChecklistService;
+import de.tum.devopss26.shared.security.JWTHelper;
+import de.tum.devopss26.shared.security.RequireTokenValidation;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.openapitools.api.ChecklistsApi;
 import org.openapitools.model.AddChecklistItemRequest;
@@ -25,63 +28,88 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChecklistController implements ChecklistsApi {
 
     private final ChecklistService checklistService;
+    private final HttpServletRequest servletRequest;
 
+    @RequireTokenValidation
     @Override
-    public ResponseEntity<GetChecklistsResponse> getChecklists(Long userId) {
+    public ResponseEntity<GetChecklistsResponse> getChecklists() {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
         GetChecklistsResponse response = new GetChecklistsResponse()
                 .checklists(checklistService.getChecklists(userId));
         return ResponseEntity.ok(response);
     }
 
+    @RequireTokenValidation
     @Override
     public ResponseEntity<Checklist> getChecklistById(Long id) {
-        Checklist checklist = checklistService.getChecklistById(id);
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
+        Checklist checklist = checklistService.getChecklistById(userId, id);
         return ResponseEntity.ok(checklist);
     }
 
+    @RequireTokenValidation
     @Override
     public ResponseEntity<Checklist> createChecklist(CreateChecklistRequest createChecklistRequest) {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
         Checklist toCreate = new Checklist().title(createChecklistRequest.getTitle());
-        Checklist created = checklistService.createChecklist(createChecklistRequest.getUserId(), toCreate);
+        Checklist created = checklistService.createChecklist(userId, toCreate);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @RequireTokenValidation
     @Override
     public ResponseEntity<Checklist> updateChecklist(Long id, UpdateChecklistRequest updateChecklistRequest) {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
         Checklist toUpdate = new Checklist().title(updateChecklistRequest.getTitle());
-        Checklist updated = checklistService.updateChecklist(id, toUpdate);
+        Checklist updated = checklistService.updateChecklist(userId, id, toUpdate);
         return ResponseEntity.ok(updated);
     }
 
+    @RequireTokenValidation
     @Override
     public ResponseEntity<Void> deleteChecklist(Long id) {
-        checklistService.deleteChecklist(id);
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
+        checklistService.deleteChecklist(userId, id);
         return ResponseEntity.noContent().build();
     }
 
+    @RequireTokenValidation
     @Override
     public ResponseEntity<AddChecklistItemResponse> addChecklistItem(Long id, AddChecklistItemRequest addChecklistItemRequest) {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
         ChecklistItem toAdd = new ChecklistItem()
                 .text(addChecklistItemRequest.getText())
                 .completed(addChecklistItemRequest.getCompleted())
                 .position(addChecklistItemRequest.getPosition());
-        ChecklistItem added = checklistService.addChecklistItem(id, toAdd);
+        ChecklistItem added = checklistService.addChecklistItem(userId, id, toAdd);
         return ResponseEntity.status(HttpStatus.CREATED).body(toAddChecklistItemResponse(added));
     }
 
+    @RequireTokenValidation
     @Override
     public ResponseEntity<UpdateChecklistItemResponse> updateChecklistItem(Long id, Long itemId, UpdateChecklistItemRequest updateChecklistItemRequest) {
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
         ChecklistItem toUpdate = new ChecklistItem()
                 .text(updateChecklistItemRequest.getText())
                 .completed(updateChecklistItemRequest.getCompleted())
                 .position(updateChecklistItemRequest.getPosition());
-        ChecklistItem updated = checklistService.updateChecklistItem(id, itemId, toUpdate);
+        ChecklistItem updated = checklistService.updateChecklistItem(userId, id, itemId, toUpdate);
         return ResponseEntity.ok(toUpdateChecklistItemResponse(updated));
     }
 
+    @RequireTokenValidation
     @Override
     public ResponseEntity<Void> deleteChecklistItem(Long id, Long itemId) {
-        checklistService.deleteChecklistItem(id, itemId);
+        long userId = JWTHelper.extractFrom(servletRequest).getUserId();
+
+        checklistService.deleteChecklistItem(userId, id, itemId);
         return ResponseEntity.noContent().build();
     }
 

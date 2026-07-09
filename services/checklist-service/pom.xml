@@ -122,6 +122,7 @@
                 <directory>${project.basedir}/../../api</directory>
                 <includes>
                     <include>checklist-service.yaml</include>
+                    <include>common.yaml</include>
                 </includes>
             </testResource>
         </testResources>

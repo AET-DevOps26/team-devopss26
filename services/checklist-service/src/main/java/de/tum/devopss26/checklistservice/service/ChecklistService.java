@@ -9,17 +9,17 @@ public interface ChecklistService {
 
     List<Checklist> getChecklists(Long userId);
 
-    Checklist getChecklistById(Long id);
+    Checklist getChecklistById(Long userId, Long id);
 
     Checklist createChecklist(Long userId, Checklist checklist);
 
-    Checklist updateChecklist(Long id, Checklist checklist);
+    Checklist updateChecklist(Long userId, Long id, Checklist checklist);
 
-    void deleteChecklist(Long id);
+    void deleteChecklist(Long userId, Long id);
 
-    ChecklistItem addChecklistItem(Long checklistId, ChecklistItem item);
+    ChecklistItem addChecklistItem(Long userId, Long checklistId, ChecklistItem item);
 
-    ChecklistItem updateChecklistItem(Long checklistId, Long itemId, ChecklistItem item);
+    ChecklistItem updateChecklistItem(Long userId, Long checklistId, Long itemId, ChecklistItem item);
 
-    void deleteChecklistItem(Long checklistId, Long itemId);
+    void deleteChecklistItem(Long userId, Long checklistId, Long itemId);
 }

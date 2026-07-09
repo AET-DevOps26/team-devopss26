@@ -5,6 +5,7 @@ import de.tum.devopss26.checklistservice.entity.ChecklistItemEntity;
 import de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundException;
 import de.tum.devopss26.checklistservice.exception.ChecklistItemNotInChecklistException;
 import de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException;
+import de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException;
 import de.tum.devopss26.checklistservice.repository.ChecklistItemRepository;
 import de.tum.devopss26.checklistservice.repository.ChecklistRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +35,8 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     @Override
-    public Checklist getChecklistById(Long id) {
-        ChecklistEntity entity = checklistRepository.findById(id)
-                .orElseThrow(() -> new ChecklistNotFoundException(id));
+    public Checklist getChecklistById(Long userId, Long id) {
+        ChecklistEntity entity = getOwnedChecklistEntity(userId, id);
         return toDto(entity);
     }
 
@@ -50,25 +50,21 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     @Override
-    public Checklist updateChecklist(Long id, Checklist dto) {
-        ChecklistEntity entity = checklistRepository.findById(id)
-                .orElseThrow(() -> new ChecklistNotFoundException(id));
+    public Checklist updateChecklist(Long userId, Long id, Checklist dto) {
+        ChecklistEntity entity = getOwnedChecklistEntity(userId, id);
         entity.setTitle(dto.getTitle());
         return toDto(checklistRepository.save(entity));
     }
 
     @Override
-    public void deleteChecklist(Long id) {
-        if (!checklistRepository.existsById(id)) {
-            throw new ChecklistNotFoundException(id);
-        }
-        checklistRepository.deleteById(id);
+    public void deleteChecklist(Long userId, Long id) {
+        ChecklistEntity entity = getOwnedChecklistEntity(userId, id);
+        checklistRepository.delete(entity);
     }
 
     @Override
-    public ChecklistItem addChecklistItem(Long checklistId, ChecklistItem dto) {
-        ChecklistEntity checklist = checklistRepository.findById(checklistId)
-                .orElseThrow(() -> new ChecklistNotFoundException(checklistId));
+    public ChecklistItem addChecklistItem(Long userId, Long checklistId, ChecklistItem dto) {
+        ChecklistEntity checklist = getOwnedChecklistEntity(userId, checklistId);
         ChecklistItemEntity item = new ChecklistItemEntity();
         item.setChecklist(checklist);
         item.setText(dto.getText());
@@ -78,7 +74,8 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     @Override
-    public ChecklistItem updateChecklistItem(Long checklistId, Long itemId, ChecklistItem dto) {
+    public ChecklistItem updateChecklistItem(Long userId, Long checklistId, Long itemId, ChecklistItem dto) {
+        getOwnedChecklistEntity(userId, checklistId);
         ChecklistItemEntity item = checklistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ChecklistItemNotFoundException(itemId));
         if (!item.getChecklist().getId().equals(checklistId)) {
@@ -93,13 +90,23 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     @Override
-    public void deleteChecklistItem(Long checklistId, Long itemId) {
+    public void deleteChecklistItem(Long userId, Long checklistId, Long itemId) {
+        getOwnedChecklistEntity(userId, checklistId);
         ChecklistItemEntity item = checklistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ChecklistItemNotFoundException(itemId));
         if (!item.getChecklist().getId().equals(checklistId)) {
             throw new ChecklistItemNotInChecklistException(itemId, checklistId);
         }
         checklistItemRepository.delete(item);
+    }
+
+    private ChecklistEntity getOwnedChecklistEntity(Long userId, Long id) {
+        ChecklistEntity entity = checklistRepository.findById(id)
+                .orElseThrow(() -> new ChecklistNotFoundException(id));
+        if (!entity.getUserId().equals(userId)) {
+            throw new IllegalChecklistAccessException(userId, entity.getUserId(), id);
+        }
+        return entity;
     }
 
     private Checklist toDto(ChecklistEntity entity) {
