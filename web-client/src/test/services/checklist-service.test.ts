@@ -15,8 +15,9 @@ import {
 describe('checklist service', () => {
   it('getChecklists sends GET with userId query param', async () => {
     const result = await getChecklists({ userId: 1 });
-    expect(Array.isArray(result)).toBe(true);
-    expect(result[0]).toHaveProperty('title');
+    expect(result.checklists).toBeDefined();
+    expect(Array.isArray(result.checklists)).toBe(true);
+    expect(result.checklists![0]).toHaveProperty('title');
   });
 
   it('createChecklist sends POST and returns created checklist', async () => {

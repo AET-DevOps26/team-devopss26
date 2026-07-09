@@ -43,8 +43,7 @@ jobs:
           - service: client
             context: ./
             dockerfile: ./web-client/Dockerfile
-            build_args: |
-              VITE_BASE_PATH=/dev
+            build_args: VITE_BASE_PATH=/dev
 
     steps:
       - name: Checkout
