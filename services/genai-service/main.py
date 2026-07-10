@@ -108,6 +108,9 @@ _public_key_lock = asyncio.Lock()
 # HTTP middleware instead, which stashes the resolved user id here for the duration of
 # the request.
 _current_user_id: ContextVar[Optional[int]] = ContextVar("_current_user_id", default=None)
+# Downstream services (calendar, checklist) validate the JWT themselves and derive the
+# user id from it, so the original bearer token must be forwarded rather than the user id.
+_current_auth_header: ContextVar[Optional[str]] = ContextVar("_current_auth_header", default=None)
 # The Caddy gateway forwards /api/genai/* to this service without stripping the
 # prefix (mirroring how Spring's server.servlet.context-path works for the other
 # services), so routes must actually be mounted under it; see
@@ -191,6 +194,13 @@ def _require_user_id() -> int:
     return user_id
 
 
+def _require_auth_header() -> str:
+    auth_header = _current_auth_header.get()
+    if auth_header is None:
+        raise HTTPException(status_code=500, detail="Auth header not resolved")
+    return auth_header
+
+
 # ── RAG: Weaviate + embeddings ────────────────────────────────────────────────
 _weaviate_client: Optional[weaviate.WeaviateClient] = None
 _embedding_model: Optional[GoogleGenerativeAIEmbeddings] = None
@@ -230,11 +240,16 @@ async def _fetch_user_data(user_id: int) -> list[str]:
     calendar_url = os.environ.get("CALENDAR_SERVICE_URL", "http://calendar-service-app:8004")
     checklist_url = os.environ.get("CHECKLIST_SERVICE_URL", "http://checklist-service-app:8003")
 
+    # calendar-service and checklist-service validate the JWT themselves and derive the
+    # user id from it (no userId query param accepted); note-service is still an
+    # unauthenticated openapi stub that takes userId directly.
+    auth_headers = {"Authorization": _require_auth_header()}
+
     async with httpx.AsyncClient(timeout=10.0) as client:
         notes_resp, events_resp, checklists_resp = await asyncio.gather(
             client.get(f"{note_url}/api/v1/notes", params={"userId": user_id}),
-            client.get(f"{calendar_url}/api/v1/events", params={"userId": user_id}),
-            client.get(f"{checklist_url}/api/v1/checklists", params={"userId": user_id}),
+            client.get(f"{calendar_url}/api/v1/events", headers=auth_headers),
+            client.get(f"{checklist_url}/api/v1/checklists", headers=auth_headers),
             return_exceptions=True,
         )
 
@@ -353,11 +368,13 @@ async def _auth_middleware(request: Request, call_next):
     except HTTPException as exc:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
-    reset_token = _current_user_id.set(user_id)
+    reset_user_id = _current_user_id.set(user_id)
+    reset_auth_header = _current_auth_header.set(auth_header)
     try:
         return await call_next(request)
     finally:
-        _current_user_id.reset(reset_token)
+        _current_user_id.reset(reset_user_id)
+        _current_auth_header.reset(reset_auth_header)
 
 
 def _now_ms() -> int:
