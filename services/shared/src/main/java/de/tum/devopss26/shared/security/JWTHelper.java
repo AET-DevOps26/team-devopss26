@@ -3,7 +3,7 @@ package de.tum.devopss26.shared.security;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 
-public class JWTHelper {
+public final class JWTHelper {
 	
 	private JWTHelper() {
 	    throw new IllegalAccessError("Illegal access of JWTHelper - No instantiation!");
