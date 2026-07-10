@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openapitools.model.Checklist;
 import org.openapitools.model.ChecklistItem;
+import org.openapitools.model.IdentifiedChecklist;
+import org.openapitools.model.IdentifiedChecklistItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -63,7 +65,7 @@ class ChecklistControllerTest {
 
     @Test
     void getChecklists_OK() throws Exception {
-        Checklist checklist = new Checklist();
+        IdentifiedChecklist checklist = new IdentifiedChecklist();
         checklist.setId(1L);
         checklist.setUserId(USER_ID);
         checklist.setTitle("Groceries");
@@ -95,7 +97,7 @@ class ChecklistControllerTest {
 
     @Test
     void getChecklistById_OK() throws Exception {
-        Checklist checklist = new Checklist();
+        IdentifiedChecklist checklist = new IdentifiedChecklist();
         checklist.setId(1L);
         checklist.setUserId(USER_ID);
         checklist.setTitle("Groceries");
@@ -122,7 +124,7 @@ class ChecklistControllerTest {
 
     @Test
     void createChecklist_CREATED() throws Exception {
-        Checklist created = new Checklist();
+        IdentifiedChecklist created = new IdentifiedChecklist();
         created.setId(1L);
         created.setUserId(USER_ID);
         created.setTitle("Groceries");
@@ -166,7 +168,7 @@ class ChecklistControllerTest {
 
     @Test
     void updateChecklist_OK() throws Exception {
-        Checklist updated = new Checklist();
+        IdentifiedChecklist updated = new IdentifiedChecklist();
         updated.setId(1L);
         updated.setUserId(USER_ID);
         updated.setTitle("Updated Title");
@@ -241,7 +243,7 @@ class ChecklistControllerTest {
 
     @Test
     void addChecklistItem_CREATED() throws Exception {
-        ChecklistItem item = new ChecklistItem();
+        IdentifiedChecklistItem item = new IdentifiedChecklistItem();
         item.setId(1L);
         item.setText("Milk");
         item.setCompleted(false);
@@ -284,7 +286,7 @@ class ChecklistControllerTest {
 
     @Test
     void updateChecklistItem_OK() throws Exception {
-        ChecklistItem item = new ChecklistItem();
+        IdentifiedChecklistItem item = new IdentifiedChecklistItem();
         item.setId(1L);
         item.setText("Oat Milk");
         item.setCompleted(true);
