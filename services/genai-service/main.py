@@ -236,9 +236,12 @@ async def lifespan(app: FastAPI):
 
 
 async def _fetch_user_data(user_id: int) -> list[str]:
-    note_url = os.environ.get("NOTE_SERVICE_URL", "http://note-service-app:8005")
-    calendar_url = os.environ.get("CALENDAR_SERVICE_URL", "http://calendar-service-app:8004")
-    checklist_url = os.environ.get("CHECKLIST_SERVICE_URL", "http://checklist-service-app:8003")
+    # *_SERVICE_URL env vars only carry scheme+host+port; each service serves its API
+    # under its own Spring context path, so it must be appended here (same as
+    # _PUBLIC_KEY_PATH above).
+    note_url = os.environ.get("NOTE_SERVICE_URL", "http://note-service-app:8005") + "/api/note"
+    calendar_url = os.environ.get("CALENDAR_SERVICE_URL", "http://calendar-service-app:8004") + "/api/calendar"
+    checklist_url = os.environ.get("CHECKLIST_SERVICE_URL", "http://checklist-service-app:8003") + "/api/checklist"
 
     # calendar-service and checklist-service validate the JWT themselves and derive the
     # user id from it (no userId query param accepted); note-service is still an
@@ -263,7 +266,7 @@ async def _fetch_user_data(user_id: int) -> list[str]:
                 chunks.append(f"[Note] {title}: {content}")
 
     if not isinstance(events_resp, Exception) and events_resp.status_code == 200:
-        for event in events_resp.json():
+        for event in events_resp.json().get("events", []):
             chunks.append(
                 f"[Calendar Event] {event.get('title', '')} "
                 f"from {event.get('startTime', '')} to {event.get('endTime', '')} "
@@ -271,7 +274,7 @@ async def _fetch_user_data(user_id: int) -> list[str]:
             )
 
     if not isinstance(checklists_resp, Exception) and checklists_resp.status_code == 200:
-        for checklist in checklists_resp.json():
+        for checklist in checklists_resp.json().get("checklists", []):
             title = checklist.get("title", "")
             for item in checklist.get("items", []):
                 status = "completed" if item.get("completed") else "not completed"
