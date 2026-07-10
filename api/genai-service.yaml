@@ -34,12 +34,6 @@ paths:
       tags: [GenAI]
       summary: Create a new chat conversation
       operationId: createConversation
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConversationCreateRequest'
       responses:
         '200':
           description: Conversation created
@@ -128,16 +122,6 @@ components:
         maximum: 9223372036854775807
 
   schemas:
-    ConversationCreateRequest:
-      type: object
-      required: [user_id]
-      properties:
-        user_id:
-          type: integer
-          format: int64
-          minimum: -9223372036854775808
-          maximum: 9223372036854775807
-
     ChatMessage:
       type: object
       properties:
@@ -183,15 +167,10 @@ components:
 
     ChatRequest:
       type: object
-      required: [message, user_id]
+      required: [message]
       properties:
         message:
           type: string
-        user_id:
-          type: integer
-          format: int64
-          minimum: -9223372036854775808
-          maximum: 9223372036854775807
         conversation_id:
           type: integer
           format: int64

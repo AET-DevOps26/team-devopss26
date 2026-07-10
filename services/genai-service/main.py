@@ -41,7 +41,6 @@ from openapi_server.models.chat_message import ChatMessage as ChatMessageModel  
 from openapi_server.models.chat_request import ChatRequest  # noqa: E402
 from openapi_server.models.chat_response import ChatResponse  # noqa: E402
 from openapi_server.models.conversation import Conversation  # noqa: E402
-from openapi_server.models.conversation_create_request import ConversationCreateRequest  # noqa: E402
 from openapi_server.models.delete_conversation200_response import DeleteConversation200Response  # noqa: E402
 from openapi_server.models.health200_response import Health200Response  # noqa: E402
 
@@ -405,7 +404,7 @@ class GenAIApiImpl(BaseGenAIApi):
     async def health(self) -> Health200Response:
         return Health200Response(status="ok")
 
-    async def create_conversation(self, conversation_create_request: ConversationCreateRequest) -> Conversation:
+    async def create_conversation(self) -> Conversation:
         user_id = _require_user_id()
         async with _sessions() as db:
             conversation = ChatConversation(user_id=user_id)
