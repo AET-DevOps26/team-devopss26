@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.function.Function;
 
 @Service
-public class JwtService {
+public final class JwtService {
 
     private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L;
     private final PrivateKey privateKey;

@@ -74,6 +74,11 @@ jobs:
           cd services/${{ matrix.service }}
           mvn clean test
 
+      - name: Static Analysis with Spotbugs
+        run: |
+          cd services/${{ matrix.service }}
+          mvn compile spotbugs:check
+
   frontend-test:
     name: Build & Test Frontend
     needs: openapi-lint
