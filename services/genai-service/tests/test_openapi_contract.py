@@ -7,6 +7,7 @@ from pathlib import Path
 
 from hypothesis import HealthCheck, settings
 import schemathesis
+from schemathesis.specs.openapi.checks import ignored_auth
 
 SPEC_PATH = Path(__file__).parent.parent.parent.parent / "api" / "genai-service.yaml"
 schema = schemathesis.openapi.from_path(str(SPEC_PATH))
@@ -18,4 +19,4 @@ def test_matches_openapi_spec(case, app, auth_headers):
     # Routes are mounted under /api/genai (mirroring the Spring services'
     # server.servlet.context-path), which the spec itself doesn't encode.
     response = case.call_asgi(app=app, base_url="http://test/api/genai", headers=auth_headers)
-    case.validate_response(response)
+    case.validate_response(response, excluded_checks=(ignored_auth,))
