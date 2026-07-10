@@ -264,6 +264,8 @@ components:
           format: int64
         title:
           type: string
+          pattern: '.*\S.*'
+          maxLength: 255
         createdAt:
           type: string
           format: date-time
