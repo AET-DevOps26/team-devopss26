@@ -10,6 +10,7 @@ import org.openapitools.model.RegisterUserRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -23,6 +24,7 @@ class UserAuthenticationServiceImpl implements UserAuthenticationService {
     private final UserMapper mapper;
     private final JwtService jwtService;
 
+    @Transactional
     @Override
     public void registerUser(RegisterUserRequest request) {
         if (repository.existsByUsername(request.getUsername())) {
@@ -33,6 +35,7 @@ class UserAuthenticationServiceImpl implements UserAuthenticationService {
         repository.save(mapped);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public String loginUser() {
         String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();

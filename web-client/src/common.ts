@@ -10,6 +10,16 @@ export interface components {
         Identifier: {
             /** Format: int64 */
             id: number;
+        } & {
+            [key: string]: unknown;
+        };
+        Timestamped: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            lastUpdatedAt: string;
+        } & {
+            [key: string]: unknown;
         };
     };
     responses: never;

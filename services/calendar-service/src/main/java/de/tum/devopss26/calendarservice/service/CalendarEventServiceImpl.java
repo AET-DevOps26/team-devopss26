@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static de.tum.devopss26.calendarservice.exception.IllegalCalendarEventAccessException.IllegalAccessPair;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ class CalendarEventServiceImpl implements CalendarEventService {
     private final CalendarEventRepository repository;
     private final CalendarEventMapper mapper;
 
+    @Transactional
     @Override
     public CreateCalendarEventResponse createEvent(CreateCalendarEventRequest request, long userId) {
         CalendarEvent event = mapper.toCalendarEvent(request, userId);
@@ -29,6 +31,7 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toCreateResponse(event);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public ListCalendarEventResponse getEvents(long userId) {
         List<CalendarEvent> eventEntities = repository.findAllByUserId(userId);
@@ -54,6 +57,7 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return event;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public GetCalendarEventResponse getEvent(long userId, long eventId) {
         CalendarEvent event = getEventEntity(userId, eventId);
@@ -61,6 +65,7 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toGetResponse(event);
     }
 
+    @Transactional
     @Override
     public UpdateCalendarEventResponse updateEvent(long userId, long eventId,
                                                    org.openapitools.model.CalendarEvent diff) {
@@ -92,6 +97,7 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toUpdateResponse(event);
     }
 
+    @Transactional
     @Override
     public void deleteEvent(long userId, long eventId) {
         CalendarEvent event = getEventEntity(userId, eventId);
