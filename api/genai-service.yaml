@@ -34,6 +34,8 @@ paths:
       tags: [GenAI]
       summary: Create a new chat conversation
       operationId: createConversation
+      security:
+        - JWTAuth: []
       responses:
         '200':
           description: Conversation created
@@ -41,12 +43,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Token either does not exist or is already expired
 
   /api/v1/conversations/{conversationId}:
     get:
       tags: [GenAI]
       summary: Get a conversation by ID including all messages
       operationId: getConversation
+      security:
+        - JWTAuth: []
       parameters:
         - $ref: '#/components/parameters/conversationId'
       responses:
@@ -56,6 +62,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Token either does not exist or is already expired
         '403':
           description: Access denied
         '404':
@@ -65,6 +73,8 @@ paths:
       tags: [GenAI]
       summary: Delete a conversation by ID
       operationId: deleteConversation
+      security:
+        - JWTAuth: []
       parameters:
         - $ref: '#/components/parameters/conversationId'
       responses:
@@ -78,6 +88,8 @@ paths:
                   message:
                     type: string
                     example: Conversation deleted
+        '401':
+          description: Token either does not exist or is already expired
         '403':
           description: Access denied
         '404':
@@ -88,6 +100,8 @@ paths:
       tags: [GenAI]
       summary: Send a message and get an AI response
       operationId: chat
+      security:
+        - JWTAuth: []
       requestBody:
         required: true
         content:
@@ -103,12 +117,18 @@ paths:
                 $ref: '#/components/schemas/ChatResponse'
         '400':
           description: Message must not be empty
+        '401':
+          description: Token either does not exist or is already expired
         '403':
           description: Access denied
         '404':
           description: Conversation not found
 
 components:
+
+  securitySchemes:
+    JWTAuth:
+      $ref: './common.yaml#/components/securitySchemes/JWTAuth'
 
   parameters:
     conversationId:
