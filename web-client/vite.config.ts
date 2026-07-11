@@ -9,7 +9,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { proxyConfig } from './proxy.config'
 
 const config = defineConfig({
-  base: process.env.VITE_BASE_PATH || '/',
+  base: '/',
   resolve: { tsconfigPaths: true },
   plugins: [
     devtools(),

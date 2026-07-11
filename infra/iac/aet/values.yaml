@@ -8,8 +8,8 @@ imageRegistry: team-devopss26
 
 # Default resources for Java microservices
 serviceResources:
-  requests: { memory: "256Mi", cpu: "50m" }
-  limits: { memory: "320Mi", cpu: "150m" }
+  requests: { memory: "384Mi", cpu: "100m" }
+  limits: { memory: "512Mi", cpu: "300m" }
 
 services:
   user-service:
@@ -41,8 +41,8 @@ client:
     pullPolicy: IfNotPresent
   port: 80
   resources:
-    requests: { memory: "32Mi", cpu: "25m" }
-    limits: { memory: "64Mi", cpu: "50m" }
+    requests: { memory: "64Mi", cpu: "50m" }
+    limits: { memory: "128Mi", cpu: "100m" }
 
 genaiService:
   replicaCount: 1
@@ -54,8 +54,8 @@ genaiService:
   geminiApiKey: ""
   dbName: genaidb
   resources:
-    requests: { memory: "128Mi", cpu: "50m" }
-    limits: { memory: "256Mi", cpu: "100m" }
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits: { memory: "512Mi", cpu: "200m" }
 
 # ── Postgres ──
 # WARNING: Override these credentials via --set or external secrets for any non-local deployment.
@@ -66,8 +66,8 @@ postgres:
   persistence:
     size: 2Gi
   resources:
-    requests: { memory: "128Mi", cpu: "50m" }
-    limits: { memory: "256Mi", cpu: "100m" }
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits: { memory: "512Mi", cpu: "200m" }
 
 ingress:
   enabled: true

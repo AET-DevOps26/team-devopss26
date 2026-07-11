@@ -6,48 +6,6 @@ metadata:
 data:
   Caddyfile: |
     :80 {
-        # ── Dev routes (prefix-based, proxies cross-namespace to team-devopss26-dev) ──
-        handle /dev/api/v1/users/* {
-            uri strip_prefix /dev
-            reverse_proxy http://user-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "user-service" "appPort" }}
-        }
-        handle /dev/api/v1/admin/* {
-            uri strip_prefix /dev
-            reverse_proxy http://admin-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "admin-service" "appPort" }}
-        }
-        handle /dev/api/v1/checklists/* {
-            uri strip_prefix /dev
-            reverse_proxy http://checklist-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "checklist-service" "appPort" }}
-        }
-        handle /dev/api/v1/events/* {
-            uri strip_prefix /dev
-            reverse_proxy http://calendar-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "calendar-service" "appPort" }}
-        }
-        handle /dev/api/v1/notes/* {
-            uri strip_prefix /dev
-            reverse_proxy http://note-service.team-devopss26-dev.svc.cluster.local:{{ index .Values.services "note-service" "appPort" }}
-        }
-        handle /dev/api/v1/chat/* {
-            uri strip_prefix /dev
-            reverse_proxy http://genai-service.team-devopss26-dev.svc.cluster.local:{{ .Values.genaiService.appPort }}
-        }
-        handle /dev/api/v1/conversations/* {
-            uri strip_prefix /dev
-            reverse_proxy http://genai-service.team-devopss26-dev.svc.cluster.local:{{ .Values.genaiService.appPort }}
-        }
-        handle /dev/api/v1/health/* {
-            uri strip_prefix /dev
-            reverse_proxy http://genai-service.team-devopss26-dev.svc.cluster.local:{{ .Values.genaiService.appPort }}
-        }
-        handle /dev {
-            uri strip_prefix /dev
-            reverse_proxy http://client.team-devopss26-dev.svc.cluster.local:80
-        }
-        handle /dev/* {
-            uri strip_prefix /dev
-            reverse_proxy http://client.team-devopss26-dev.svc.cluster.local:80
-        }
-
         # ── Prod routes ──
         handle /api/v1/users/* {
             reverse_proxy http://user-service:{{ index .Values.services "user-service" "appPort" }}

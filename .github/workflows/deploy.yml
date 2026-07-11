@@ -6,7 +6,7 @@ on:
     types:
       - completed
     branches:
-      - release
+      - main
   workflow_dispatch:
 
 env:

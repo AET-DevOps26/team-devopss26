@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: prod-quota
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app.kubernetes.io/part-of: devopss26
+spec:
+  hard:
+    requests.cpu: "3333m"
+    requests.memory: "5Gi"
+    limits.cpu: "3333m"
+    limits.memory: "5Gi"
