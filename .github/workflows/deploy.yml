@@ -110,7 +110,7 @@ jobs:
           helm upgrade --install devopss26 ./infra/iac/aet \
             --namespace team-devopss26-prod \
             --create-namespace \
-            --atomic \
+            --rollback-on-failure \
             --set global.imageTag=${{ github.sha }} \
             --set ingress.host="$INGRESS_HOST" \
             -f infra/iac/aet/values-prod.yaml \
