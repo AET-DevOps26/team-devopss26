@@ -276,6 +276,7 @@ components:
         - $ref: './common.yaml#/components/schemas/Identifier'
         - $ref: '#/components/schemas/Checklist'
         - type: object
+          additionalProperties: true
           properties:
             userId:
               type: integer
