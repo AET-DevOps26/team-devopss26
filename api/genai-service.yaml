@@ -128,7 +128,9 @@ components:
 
   securitySchemes:
     JWTAuth:
-      $ref: './common.yaml#/components/securitySchemes/JWTAuth'
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   parameters:
     conversationId:
