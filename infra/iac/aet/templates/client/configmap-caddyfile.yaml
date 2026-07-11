@@ -58,6 +58,9 @@ data:
         handle /api/v1/checklists/* {
             reverse_proxy http://checklist-service:{{ index .Values.services "checklist-service" "appPort" }}
         }
+        handle /api/v1/events {
+            reverse_proxy http://calendar-service:{{ index .Values.services "calendar-service" "appPort" }}
+        }
         handle /api/v1/events/* {
             reverse_proxy http://calendar-service:{{ index .Values.services "calendar-service" "appPort" }}
         }

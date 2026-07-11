@@ -51,7 +51,7 @@ const calendarQueries = {
       queryKey: calendarKeys.events(),
       queryFn: async () => {
         const response = await getEvents();
-        return response.events;
+        return response.events ?? [];
       },
       staleTime: 30_000,
     }),
@@ -400,37 +400,6 @@ export function CalendarPage() {
     setSelectedDate(dateStr);
   };
 
-  // Empty state: no events at all
-  if (events.length === 0) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Calendar</h1>
-        </div>
-        <div className="flex items-center justify-center py-16">
-          <Empty>
-            <EmptyMedia>
-              <CalendarDaysIcon className="size-10 text-muted-foreground" />
-            </EmptyMedia>
-            <EmptyContent>
-              <EmptyTitle>No events yet</EmptyTitle>
-              <EmptyDescription>Create your first event to get started.</EmptyDescription>
-              <Button className="mt-2" onClick={openCreateSheet}>
-                <PlusIcon data-icon="inline-start" />Create Event
-              </Button>
-            </EmptyContent>
-          </Empty>
-        </div>
-
-        <EventSheet
-          event={null}
-          isOpen={sheetOpen}
-          onOpenChange={setSheetOpen}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
@@ -528,7 +497,20 @@ export function CalendarPage() {
           Events for {selectedDate === todayStr ? 'Today' : selectedDate}
         </h3>
 
-        {selectedDayEvents.length === 0 ? (
+        {events.length === 0 ? (
+          <Empty>
+            <EmptyMedia>
+              <CalendarDaysIcon className="size-8 text-muted-foreground" />
+            </EmptyMedia>
+            <EmptyContent>
+              <EmptyTitle>No events yet</EmptyTitle>
+              <EmptyDescription>Create your first event to get started.</EmptyDescription>
+              <Button className="mt-2" onClick={openCreateSheet}>
+                <PlusIcon data-icon="inline-start" />Create Event
+              </Button>
+            </EmptyContent>
+          </Empty>
+        ) : selectedDayEvents.length === 0 ? (
           <Empty>
             <EmptyMedia>
               <CalendarDaysIcon className="size-8 text-muted-foreground" />

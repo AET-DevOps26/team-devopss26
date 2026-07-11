@@ -29,7 +29,7 @@ export const calendarQueries = {
       queryKey: calendarKeys.events(),
       queryFn: async () => {
         const response = await getEvents();
-        return response.events;
+        return response.events ?? [];
       },
       staleTime: 30_000,
     }),
