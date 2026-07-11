@@ -6,20 +6,26 @@ import de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundExceptio
 import de.tum.devopss26.checklistservice.exception.ChecklistItemNotInChecklistException;
 import de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException;
 import de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException;
+import de.tum.devopss26.checklistservice.mapper.ChecklistMapper;
 import de.tum.devopss26.checklistservice.repository.ChecklistItemRepository;
 import de.tum.devopss26.checklistservice.repository.ChecklistRepository;
 import lombok.RequiredArgsConstructor;
+import org.openapitools.model.AddChecklistItemResponse;
 import org.openapitools.model.Checklist;
 import org.openapitools.model.ChecklistItem;
+import org.openapitools.model.CreateChecklistResponse;
+import org.openapitools.model.GetChecklistResponse;
+import org.openapitools.model.GetChecklistsResponse;
 import org.openapitools.model.IdentifiedChecklist;
 import org.openapitools.model.IdentifiedChecklistItem;
+import org.openapitools.model.UpdateChecklistItemResponse;
+import org.openapitools.model.UpdateChecklistResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,34 +34,35 @@ public class ChecklistServiceImpl implements ChecklistService {
 
     private final ChecklistRepository checklistRepository;
     private final ChecklistItemRepository checklistItemRepository;
+    private final ChecklistMapper mapper;
 
     @Override
-    public List<IdentifiedChecklist> getChecklists(Long userId) {
-        return checklistRepository.findByUserId(userId).stream()
+    public GetChecklistsResponse getChecklists(Long userId) {
+        return mapper.toGetChecklistsResponse(checklistRepository.findByUserId(userId).stream()
                 .map(this::toDto)
-                .toList();
+                .toList());
     }
 
     @Override
-    public IdentifiedChecklist getChecklistById(Long userId, Long id) {
+    public GetChecklistResponse getChecklistById(Long userId, Long id) {
         ChecklistEntity entity = getOwnedChecklistEntity(userId, id);
-        return toDto(entity);
+        return mapper.toGetChecklistResponse(toDto(entity));
     }
 
     @Override
-    public IdentifiedChecklist createChecklist(Long userId, Checklist dto) {
+    public CreateChecklistResponse createChecklist(Long userId, Checklist dto) {
         ChecklistEntity entity = new ChecklistEntity();
         entity.setUserId(userId);
         entity.setTitle(dto.getTitle());
         entity.setCreatedAt(LocalDateTime.now());
-        return toDto(checklistRepository.save(entity));
+        return mapper.toCreateChecklistResponse(toDto(checklistRepository.save(entity)));
     }
 
     @Override
-    public IdentifiedChecklist updateChecklist(Long userId, Long id, Checklist dto) {
+    public UpdateChecklistResponse updateChecklist(Long userId, Long id, Checklist dto) {
         ChecklistEntity entity = getOwnedChecklistEntity(userId, id);
         entity.setTitle(dto.getTitle());
-        return toDto(checklistRepository.save(entity));
+        return mapper.toUpdateChecklistResponse(toDto(checklistRepository.save(entity)));
     }
 
     @Override
@@ -65,18 +72,18 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     @Override
-    public IdentifiedChecklistItem addChecklistItem(Long userId, Long checklistId, ChecklistItem dto) {
+    public AddChecklistItemResponse addChecklistItem(Long userId, Long checklistId, ChecklistItem dto) {
         ChecklistEntity checklist = getOwnedChecklistEntity(userId, checklistId);
         ChecklistItemEntity item = new ChecklistItemEntity();
         item.setChecklist(checklist);
         item.setText(dto.getText());
         item.setCompleted(Boolean.TRUE.equals(dto.getCompleted()));
         item.setPosition(dto.getPosition() != null ? dto.getPosition() : checklist.getItems().size() + 1);
-        return toDto(checklistItemRepository.save(item));
+        return mapper.toAddChecklistItemResponse(toDto(checklistItemRepository.save(item)));
     }
 
     @Override
-    public IdentifiedChecklistItem updateChecklistItem(Long userId, Long checklistId, Long itemId, ChecklistItem dto) {
+    public UpdateChecklistItemResponse updateChecklistItem(Long userId, Long checklistId, Long itemId, ChecklistItem dto) {
         getOwnedChecklistEntity(userId, checklistId);
         ChecklistItemEntity item = checklistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ChecklistItemNotFoundException(itemId));
@@ -88,7 +95,7 @@ public class ChecklistServiceImpl implements ChecklistService {
         if (dto.getPosition() != null) {
             item.setPosition(dto.getPosition());
         }
-        return toDto(checklistItemRepository.save(item));
+        return mapper.toUpdateChecklistItemResponse(toDto(checklistItemRepository.save(item)));
     }
 
     @Override

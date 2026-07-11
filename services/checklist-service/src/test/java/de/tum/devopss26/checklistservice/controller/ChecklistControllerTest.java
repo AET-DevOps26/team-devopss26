@@ -7,10 +7,15 @@ import de.tum.devopss26.shared.security.SecurityAutoConfiguration;
 import de.tum.devopss26.shared.security.TokenValidationInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openapitools.model.AddChecklistItemResponse;
 import org.openapitools.model.Checklist;
 import org.openapitools.model.ChecklistItem;
+import org.openapitools.model.CreateChecklistResponse;
+import org.openapitools.model.GetChecklistResponse;
+import org.openapitools.model.GetChecklistsResponse;
 import org.openapitools.model.IdentifiedChecklist;
-import org.openapitools.model.IdentifiedChecklistItem;
+import org.openapitools.model.UpdateChecklistItemResponse;
+import org.openapitools.model.UpdateChecklistResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -72,7 +77,8 @@ class ChecklistControllerTest {
         checklist.setCreatedAt(OffsetDateTime.now());
         checklist.setItems(List.of());
 
-        when(checklistService.getChecklists(USER_ID)).thenReturn(List.of(checklist));
+        when(checklistService.getChecklists(USER_ID))
+                .thenReturn(new GetChecklistsResponse().checklists(List.of(checklist)));
 
         mockMvc.perform(get("/api/v1/checklists")
                         .header("Authorization", VALID_AUTH_HEADER))
@@ -97,7 +103,7 @@ class ChecklistControllerTest {
 
     @Test
     void getChecklistById_OK() throws Exception {
-        IdentifiedChecklist checklist = new IdentifiedChecklist();
+        GetChecklistResponse checklist = new GetChecklistResponse();
         checklist.setId(1L);
         checklist.setUserId(USER_ID);
         checklist.setTitle("Groceries");
@@ -124,7 +130,7 @@ class ChecklistControllerTest {
 
     @Test
     void createChecklist_CREATED() throws Exception {
-        IdentifiedChecklist created = new IdentifiedChecklist();
+        CreateChecklistResponse created = new CreateChecklistResponse();
         created.setId(1L);
         created.setUserId(USER_ID);
         created.setTitle("Groceries");
@@ -168,7 +174,7 @@ class ChecklistControllerTest {
 
     @Test
     void updateChecklist_OK() throws Exception {
-        IdentifiedChecklist updated = new IdentifiedChecklist();
+        UpdateChecklistResponse updated = new UpdateChecklistResponse();
         updated.setId(1L);
         updated.setUserId(USER_ID);
         updated.setTitle("Updated Title");
@@ -243,7 +249,7 @@ class ChecklistControllerTest {
 
     @Test
     void addChecklistItem_CREATED() throws Exception {
-        IdentifiedChecklistItem item = new IdentifiedChecklistItem();
+        AddChecklistItemResponse item = new AddChecklistItemResponse();
         item.setId(1L);
         item.setText("Milk");
         item.setCompleted(false);
@@ -286,7 +292,7 @@ class ChecklistControllerTest {
 
     @Test
     void updateChecklistItem_OK() throws Exception {
-        IdentifiedChecklistItem item = new IdentifiedChecklistItem();
+        UpdateChecklistItemResponse item = new UpdateChecklistItemResponse();
         item.setId(1L);
         item.setText("Oat Milk");
         item.setCompleted(true);

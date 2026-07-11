@@ -17,8 +17,6 @@ import org.openapitools.model.CreateChecklistRequest;
 import org.openapitools.model.CreateChecklistResponse;
 import org.openapitools.model.GetChecklistResponse;
 import org.openapitools.model.GetChecklistsResponse;
-import org.openapitools.model.IdentifiedChecklist;
-import org.openapitools.model.IdentifiedChecklistItem;
 import org.openapitools.model.UpdateChecklistItemResponse;
 import org.openapitools.model.UpdateChecklistRequest;
 import org.openapitools.model.UpdateChecklistResponse;
@@ -39,9 +37,7 @@ public class ChecklistController implements ChecklistsApi {
     public ResponseEntity<GetChecklistsResponse> getChecklists() {
         long userId = JWTHelper.extractFrom(servletRequest).getUserId();
 
-        GetChecklistsResponse response = new GetChecklistsResponse()
-                .checklists(checklistService.getChecklists(userId));
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(checklistService.getChecklists(userId));
     }
 
     @RequireTokenValidation
@@ -49,8 +45,7 @@ public class ChecklistController implements ChecklistsApi {
     public ResponseEntity<GetChecklistResponse> getChecklistById(Long id) {
         long userId = JWTHelper.extractFrom(servletRequest).getUserId();
 
-        IdentifiedChecklist checklist = checklistService.getChecklistById(userId, id);
-        return ResponseEntity.ok(toGetChecklistResponse(checklist));
+        return ResponseEntity.ok(checklistService.getChecklistById(userId, id));
     }
 
     @RequireTokenValidation
@@ -59,8 +54,7 @@ public class ChecklistController implements ChecklistsApi {
         long userId = JWTHelper.extractFrom(servletRequest).getUserId();
 
         Checklist toCreate = new Checklist().title(createChecklistRequest.getTitle());
-        IdentifiedChecklist created = checklistService.createChecklist(userId, toCreate);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toCreateChecklistResponse(created));
+        return ResponseEntity.status(HttpStatus.CREATED).body(checklistService.createChecklist(userId, toCreate));
     }
 
     @RequireTokenValidation
@@ -69,8 +63,7 @@ public class ChecklistController implements ChecklistsApi {
         long userId = JWTHelper.extractFrom(servletRequest).getUserId();
 
         Checklist toUpdate = new Checklist().title(updateChecklistRequest.getTitle());
-        IdentifiedChecklist updated = checklistService.updateChecklist(userId, id, toUpdate);
-        return ResponseEntity.ok(toUpdateChecklistResponse(updated));
+        return ResponseEntity.ok(checklistService.updateChecklist(userId, id, toUpdate));
     }
 
     @RequireTokenValidation
@@ -91,8 +84,7 @@ public class ChecklistController implements ChecklistsApi {
                 .text(addChecklistItemRequest.getText())
                 .completed(addChecklistItemRequest.getCompleted())
                 .position(addChecklistItemRequest.getPosition());
-        IdentifiedChecklistItem added = checklistService.addChecklistItem(userId, id, toAdd);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toAddChecklistItemResponse(added));
+        return ResponseEntity.status(HttpStatus.CREATED).body(checklistService.addChecklistItem(userId, id, toAdd));
     }
 
     @RequireTokenValidation
@@ -104,8 +96,7 @@ public class ChecklistController implements ChecklistsApi {
                 .text(updateChecklistItemRequest.getText())
                 .completed(updateChecklistItemRequest.getCompleted())
                 .position(updateChecklistItemRequest.getPosition());
-        IdentifiedChecklistItem updated = checklistService.updateChecklistItem(userId, id, itemId, toUpdate);
-        return ResponseEntity.ok(toUpdateChecklistItemResponse(updated));
+        return ResponseEntity.ok(checklistService.updateChecklistItem(userId, id, itemId, toUpdate));
     }
 
     @RequireTokenValidation
@@ -123,46 +114,4 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.notFound().build();
     }
 
-    private AddChecklistItemResponse toAddChecklistItemResponse(IdentifiedChecklistItem item) {
-        return new AddChecklistItemResponse()
-                .id(item.getId())
-                .text(item.getText())
-                .completed(item.getCompleted())
-                .position(item.getPosition());
-    }
-
-    private UpdateChecklistItemResponse toUpdateChecklistItemResponse(IdentifiedChecklistItem item) {
-        return new UpdateChecklistItemResponse()
-                .id(item.getId())
-                .text(item.getText())
-                .completed(item.getCompleted())
-                .position(item.getPosition());
-    }
-
-    private GetChecklistResponse toGetChecklistResponse(IdentifiedChecklist checklist) {
-        return new GetChecklistResponse()
-                .id(checklist.getId())
-                .userId(checklist.getUserId())
-                .title(checklist.getTitle())
-                .createdAt(checklist.getCreatedAt())
-                .items(checklist.getItems());
-    }
-
-    private CreateChecklistResponse toCreateChecklistResponse(IdentifiedChecklist checklist) {
-        return new CreateChecklistResponse()
-                .id(checklist.getId())
-                .userId(checklist.getUserId())
-                .title(checklist.getTitle())
-                .createdAt(checklist.getCreatedAt())
-                .items(checklist.getItems());
-    }
-
-    private UpdateChecklistResponse toUpdateChecklistResponse(IdentifiedChecklist checklist) {
-        return new UpdateChecklistResponse()
-                .id(checklist.getId())
-                .userId(checklist.getUserId())
-                .title(checklist.getTitle())
-                .createdAt(checklist.getCreatedAt())
-                .items(checklist.getItems());
-    }
 }
