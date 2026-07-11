@@ -259,9 +259,6 @@ components:
       type: object
       additionalProperties: true
       properties:
-        userId:
-          type: integer
-          format: int64
         title:
           type: string
           pattern: '.*\S.*'
@@ -278,6 +275,11 @@ components:
       allOf:
         - $ref: './common.yaml#/components/schemas/Identifier'
         - $ref: '#/components/schemas/Checklist'
+        - type: object
+          properties:
+            userId:
+              type: integer
+              format: int64
 
     ChecklistItem:
       type: object
