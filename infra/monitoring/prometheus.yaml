@@ -58,6 +58,9 @@ spec:
       containers:
         - name: prometheus
           image: prom/prometheus:latest
+          args:
+            - --web.external-url=/prometheus/
+            - --web.route-prefix=/
           ports:
             - containerPort: 9090
           resources:

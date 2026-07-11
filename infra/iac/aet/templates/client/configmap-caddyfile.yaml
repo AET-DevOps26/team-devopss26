@@ -32,6 +32,16 @@ data:
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
 
+        # ── Monitoring routes (cross-namespace to monitoring) ──
+        handle /grafana/* {
+            uri strip_prefix /grafana
+            reverse_proxy http://grafana.team-devopss26-monitoring.svc.cluster.local:3000
+        }
+        handle /prometheus/* {
+            uri strip_prefix /prometheus
+            reverse_proxy http://prometheus.team-devopss26-monitoring.svc.cluster.local:9090
+        }
+
         handle {
             root * /usr/share/caddy
             try_files {path} /index.html
