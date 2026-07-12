@@ -1,0 +1,91 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: team-devopss26-monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+
+    scrape_configs:
+      - job_name: 'user-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['user-service.team-devopss26-prod.svc.cluster.local:8001']
+      - job_name: 'admin-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['admin-service.team-devopss26-prod.svc.cluster.local:8002']
+      - job_name: 'checklist-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['checklist-service.team-devopss26-prod.svc.cluster.local:8003']
+      - job_name: 'calendar-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['calendar-service.team-devopss26-prod.svc.cluster.local:8004']
+      - job_name: 'note-service'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['note-service.team-devopss26-prod.svc.cluster.local:8005']
+      - job_name: 'genai-service'
+        metrics_path: '/metrics'
+        static_configs:
+          - targets: ['genai-service.team-devopss26-prod.svc.cluster.local:8006']
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: team-devopss26-monitoring
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: prometheus
+          image: prom/prometheus:latest
+          args:
+            - --web.external-url=/prometheus/
+            - --web.route-prefix=/
+          ports:
+            - containerPort: 9090
+          resources:
+            requests: { memory: "256Mi", cpu: "100m" }
+            limits:   { memory: "512Mi", cpu: "256m" }
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus/prometheus.yml
+              subPath: prometheus.yml
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: team-devopss26-monitoring
+  labels:
+    app: prometheus
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: 9090
+  selector:
+    app: prometheus
