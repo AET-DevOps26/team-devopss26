@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
+import { useSuspenseQuery, useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card.tsx';
 import { Button } from '#/components/ui/button.tsx';
 import { Input } from '#/components/ui/input.tsx';
@@ -7,6 +8,7 @@ import { Badge } from '#/components/ui/badge.tsx';
 import { Textarea } from '#/components/ui/textarea.tsx';
 import { Checkbox } from '#/components/ui/checkbox.tsx';
 import { Progress, ProgressLabel, ProgressValue } from '#/components/ui/progress.tsx';
+import { Skeleton } from '#/components/ui/skeleton.tsx';
 import {
   Dialog,
   DialogTrigger,
@@ -15,6 +17,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from '#/components/ui/dialog.tsx';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '#/components/ui/select.tsx';
 import { Empty, EmptyTitle, EmptyDescription, EmptyMedia, EmptyContent } from '#/components/ui/empty.tsx';
@@ -28,22 +31,33 @@ import {
   ArrowLeftIcon,
   CheckIcon,
   XIcon,
+  AlertCircleIcon,
 } from 'lucide-react';
-
-export const Route = createFileRoute('/_authenticated/notes/')({ component: NotesPage });
+import { notesQueries, useCreateNote, useUpdateNote, useDeleteNote } from '#/lib/queries/notes.ts';
+import {
+  checklistQueries,
+  useCreateChecklist,
+  useUpdateChecklist,
+  useDeleteChecklist,
+  useAddChecklistItem,
+  useUpdateChecklistItem,
+  useDeleteChecklistItem,
+} from '#/lib/queries/checklists.ts';
+import type { Note as ApiNote } from '#/types/notes';
+import type { Checklist as ApiChecklist } from '#/types/checklist';
 
 // ── Types ──────────────────────────────────────────────────────
 
 type NoteType = 'note' | 'checklist';
 
 interface ChecklistItem {
-  id: string;
+  id: string | number;
   text: string;
   done: boolean;
 }
 
-interface Note {
-  id: string;
+interface DisplayNote {
+  id: number;
   title: string;
   body: string;
   type: NoteType;
@@ -54,64 +68,133 @@ interface Note {
 
 type ViewMode = 'list' | 'detail' | 'create' | 'edit';
 
-// ── Mock data ──────────────────────────────────────────────────
+// ── Route config ───────────────────────────────────────────────
 
-const mockNotes: Note[] = [
-  {
-    id: '1',
-    title: 'Project setup steps',
-    body: '## Prerequisites\n- Node.js 22+\n- pnpm 10+\n\n## Steps\n1. Clone the monorepo\n2. Run `pnpm install`\n3. Run `pnpm dev`\n\nThe project uses Vite + React + TanStack Router.',
+export const Route = createFileRoute('/_authenticated/notes/')({
+  loader: async ({ context: { queryClient } }) => {
+    await Promise.all([
+      queryClient.ensureQueryData(notesQueries.all()),
+      queryClient.ensureQueryData(checklistQueries.all()),
+    ]);
+  },
+  pendingComponent: NotesSkeleton,
+  errorComponent: NotesError,
+  component: NotesPage,
+});
+
+// ── Helpers ─────────────────────────────────────────────────────
+
+function formatDate(isoString: string | undefined | null): string {
+  if (!isoString) return '';
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return isoString;
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return isoString;
+  }
+}
+
+function fromApiNote(note: ApiNote): DisplayNote {
+  return {
+    id: note.id ?? 0,
+    title: note.title ?? '',
+    body: note.content ?? '',
     type: 'note',
     checklist: [],
-    createdAt: '2026-06-15',
-    updatedAt: '2h ago',
-  },
-  {
-    id: '2',
-    title: 'Sprint 26 tasks',
-    body: 'Items for the current sprint.',
+    createdAt: note.createdAt ?? '',
+    updatedAt: note.lastUpdatedAt ?? '',
+  };
+}
+
+function fromApiChecklist(checklist: ApiChecklist): DisplayNote {
+  return {
+    id: checklist.id ?? 0,
+    title: checklist.title ?? '',
+    body: '',
     type: 'checklist',
-    checklist: [
-      { id: 'c1', text: 'Finalize API contracts', done: true },
-      { id: 'c2', text: 'Implement calendar mockup', done: true },
-      { id: 'c3', text: 'Wire up notes CRUD', done: false },
-      { id: 'c4', text: 'Deploy staging environment', done: false },
-    ],
-    createdAt: '2026-06-14',
-    updatedAt: '5h ago',
-  },
-  {
-    id: '3',
-    title: 'Design tokens reference',
-    body: 'Primary: oklch(0.531 0.101 153.371)\nSecondary: oklch(0.585 0.085 61.136)\n\nRadius: 1.55rem\nFont: Geist Mono',
+    checklist: (checklist.items ?? []).map((item) => ({
+      id: item.id ?? 0,
+      text: item.text ?? '',
+      done: item.completed ?? false,
+    })),
+    createdAt: checklist.createdAt ?? '',
+    updatedAt: checklist.createdAt ?? '',
+  };
+}
+
+function emptyDisplayNote(): DisplayNote {
+  return {
+    id: 0,
+    title: '',
+    body: '',
     type: 'note',
     checklist: [],
-    createdAt: '2026-06-13',
-    updatedAt: '1d ago',
-  },
-  {
-    id: '4',
-    title: 'Bug bash findings',
-    body: 'Issues found during QA session.',
-    type: 'checklist',
-    checklist: [
-      { id: 'c5', text: 'Sidebar not collapsing on mobile', done: false },
-      { id: 'c6', text: 'Toast timeout too short', done: true },
-    ],
-    createdAt: '2026-06-12',
-    updatedAt: '2d ago',
-  },
-];
+    createdAt: '',
+    updatedAt: '',
+  };
+}
 
-const emptyNote: Note = {
-  id: '',
-  title: '',
-  body: '',
-  type: 'note',
-  checklist: [],
-  createdAt: '',
-  updatedAt: '',
-};
+// ── Skeleton ────────────────────────────────────────────────────
+
+function NotesSkeleton() {
+  return (
+    <div className="p-4 sm:p-6 lg:p-8" aria-busy="true" aria-label="Loading notes">
+      <div className="flex items-center justify-between mb-6">
+        <Skeleton className="h-9 w-24" />
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <div className="flex items-center gap-3 mb-6">
+        <Skeleton className="h-9 flex-1 min-w-[200px]" />
+        <Skeleton className="h-9 w-[130px]" />
+        <Skeleton className="h-9 w-24" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-2">
+                <Skeleton className="h-5 flex-1" />
+                <Skeleton className="h-5 w-20 shrink-0" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-20 mt-2" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Error component ────────────────────────────────────────────
+
+function NotesError({ error, reset }: { error: Error; reset: () => void }) {
+  const { reset: resetQuery } = useQueryErrorResetBoundary();
+
+  const handleRetry = () => {
+    resetQuery();
+    reset();
+  };
+
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center" role="alert">
+      <AlertCircleIcon className="size-10 text-destructive" />
+      <h2 className="text-xl font-bold tracking-tight">Failed to load notes</h2>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        {error.message || 'Something went wrong while loading your notes and checklists.'}
+      </p>
+      <Button onClick={handleRetry}>Try Again</Button>
+    </div>
+  );
+}
 
 // ── Sub-components ─────────────────────────────────────────────
 
@@ -157,7 +240,7 @@ function NotesToolbar({
   );
 }
 
-function NoteCard({ note, onClick }: { note: Note; onClick: () => void }) {
+function NoteCard({ note, onClick }: { note: DisplayNote; onClick: () => void }) {
   const doneCount = note.checklist.filter((i) => i.done).length;
   return (
     <Card className="cursor-pointer transition-colors hover:border-ring/30" onClick={onClick}>
@@ -179,13 +262,25 @@ function NoteCard({ note, onClick }: { note: Note; onClick: () => void }) {
             ? `${doneCount}/${note.checklist.length} tasks completed`
             : note.body}
         </p>
-        <p className="mt-2 text-xs text-muted-foreground/60">{note.updatedAt}</p>
+        <p className="mt-2 text-xs text-muted-foreground/60">{formatDate(note.updatedAt)}</p>
       </CardContent>
     </Card>
   );
 }
 
-function NoteDetail({ note, onBack, onEdit, onDelete }: { note: Note; onBack: () => void; onEdit: () => void; onDelete: () => void }) {
+function NoteDetail({
+  note,
+  onBack,
+  onEdit,
+  onDelete,
+  onItemToggle,
+}: {
+  note: DisplayNote;
+  onBack: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onItemToggle: (itemId: string | number, done: boolean) => void;
+}) {
   const doneCount = note.checklist.filter((i) => i.done).length;
   return (
     <div>
@@ -199,18 +294,21 @@ function NoteDetail({ note, onBack, onEdit, onDelete }: { note: Note; onBack: ()
       </div>
 
       <h2 className="text-xl font-bold tracking-tight">{note.title}</h2>
-      <p className="mt-1 text-xs text-muted-foreground">Created {note.createdAt} &middot; Updated {note.updatedAt}</p>
+      <p className="mt-1 text-xs text-muted-foreground">Created {formatDate(note.createdAt)} &middot; Updated {formatDate(note.updatedAt)}</p>
 
       {note.type === 'checklist' ? (
         <div className="mt-6">
-          <Progress value={doneCount} max={note.checklist.length} className="mb-4">
+          <Progress value={note.checklist.length > 0 ? Math.round((doneCount / note.checklist.length) * 100) : 0} className="mb-4">
             <ProgressLabel>Progress</ProgressLabel>
             <ProgressValue />
           </Progress>
           <div className="space-y-2">
             {note.checklist.map((item) => (
               <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-border hover:bg-muted/50">
-                <Checkbox defaultChecked={item.done} />
+                <Checkbox
+                  checked={item.done}
+                  onCheckedChange={(checked) => onItemToggle(item.id, checked)}
+                />
                 <span className={`text-sm ${item.done ? 'text-muted-foreground line-through' : ''}`}>
                   {item.text}
                 </span>
@@ -238,7 +336,7 @@ function NoteDetail({ note, onBack, onEdit, onDelete }: { note: Note; onBack: ()
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" data-slot="dialog-close">Cancel</Button>
+              <DialogClose render={<Button variant="outline" />}>Cancel</DialogClose>
               <Button variant="destructive" onClick={onDelete}><Trash2Icon data-icon="inline-start" />Delete</Button>
             </DialogFooter>
           </DialogContent>
@@ -253,8 +351,8 @@ function NoteForm({
   onSave,
   onCancel,
 }: {
-  note: Note;
-  onSave: (n: Note) => void;
+  note: DisplayNote;
+  onSave: (n: DisplayNote) => void;
   onCancel: () => void;
 }) {
   const [title, setTitle] = useState(note.title);
@@ -269,11 +367,11 @@ function NoteForm({
     setNewItemText('');
   };
 
-  const toggleItem = (id: string) => {
+  const toggleItem = (id: string | number) => {
     setItems(items.map((i) => (i.id === id ? { ...i, done: !i.done } : i)));
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = (id: string | number) => {
     setItems(items.filter((i) => i.id !== id));
   };
 
@@ -340,7 +438,7 @@ function NoteForm({
         )}
 
         <div className="flex gap-2 pt-2">
-          <Button onClick={() => onSave({ ...note, title, body, type, checklist: items })} disabled={!canSave}>
+          <Button onClick={() => onSave({ ...note, id: note.id || 0, title, body, type, checklist: items })} disabled={!canSave}>
             <CheckIcon data-icon="inline-start" />Save
           </Button>
           <Button variant="outline" onClick={onCancel}>Cancel</Button>
@@ -352,26 +450,63 @@ function NoteForm({
 
 // ── Main page component ────────────────────────────────────────
 
-function NotesPage() {
+export function NotesPage() {
   const [view, setView] = useState<ViewMode>('list');
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [editingNote, setEditingNote] = useState<Note>(emptyNote);
-  const [notes] = useState<Note[]>(mockNotes);
+  const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
+  const [editingNote, setEditingNote] = useState<DisplayNote>(emptyDisplayNote());
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const filtered = notes.filter((n) => {
-    const matchesSearch = search === '' || n.title.toLowerCase().includes(search.toLowerCase()) || n.body.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === 'all' || n.type === typeFilter;
-    return matchesSearch && matchesType;
-  });
+  const { data: apiNotes } = useSuspenseQuery(notesQueries.all());
+  const { data: apiChecklists } = useSuspenseQuery(checklistQueries.all());
+
+  const createNote = useCreateNote();
+  const updateNote = useUpdateNote();
+  const deleteNote = useDeleteNote();
+  const createChecklist = useCreateChecklist();
+  const updateChecklist = useUpdateChecklist();
+  const deleteChecklist = useDeleteChecklist();
+  const addChecklistItem = useAddChecklistItem();
+  const updateChecklistItem = useUpdateChecklistItem();
+  const deleteChecklistItem = useDeleteChecklistItem();
+
+  // Merge notes + checklists into unified display list sorted by createdAt
+  const displayList = useMemo(() => {
+    const notes = (apiNotes ?? []).map(fromApiNote);
+    const checklists = (apiChecklists ?? []).map(fromApiChecklist);
+    return [...notes, ...checklists].sort((a, b) => {
+      if (!a.createdAt) return 1;
+      if (!b.createdAt) return -1;
+      return a.createdAt.localeCompare(b.createdAt);
+    });
+  }, [apiNotes, apiChecklists]);
+
+  // Keep selectedNote in sync when query data refetches after mutation
+  useEffect(() => {
+    if (selectedNote && view === 'detail') {
+      const fresh = displayList.find((n) => n.id === selectedNote.id);
+      if (fresh && fresh !== selectedNote) {
+        setSelectedNote(fresh);
+      }
+    }
+  }, [displayList]);
+
+  const filtered = useMemo(() => {
+    return displayList.filter((n) => {
+      const matchesSearch = search === '' ||
+        n.title.toLowerCase().includes(search.toLowerCase()) ||
+        n.body.toLowerCase().includes(search.toLowerCase());
+      const matchesType = typeFilter === 'all' || n.type === typeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [displayList, search, typeFilter]);
 
   const handleCreate = () => {
-    setEditingNote(emptyNote);
+    setEditingNote(emptyDisplayNote());
     setView('create');
   };
 
-  const handleSelect = (note: Note) => {
+  const handleSelect = (note: DisplayNote) => {
     setSelectedNote(note);
     setView('detail');
   };
@@ -384,15 +519,92 @@ function NotesPage() {
   };
 
   const handleDelete = () => {
-    // Mock: go back to list
+    if (!selectedNote) return;
+    const item = selectedNote;
     setView('list');
     setSelectedNote(null);
+    if (item.type === 'note') {
+      deleteNote.mutate(item.id);
+    } else {
+      deleteChecklist.mutate(item.id);
+    }
   };
 
-  const handleSave = (note: Note) => {
-    // Mock: return to detail view
-    setSelectedNote(note);
-    setView('detail');
+  const handleSave = (note: DisplayNote) => {
+    const isNew = !note.id;
+
+    if (note.type === 'note') {
+      if (isNew) {
+        createNote.mutate(
+          { title: note.title, content: note.body },
+          { onSuccess: () => { setView('list'); } },
+        );
+      } else {
+        updateNote.mutate(
+          { id: note.id, title: note.title, content: note.body },
+          { onSuccess: () => { setView('list'); setSelectedNote(null); } },
+        );
+      }
+    } else {
+      if (isNew) {
+        createChecklist.mutate(
+          { title: note.title },
+          {
+            onSuccess: (created) => {
+              const checklistId = created.id;
+              if (checklistId) {
+                // Add items after checklist is created
+                for (const item of note.checklist) {
+                  addChecklistItem.mutate({ checklistId, text: item.text });
+                }
+              }
+              setView('list');
+            },
+          },
+        );
+      } else {
+        // Editing existing checklist
+        const originalNote = displayList.find((n) => n.id === note.id);
+        const originalItems = originalNote?.checklist ?? [];
+
+        updateChecklist.mutate(
+          { id: note.id, title: note.title },
+          {
+            onSuccess: () => {
+              const checklistId = note.id;
+
+              // Find removed items (in original but not in form)
+              const removedItems = originalItems.filter(
+                (orig) => typeof orig.id === 'number' && !note.checklist.some((cur) => cur.id === orig.id),
+              );
+              for (const item of removedItems) {
+                deleteChecklistItem.mutate({ checklistId, itemId: item.id as number });
+              }
+
+              // Find new items (string ids from crypto.randomUUID)
+              const newItems = note.checklist.filter((item) => typeof item.id === 'string');
+              for (const item of newItems) {
+                addChecklistItem.mutate({ checklistId, text: item.text });
+              }
+
+              setView('list');
+              setSelectedNote(null);
+            },
+          },
+        );
+      }
+    }
+  };
+
+  const handleItemToggle = (itemId: string | number, done: boolean) => {
+    if (!selectedNote) return;
+    const checklistId = selectedNote.id;
+    // Only toggle items with numeric ids (from API); local items are handled in form
+    if (typeof itemId === 'number') {
+      // Include text so the backend doesn't overwrite it with null
+      const item = selectedNote.checklist.find((i) => i.id === itemId);
+      updateChecklistItem.mutate({ checklistId, itemId, completed: done, text: item?.text });
+    }
   };
 
   const handleBack = () => {
@@ -403,7 +615,13 @@ function NotesPage() {
   if (view === 'detail' && selectedNote) {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-2xl">
-        <NoteDetail note={selectedNote} onBack={handleBack} onEdit={handleEdit} onDelete={handleDelete} />
+        <NoteDetail
+          note={selectedNote}
+          onBack={handleBack}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onItemToggle={handleItemToggle}
+        />
       </div>
     );
   }
@@ -425,7 +643,7 @@ function NotesPage() {
       <NotesToolbar search={search} onSearchChange={setSearch} typeFilter={typeFilter} onTypeFilterChange={setTypeFilter} onCreate={handleCreate} />
 
       <div className="mt-6">
-        {notes.length === 0 ? (
+        {displayList.length === 0 ? (
           <div className="flex items-center justify-center py-12">
             <Empty>
               <EmptyMedia>

@@ -8,6 +8,7 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -20,6 +21,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Map;
 
 @Component
 public class TokenValidationInterceptor implements HandlerInterceptor {
@@ -46,13 +48,16 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 			return publicKey;
 		}
 		try {
-			String base64Key = restClient.get()
+			Map<String, String> response = restClient.get()
 					.uri("/api/v1/users/auth/public-key")
 					.retrieve()
-					.body(String.class);
+					.body(new ParameterizedTypeReference<>() {
+                    });
+
+			String base64Key = response != null ? response.get("publicKey") : null;
 
 			if (base64Key != null) {
-				byte[] keyBytes = Base64.getDecoder().decode(base64Key.trim());
+				byte[] keyBytes = Base64.getDecoder().decode(base64Key);
 				X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
 				KeyFactory kf = KeyFactory.getInstance("RSA");
 				this.publicKey = kf.generatePublic(spec);
