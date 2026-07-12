@@ -33,8 +33,6 @@ jobs:
           filters: |
             user-service:
               - 'services/user-service/**'
-            admin-service:
-              - 'services/admin-service/**'
             checklist-service:
               - 'services/checklist-service/**'
             calendar-service:
@@ -57,7 +55,6 @@ jobs:
           script: |
             const ALL = [
               {service: "user-service",    context: "./",               dockerfile: "./services/user-service/Dockerfile"},
-              {service: "admin-service",   context: "./",               dockerfile: "./services/admin-service/Dockerfile"},
               {service: "checklist-service", context: "./",             dockerfile: "./services/checklist-service/Dockerfile"},
               {service: "calendar-service", context: "./",              dockerfile: "./services/calendar-service/Dockerfile"},
               {service: "note-service",    context: "./",               dockerfile: "./services/note-service/Dockerfile"},
@@ -76,7 +73,7 @@ jobs:
 
             const changed = ${{ toJSON(steps.filter.outputs) }};
             const services = [];
-            const javaServices = ['user-service', 'admin-service', 'checklist-service', 'calendar-service', 'note-service'];
+            const javaServices = ['user-service', 'checklist-service', 'calendar-service', 'note-service'];
 
             // Shared/api changes cascade to all Java services
             if (changed.shared === 'true' || changed.api === 'true') {

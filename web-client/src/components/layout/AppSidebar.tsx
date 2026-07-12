@@ -4,7 +4,6 @@ import {
   FileText,
   Calendar,
   MessageSquare,
-  Settings,
   Palette,
 } from 'lucide-react';
 
@@ -26,7 +25,6 @@ const navItems = [
   { to: '/notes', label: 'Notes', icon: FileText },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/chat', label: 'Chat', icon: MessageSquare },
-  { to: '/settings', label: 'Settings', icon: Settings },
   { to: '/demo', label: 'Demo', icon: Palette },
 ];
 

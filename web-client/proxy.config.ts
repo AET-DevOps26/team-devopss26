@@ -5,10 +5,6 @@ export const proxyConfig: Record<string, string | ProxyOptions> = {
     target: 'http://localhost:8001',
     changeOrigin: true,
   },
-  '/api/v1/admin': {
-    target: 'http://localhost:8002',
-    changeOrigin: true,
-  },
   '/api/v1/checklists': {
     target: 'http://localhost:8003',
     changeOrigin: true,

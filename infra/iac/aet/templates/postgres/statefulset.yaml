@@ -110,7 +110,6 @@ metadata:
 data:
   init.sql: |
     CREATE DATABASE user_service_db;
-    CREATE DATABASE admin_service_db;
     CREATE DATABASE checklist_service_db;
     CREATE DATABASE calendar_service_db;
     CREATE DATABASE note_service_db;

@@ -16,10 +16,6 @@ services:
     appPort: 8001
     contextPath: /api/user
     dbName: userdb
-  admin-service:
-    appPort: 8002
-    contextPath: /api/admin
-    dbName: admindb
   checklist-service:
     appPort: 8003
     contextPath: /api/checklist

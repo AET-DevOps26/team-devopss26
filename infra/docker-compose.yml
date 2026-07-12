@@ -29,14 +29,13 @@ services:
       POSTGRES_USER: ${SERVICES_POSTGRES_USER}
       POSTGRES_PASSWORD: ${SERVICES_POSTGRES_PASSWORD}
       POSTGRES_DB: postgres
-      POSTGRES_MULTIPLE_DATABASES: user_service_db,admin_service_db,checklist_service_db,calendar_service_db,note_service_db,genai_service_db
+      POSTGRES_MULTIPLE_DATABASES: user_service_db,checklist_service_db,calendar_service_db,note_service_db,genai_service_db
     ports:
       - "${SERVICES_POSTGRES_PORT_EXT}:5432"
     volumes:
       - services-db:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
     networks:
-      - admin-service-net
       - calendar-service-net
       - checklist-service-net
       - client-net
@@ -55,26 +54,6 @@ services:
       - "${USER_SERVICE_APP_PORT}:${USER_SERVICE_APP_PORT}"
     networks:
       - user-service-net
-      - internal-net
-      - monitoring-net
-    depends_on:
-      services-db:
-        condition: service_healthy
-
-  #####################################################################################################
-  # ADMIN SERVICE
-  #####################################################################################################
-  admin-service-app:
-    <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/admin-service:7435acd8700e13487e824899ffaa5df167e53792
-    container_name: admin-service-app
-    build:
-      context: ..
-      dockerfile: services/admin-service/Dockerfile
-    ports:
-      - "${ADMIN_SERVICE_APP_PORT}:${ADMIN_SERVICE_APP_PORT}"
-    networks:
-      - admin-service-net
       - internal-net
       - monitoring-net
     depends_on:
@@ -254,7 +233,6 @@ volumes:
 
 networks:
   user-service-net: {}
-  admin-service-net: {}
   checklist-service-net: {}
   calendar-service-net: {}
   note-service-net: {}
