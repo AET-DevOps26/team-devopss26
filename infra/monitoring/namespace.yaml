@@ -1,5 +1,10 @@
 ---
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-devopss26-monitoring
+---
+apiVersion: v1
 kind: ResourceQuota
 metadata:
   name: monitoring-quota
