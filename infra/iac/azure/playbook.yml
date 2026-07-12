@@ -129,6 +129,11 @@
         group: devops-admin
         mode: '0755'
 
+    - name: Ensure any existing directory named prometheus.yml is removed
+      ansible.builtin.file:
+        path: /home/devops-admin/app/prometheus/prometheus.yml
+        state: absent
+
     - name: Copy prometheus.yml to VM
       ansible.builtin.copy:
         src: ../../prometheus/prometheus.yml
