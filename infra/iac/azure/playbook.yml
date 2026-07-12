@@ -121,6 +121,39 @@
         group: devops-admin
         mode: '0644'
 
+    - name: Ensure prometheus directory exists on VM
+      ansible.builtin.file:
+        path: /home/devops-admin/app/prometheus
+        state: directory
+        owner: devops-admin
+        group: devops-admin
+        mode: '0755'
+
+    - name: Copy prometheus.yml to VM
+      ansible.builtin.copy:
+        src: ../../prometheus/prometheus.yml
+        dest: /home/devops-admin/app/prometheus/prometheus.yml
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+
+    - name: Ensure grafana directory exists on VM
+      ansible.builtin.file:
+        path: /home/devops-admin/app/grafana
+        state: directory
+        owner: devops-admin
+        group: devops-admin
+        mode: '0755'
+
+    - name: Copy grafana provisioning to VM
+      ansible.builtin.copy:
+        src: ../../grafana/provisioning/
+        dest: /home/devops-admin/app/grafana/provisioning/
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+        directory_mode: '0755'
+
     - name: Start application with Docker Compose
       community.docker.docker_compose_v2:
         project_src: /home/devops-admin/app
