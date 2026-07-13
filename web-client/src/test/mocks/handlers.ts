@@ -16,9 +16,11 @@ export const handlers = [
 
   // ── Note Service ────────────────────────────────────────────
   http.get(`${API_BASE}/api/v1/notes`, () =>
-    HttpResponse.json([
-      { id: 1, title: 'Test Note', content: 'Content', createdAt: '2024-01-01T00:00:00Z', lastUpdatedAt: '2024-01-01T00:00:00Z' },
-    ]),
+    HttpResponse.json({
+      notes: [
+        { id: 1, title: 'Test Note', content: 'Content', createdAt: '2024-01-01T00:00:00Z', lastUpdatedAt: '2024-01-01T00:00:00Z' },
+      ],
+    }),
   ),
   http.post(`${API_BASE}/api/v1/notes`, () =>
     HttpResponse.json({ id: 2, title: 'New Note', content: 'New', createdAt: '2024-01-01T00:00:00Z', lastUpdatedAt: '2024-01-01T00:00:00Z' }, { status: 201 }),

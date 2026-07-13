@@ -206,3 +206,79 @@ describe('notes page — type filter', () => {
     expect(screen.queryByText('Test Note')).not.toBeInTheDocument();
   });
 });
+
+describe('notes page — navigation and views', () => {
+  it('shows create form when clicking New Note', async () => {
+    const queryClient = createTestQueryClient();
+    seedDefaultData(queryClient);
+    renderNotesPage(queryClient);
+
+    await screen.findByText('Test Note');
+    const newNoteButton = screen.getAllByText('New Note')[0];
+    const user = userEvent.setup();
+    await user.click(newNoteButton);
+
+    // Should show the create form
+    expect(await screen.findByText('New Note')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Note title')).toBeInTheDocument();
+    expect(screen.getByText('Save')).toBeInTheDocument();
+  });
+
+  it('navigates to detail view when clicking a card', async () => {
+    const queryClient = createTestQueryClient();
+    seedDefaultData(queryClient);
+    renderNotesPage(queryClient);
+
+    await screen.findByText('Test Note');
+    const user = userEvent.setup();
+
+    // Click on the "Test Note" heading text — should be inside a card
+    await user.click(screen.getByText('Test Note'));
+
+    // Should show the detail view with Edit and Delete buttons
+    expect(await screen.findByText('Edit')).toBeInTheDocument();
+    expect(screen.getByText('Delete')).toBeInTheDocument();
+    expect(screen.getByText('Note')).toBeInTheDocument();
+  });
+
+  it('shows edit form from detail view', async () => {
+    const queryClient = createTestQueryClient();
+    seedDefaultData(queryClient);
+    renderNotesPage(queryClient);
+
+    // Navigate to detail
+    await screen.findByText('Test Note');
+    const user = userEvent.setup();
+    await user.click(screen.getByText('Test Note'));
+    await screen.findByText('Edit');
+
+    // Click Edit
+    await user.click(screen.getByText('Edit'));
+
+    // Should show the edit form
+    expect(await screen.findByText('Edit Note')).toBeInTheDocument();
+    // Type should be locked during edit — shown as badge, not toggle buttons
+    expect(screen.getByText('Note')).toBeInTheDocument();
+  });
+
+  it('cancels from form back to list', async () => {
+    const queryClient = createTestQueryClient();
+    seedDefaultData(queryClient);
+    renderNotesPage(queryClient);
+
+    await screen.findByText('Test Note');
+    const user = userEvent.setup();
+
+    // Open create form
+    const newNoteButton = screen.getAllByText('New Note')[0];
+    await user.click(newNoteButton);
+    await screen.findByPlaceholderText('Note title');
+
+    // Click Cancel
+    await user.click(screen.getByText('Cancel'));
+
+    // Should return to list view
+    expect(await screen.findByText('Test Note')).toBeInTheDocument();
+    expect(await screen.findByText('Test Checklist')).toBeInTheDocument();
+  });
+});

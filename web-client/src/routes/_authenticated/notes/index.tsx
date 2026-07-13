@@ -224,7 +224,12 @@ function NotesToolbar({
       </div>
       <Select value={typeFilter} onValueChange={(v) => v && onTypeFilterChange(v)}>
         <SelectTrigger className="w-[130px]">
-          <SelectValue />
+          <SelectValue>
+            {(value: string | null) => {
+              const labels: Record<string, string> = { all: 'All Types', note: 'Notes', checklist: 'Checklists' };
+              return labels[value ?? 'all'] ?? value;
+            }}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Types</SelectItem>
@@ -394,11 +399,19 @@ function NoteForm({
 
         <div className="flex items-center gap-2">
           <label className="text-xs font-medium text-muted-foreground">Type:</label>
-          {(['note', 'checklist'] as const).map((t) => (
-            <Button key={t} size="xs" variant={type === t ? 'default' : 'outline'} onClick={() => setType(t)}>
-              {t === 'note' ? 'Note' : 'Checklist'}
-            </Button>
-          ))}
+          {note.id ? (
+            // Editing — type is locked (cannot convert note ↔ checklist)
+            <Badge variant={type === 'checklist' ? 'secondary' : 'default'}>
+              {type === 'checklist' ? 'Checklist' : 'Note'}
+            </Badge>
+          ) : (
+            // Creating — allow type selection
+            (['note', 'checklist'] as const).map((t) => (
+              <Button key={t} size="xs" variant={type === t ? 'default' : 'outline'} onClick={() => setType(t)}>
+                {t === 'note' ? 'Note' : 'Checklist'}
+              </Button>
+            ))
+          )}
         </div>
 
         {type === 'note' ? (
@@ -482,9 +495,10 @@ export function NotesPage() {
   }, [apiNotes, apiChecklists]);
 
   // Keep selectedNote in sync when query data refetches after mutation
+  // Match by both type AND id to avoid collisions (note=1, checklist=1)
   useEffect(() => {
     if (selectedNote && view === 'detail') {
-      const fresh = displayList.find((n) => n.id === selectedNote.id);
+      const fresh = displayList.find((n) => n.type === selectedNote.type && n.id === selectedNote.id);
       if (fresh && fresh !== selectedNote) {
         setSelectedNote(fresh);
       }
@@ -518,81 +532,91 @@ export function NotesPage() {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedNote) return;
     const item = selectedNote;
     setView('list');
     setSelectedNote(null);
-    if (item.type === 'note') {
-      deleteNote.mutate(item.id);
-    } else {
-      deleteChecklist.mutate(item.id);
+    try {
+      if (item.type === 'note') {
+        await deleteNote.mutateAsync(item.id);
+      } else {
+        await deleteChecklist.mutateAsync(item.id);
+      }
+    } catch {
+      // Error toast handled by hook
     }
   };
 
-  const handleSave = (note: DisplayNote) => {
+  const handleSave = async (note: DisplayNote) => {
     const isNew = !note.id;
 
-    if (note.type === 'note') {
-      if (isNew) {
-        createNote.mutate(
-          { title: note.title, content: note.body },
-          { onSuccess: () => { setView('list'); } },
-        );
+    try {
+      if (note.type === 'note') {
+        if (isNew) {
+          await createNote.mutateAsync(
+            { title: note.title, content: note.body },
+          );
+        } else {
+          await updateNote.mutateAsync(
+            { id: note.id, title: note.title, content: note.body },
+          );
+        }
+        setView('list');
+        setSelectedNote(null);
       } else {
-        updateNote.mutate(
-          { id: note.id, title: note.title, content: note.body },
-          { onSuccess: () => { setView('list'); setSelectedNote(null); } },
-        );
+        if (isNew) {
+          const created = await createChecklist.mutateAsync(
+            { title: note.title },
+          );
+          const checklistId = created.id;
+          if (checklistId && note.checklist.length > 0) {
+            await Promise.all(
+              note.checklist.map((item) =>
+                addChecklistItem.mutateAsync({ checklistId, text: item.text }),
+              ),
+            );
+          }
+          setView('list');
+        } else {
+          // Editing existing checklist
+          const originalNote = displayList.find((n) => n.type === note.type && n.id === note.id);
+          const originalItems = originalNote?.checklist ?? [];
+
+          await updateChecklist.mutateAsync(
+            { id: note.id, title: note.title },
+          );
+
+          const checklistId = note.id;
+
+          // Remove items (in original but not in form)
+          const removedItems = originalItems.filter(
+            (orig) => typeof orig.id === 'number' && !note.checklist.some((cur) => cur.id === orig.id),
+          );
+          if (removedItems.length > 0) {
+            await Promise.all(
+              removedItems.map((item) =>
+                deleteChecklistItem.mutateAsync({ checklistId, itemId: item.id as number }),
+              ),
+            );
+          }
+
+          // Add new items (string ids from crypto.randomUUID)
+          const newItems = note.checklist.filter((item) => typeof item.id === 'string');
+          if (newItems.length > 0) {
+            await Promise.all(
+              newItems.map((item) =>
+                addChecklistItem.mutateAsync({ checklistId, text: item.text }),
+              ),
+            );
+          }
+
+          setView('list');
+          setSelectedNote(null);
+        }
       }
-    } else {
-      if (isNew) {
-        createChecklist.mutate(
-          { title: note.title },
-          {
-            onSuccess: (created) => {
-              const checklistId = created.id;
-              if (checklistId) {
-                // Add items after checklist is created
-                for (const item of note.checklist) {
-                  addChecklistItem.mutate({ checklistId, text: item.text });
-                }
-              }
-              setView('list');
-            },
-          },
-        );
-      } else {
-        // Editing existing checklist
-        const originalNote = displayList.find((n) => n.id === note.id);
-        const originalItems = originalNote?.checklist ?? [];
-
-        updateChecklist.mutate(
-          { id: note.id, title: note.title },
-          {
-            onSuccess: () => {
-              const checklistId = note.id;
-
-              // Find removed items (in original but not in form)
-              const removedItems = originalItems.filter(
-                (orig) => typeof orig.id === 'number' && !note.checklist.some((cur) => cur.id === orig.id),
-              );
-              for (const item of removedItems) {
-                deleteChecklistItem.mutate({ checklistId, itemId: item.id as number });
-              }
-
-              // Find new items (string ids from crypto.randomUUID)
-              const newItems = note.checklist.filter((item) => typeof item.id === 'string');
-              for (const item of newItems) {
-                addChecklistItem.mutate({ checklistId, text: item.text });
-              }
-
-              setView('list');
-              setSelectedNote(null);
-            },
-          },
-        );
-      }
+    } catch {
+      // Mutation errors are handled by each hook's onError toast — nothing more needed
     }
   };
 
@@ -671,7 +695,7 @@ export function NotesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((note) => (
-              <NoteCard key={note.id} note={note} onClick={() => handleSelect(note)} />
+              <NoteCard key={`${note.type}-${note.id}`} note={note} onClick={() => handleSelect(note)} />
             ))}
           </div>
         )}

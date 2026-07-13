@@ -21,11 +21,10 @@ export const notesQueries = {
       queryKey: notesKeys.lists(),
       queryFn: async () => {
         const userId = useAuthStore.getState().userId;
-        const response = await getNotes({ userId: userId! });
+        if (!userId) throw new Error('User not authenticated');
+        const response = await getNotes({ userId });
         // getNotes is typed as Note[] but the backend returns { notes: Note[] } envelope.
-        // Handle both the envelope shape and the bare array (MSW test mocks).
-        if (Array.isArray(response)) return response;
-        return (response as { notes: Note[] }).notes ?? [];
+        return (response as unknown as { notes: Note[] }).notes ?? [];
       },
       staleTime: 30_000,
     }),

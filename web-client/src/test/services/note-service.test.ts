@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../setup';
+import type { Note } from '#/types/notes';
 import {
   getNotes,
   createNote,
   getNoteById,
   updateNote,
   deleteNote,
-} from '../../services/notes/notes/notes';
+} from '#/services/notes/notes/notes.ts';
 
 describe('notes service', () => {
   it('getNotes sends GET with userId query param', async () => {
-    const notes = await getNotes({ userId: 1 });
+    const result = await getNotes({ userId: 1 });
+    // The Orval-generated getNotes is typed as Note[] but the backend returns
+    // { notes: Note[] } envelope. Unwrap the envelope to match the real API shape.
+    const notes = (result as { notes: Note[] }).notes ?? [];
     expect(Array.isArray(notes)).toBe(true);
     expect(notes.length).toBeGreaterThan(0);
     expect(notes[0]).toHaveProperty('title');
