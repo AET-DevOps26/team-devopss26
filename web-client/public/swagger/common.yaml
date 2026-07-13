@@ -28,6 +28,7 @@ components:
         id:
           type: integer
           format: int64
+          example: 1
       required:
         - id
     Timestamped:
@@ -37,9 +38,11 @@ components:
         createdAt:
           type: string
           format: date-time
+          example: "2026-07-13T22:00:00Z"
         lastUpdatedAt:
           type: string
           format: date-time
+          example: "2026-07-13T22:00:00Z"
       required:
         - createdAt
         - lastUpdatedAt

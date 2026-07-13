@@ -184,16 +184,21 @@ components:
           type: string
           pattern: '.*\S.*'
           maxLength: 255
+          example: "Project Sync"
         description:
           type: string
+          example: "Weekly team synchronization and status update"
         startTime:
           type: string
           format: date-time
+          example: "2026-07-13T10:00:00Z"
         endTime:
           type: string
           format: date-time
+          example: "2026-07-13T11:00:00Z"
         location:
           type: string
+          example: "Conference Room A"
     IdentifiedCalendarEvent:
       type: object
       allOf:

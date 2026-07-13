@@ -222,14 +222,18 @@ components:
         id:
           type: integer
           format: int64
+          example: 1
         userId:
           type: integer
           format: int64
+          example: 10
         title:
           type: string
+          example: "Work Tasks"
         createdAt:
           type: string
           format: date-time
+          example: "2026-07-13T22:00:00Z"
         items:
           type: array
           items:
@@ -241,12 +245,16 @@ components:
         id:
           type: integer
           format: int64
+          example: 101
         text:
           type: string
+          example: "Review pull request"
         completed:
           type: boolean
+          example: false
         position:
           type: integer
+          example: 0
 
     GetChecklistsResponse:
       type: object
@@ -262,24 +270,30 @@ components:
         userId:
           type: integer
           format: int64
+          example: 10
         title:
           type: string
+          example: "Work Tasks"
 
     UpdateChecklistRequest:
       type: object
       properties:
         title:
           type: string
+          example: "Updated Work Tasks"
 
     AddChecklistItemRequest:
       type: object
       properties:
         text:
           type: string
+          example: "Prepare presentation"
         completed:
           type: boolean
+          example: false
         position:
           type: integer
+          example: 1
 
     AddChecklistItemResponse:
       allOf:
@@ -290,10 +304,13 @@ components:
       properties:
         text:
           type: string
+          example: "Prepare presentation"
         completed:
           type: boolean
+          example: true
         position:
           type: integer
+          example: 1
 
     UpdateChecklistItemResponse:
       allOf:
