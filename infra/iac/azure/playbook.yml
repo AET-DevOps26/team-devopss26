@@ -141,6 +141,8 @@
         owner: devops-admin
         group: devops-admin
         mode: '0644'
+      notify: Restart Prometheus
+
 
     - name: Ensure grafana directory exists on VM
       ansible.builtin.file:
@@ -158,6 +160,7 @@
         group: devops-admin
         mode: '0644'
         directory_mode: '0755'
+      notify: Restart Grafana
 
     - name: Start application with Docker Compose
       community.docker.docker_compose_v2:
@@ -165,6 +168,29 @@
         state: present
         pull: always
         remove_orphans: true
+      become: yes
+      become_user: devops-admin
+      environment:
+        BUILDKIT_NUMBER_OF_THREADS: "1"
+
+  handlers:
+    - name: Restart Prometheus
+      community.docker.docker_compose_v2:
+        project_src: /home/devops-admin/app
+        services:
+          - prometheus
+        state: restarted
+      become: yes
+      become_user: devops-admin
+      environment:
+        BUILDKIT_NUMBER_OF_THREADS: "1"
+
+    - name: Restart Grafana
+      community.docker.docker_compose_v2:
+        project_src: /home/devops-admin/app
+        services:
+          - grafana
+        state: restarted
       become: yes
       become_user: devops-admin
       environment:
