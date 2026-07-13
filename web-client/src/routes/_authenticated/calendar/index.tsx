@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import {
   useSuspenseQuery,
@@ -88,6 +88,43 @@ function getTimeStr(isoString: string | undefined): string {
   return isoString.slice(11, 16);
 }
 
+function formatTime(isoString: string | undefined): string {
+  if (!isoString) return '';
+  return new Intl.DateTimeFormat('de-DE', {
+    hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+  }).format(new Date(isoString));
+}
+
+function formatDate(isoString: string | undefined): string {
+  if (!isoString) return '';
+  return new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC' }).format(new Date(isoString));
+}
+
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function addHour(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const total = h * 60 + m + 60;
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** Convert YYYY-MM-DD to DD.MM.YYYY for localized display. */
+function toDisplayDate(isoDate: string): string {
+  const match = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return isoDate;
+  return `${match[3]}.${match[2]}.${match[1]}`;
+}
+
+/** Convert DD.MM.YYYY back to YYYY-MM-DD for internal state / API. */
+function fromDisplayDate(dmy: string): string {
+  const match = dmy.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!match) return '';
+  return `${match[3]}-${match[2]}-${match[1]}`;
+}
+
 interface CalendarFormEvent {
   id?: number;
   title: string;
@@ -147,11 +184,16 @@ function EventSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const [title, setTitle] = useState(event?.title ?? '');
-  const [date, setDate] = useState(event?.date ?? todayStr);
+  const [dateDisplay, setDateDisplay] = useState(toDisplayDate(event?.date ?? todayStr));
   const [startTime, setStartTime] = useState(event?.startTime ?? '09:00');
   const [endTime, setEndTime] = useState(event?.endTime ?? '10:00');
   const [description, setDescription] = useState(event?.description ?? '');
   const queryClient = useQueryClient();
+  const datePickerRef = useRef<HTMLInputElement>(null);
+
+  // Derive YYYY-MM-DD from display value; empty if invalid
+  const parsedDate = fromDisplayDate(dateDisplay);
+  const isTimeValid = startTime.length === 5 && endTime.length === 5 && toMinutes(startTime) < toMinutes(endTime);
 
   const createMutation = useMutation({
     mutationFn: (form: CalendarFormEvent) => createEvent(toApiEvent(form)),
@@ -187,7 +229,7 @@ function EventSheet({
   const handleOpenChange = (open: boolean) => {
     if (open) {
       setTitle(event?.title ?? '');
-      setDate(event?.date ?? todayStr);
+      setDateDisplay(toDisplayDate(event?.date ?? todayStr));
       setStartTime(event?.startTime ?? '09:00');
       setEndTime(event?.endTime ?? '10:00');
       setDescription(event?.description ?? '');
@@ -199,7 +241,7 @@ function EventSheet({
   useEffect(() => {
     if (isOpen && event) {
       setTitle(event.title);
-      setDate(event.date);
+      setDateDisplay(toDisplayDate(event.date));
       setStartTime(event.startTime);
       setEndTime(event.endTime);
       setDescription(event.description ?? '');
@@ -207,12 +249,12 @@ function EventSheet({
   }, [isOpen, event]);
 
   const handleSave = () => {
-    if (!title.trim() || isPending) return;
+    if (!title.trim() || !parsedDate || !isTimeValid || isPending) return;
 
     const form: CalendarFormEvent = {
       id: event?.id,
       title: title.trim(),
-      date,
+      date: parsedDate,
       startTime,
       endTime,
       description: description.trim() || undefined,
@@ -250,18 +292,77 @@ function EventSheet({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Date</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <div className="relative">
+              <Input
+                inputMode="numeric"
+                placeholder="DD.MM.YYYY"
+                value={dateDisplay}
+                onChange={(e) => setDateDisplay(e.target.value)}
+                onBlur={() => {
+                  const parsed = fromDisplayDate(dateDisplay);
+                  if (parsed) setDateDisplay(toDisplayDate(parsed));
+                }}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => datePickerRef.current?.showPicker()}
+                className="absolute right-1 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                tabIndex={-1}
+              >
+                <CalendarDaysIcon className="size-4" />
+              </button>
+              <input
+                ref={datePickerRef}
+                type="date"
+                className="sr-only"
+                value={parsedDate}
+                tabIndex={-1}
+                onChange={(e) => setDateDisplay(toDisplayDate(e.target.value))}
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">Start</label>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+              <Input
+                inputMode="numeric"
+                placeholder="HH:MM"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                onBlur={(e) => {
+                  const v = e.target.value;
+                  const m = v.match(/^(\d{1,2}):?(\d{0,2})$/);
+                  if (m) {
+                    const norm = `${m[1].padStart(2, '0')}:${(m[2] || '00').padStart(2, '0')}`;
+                    setStartTime(norm);
+                    if (toMinutes(norm) >= toMinutes(endTime)) {
+                      setEndTime(addHour(norm));
+                    }
+                  }
+                }}
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">End</label>
-              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+              <Input
+                inputMode="numeric"
+                placeholder="HH:MM"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                onBlur={(e) => {
+                  const v = e.target.value;
+                  const m = v.match(/^(\d{1,2}):?(\d{0,2})$/);
+                  if (m) {
+                    setEndTime(`${m[1].padStart(2, '0')}:${(m[2] || '00').padStart(2, '0')}`);
+                  }
+                }}
+              />
             </div>
           </div>
+          {!isTimeValid && (
+            <p className="text-xs text-destructive" role="alert">Start time must be before end time.</p>
+          )}
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Description (optional)</label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add description..." />
@@ -281,7 +382,7 @@ function EventSheet({
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={isPending}>Cancel</Button>
-          <Button size="sm" onClick={handleSave} disabled={!title.trim() || isPending}>
+          <Button size="sm" onClick={handleSave} disabled={!title.trim() || !parsedDate || !isTimeValid || isPending}>
             {isPending ? 'Saving...' : event?.id ? 'Update' : 'Create'}
           </Button>
         </SheetFooter>
@@ -494,7 +595,7 @@ export function CalendarPage() {
       {/* Selected day's events list */}
       <div className="mt-6">
         <h3 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-          Events for {selectedDate === todayStr ? 'Today' : selectedDate}
+          Events for {selectedDate === todayStr ? 'Today' : formatDate(selectedDate)}
         </h3>
 
         {events.length === 0 ? (
@@ -529,9 +630,9 @@ export function CalendarPage() {
                 onClick={() => openEditSheet(ev)}
               >
                 <div className="flex flex-col items-center text-xs">
-                  <span className="font-medium text-primary">{getTimeStr(ev.startTime)}</span>
+                  <span className="font-medium text-primary">{formatTime(ev.startTime)}</span>
                   <span className="text-muted-foreground">-</span>
-                  <span className="text-muted-foreground">{getTimeStr(ev.endTime)}</span>
+                  <span className="text-muted-foreground">{formatTime(ev.endTime)}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{ev.title}</p>
