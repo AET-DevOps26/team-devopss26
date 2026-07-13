@@ -1,7 +1,7 @@
 package de.tum.devopss26.checklistservice.service;
 
-import de.tum.devopss26.checklistservice.entity.ChecklistEntity;
-import de.tum.devopss26.checklistservice.entity.ChecklistItemEntity;
+import de.tum.devopss26.checklistservice.entity.Checklist;
+import de.tum.devopss26.checklistservice.entity.ChecklistItem;
 import de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundException;
 import de.tum.devopss26.checklistservice.exception.ChecklistItemNotInChecklistException;
 import de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException;
@@ -10,22 +10,11 @@ import de.tum.devopss26.checklistservice.mapper.ChecklistMapper;
 import de.tum.devopss26.checklistservice.repository.ChecklistItemRepository;
 import de.tum.devopss26.checklistservice.repository.ChecklistRepository;
 import lombok.RequiredArgsConstructor;
-import org.openapitools.model.AddChecklistItemResponse;
-import org.openapitools.model.Checklist;
-import org.openapitools.model.ChecklistItem;
-import org.openapitools.model.CreateChecklistResponse;
-import org.openapitools.model.GetChecklistResponse;
-import org.openapitools.model.GetChecklistsResponse;
-import org.openapitools.model.IdentifiedChecklist;
-import org.openapitools.model.IdentifiedChecklistItem;
-import org.openapitools.model.UpdateChecklistItemResponse;
-import org.openapitools.model.UpdateChecklistResponse;
+import org.openapitools.model.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +43,7 @@ public class ChecklistServiceImpl implements ChecklistService {
         ChecklistEntity entity = new ChecklistEntity();
         entity.setUserId(userId);
         entity.setTitle(dto.getTitle());
-        entity.setCreatedAt(LocalDateTime.now());
+        entity.setCreatedAt(OffsetDateTime.now());
         return mapper.toCreateChecklistResponse(toDto(checklistRepository.save(entity)));
     }
 
@@ -101,7 +90,7 @@ public class ChecklistServiceImpl implements ChecklistService {
     @Override
     public void deleteChecklistItem(Long userId, Long checklistId, Long itemId) {
         getOwnedChecklistEntity(userId, checklistId);
-        ChecklistItemEntity item = checklistItemRepository.findById(itemId)
+        ChecklistItem item = checklistItemRepository.findById(itemId)
                 .orElseThrow(() -> new ChecklistItemNotFoundException(itemId));
         if (!item.getChecklist().getId().equals(checklistId)) {
             throw new ChecklistItemNotInChecklistException(itemId, checklistId);
@@ -124,7 +113,7 @@ public class ChecklistServiceImpl implements ChecklistService {
         dto.setUserId(entity.getUserId());
         dto.setTitle(entity.getTitle());
         if (entity.getCreatedAt() != null) {
-            dto.setCreatedAt(OffsetDateTime.of(entity.getCreatedAt(), ZoneOffset.UTC));
+            dto.setCreatedAt(entity.getCreatedAt());
         }
         dto.setItems(entity.getItems().stream().map(this::toDto).toList());
         return dto;
