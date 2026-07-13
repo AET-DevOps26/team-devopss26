@@ -28,7 +28,8 @@ try {
   }
 
   // Files to copy from swagger-ui-dist
-  const filesToCopy = [
+  const swaggerUiDistPath = path.dirname(require.resolve('swagger-ui-dist'));
+const filesToCopy = [
     'swagger-ui-bundle.js',
     'swagger-ui-standalone-preset.js',
     'swagger-ui.css',

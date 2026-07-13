@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: Checklist Service API
+  version: 1.0.0
+
+tags:
+  - name: Checklists
+    description: Operations for managing checklists and their items
+
+servers:
+  - url: /
+
+paths:
+
+  /api/v1/checklists:
+    get:
+      tags: [Checklists]
+      summary: Get all checklists for a user
+      operationId: getChecklists
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of checklists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetChecklistsResponse'
+        '400':
+          description: Invalid or missing userId parameter
+        '500':
+          description: Unhandled error occurred
+
+    post:
+      tags: [Checklists]
+      summary: Create a new checklist
+      operationId: createChecklist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChecklistRequest'
+      responses:
+        '201':
+          description: Checklist created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checklist'
+        '400':
+          description: Invalid request body
+        '500':
+          description: Unhandled error occurred
+
+  /api/v1/checklists/{id}:
+    get:
+      tags: [Checklists]
+      summary: Get a checklist by ID including its items
+      operationId: getChecklistById
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: The checklist with its items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checklist'
+        '400':
+          description: Invalid id parameter
+        '404':
+          description: Checklist not found
+        '500':
+          description: Unhandled error occurred
+
+    put:
+      tags: [Checklists]
+      summary: Update a checklist's title
+      operationId: updateChecklist
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChecklistRequest'
+      responses:
+        '200':
+          description: Updated checklist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checklist'
+        '400':
+          description: Invalid id parameter or request body
+        '404':
+          description: Checklist not found
+        '500':
+          description: Unhandled error occurred
+
+    delete:
+      tags: [Checklists]
+      summary: Delete a checklist by ID
+      operationId: deleteChecklist
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '204':
+          description: Checklist deleted
+        '400':
+          description: Invalid id parameter
+        '404':
+          description: Checklist not found
+        '500':
+          description: Unhandled error occurred
+
+  /api/v1/checklists/{id}/items:
+    post:
+      tags: [Checklists]
+      summary: Add an item to a checklist
+      operationId: addChecklistItem
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddChecklistItemRequest'
+      responses:
+        '201':
+          description: Item added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddChecklistItemResponse'
+        '400':
+          description: Invalid id parameter or request body
+        '404':
+          description: Checklist not found
+        '500':
+          description: Unhandled error occurred
+
+  /api/v1/checklists/{id}/items/{itemId}:
+    put:
+      tags: [Checklists]
+      summary: Update a checklist item
+      description: Can be used to change the text, toggle completed, or reorder
+      operationId: updateChecklistItem
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateChecklistItemRequest'
+      responses:
+        '200':
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateChecklistItemResponse'
+        '400':
+          description: Invalid id/itemId parameter or request body
+        '404':
+          description: Checklist or item not found
+        '500':
+          description: Unhandled error occurred
+
+    delete:
+      tags: [Checklists]
+      summary: Remove an item from a checklist
+      operationId: deleteChecklistItem
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Item removed
+        '400':
+          description: Invalid id/itemId parameter
+        '404':
+          description: Checklist or item not found
+        '500':
+          description: Unhandled error occurred
+
+components:
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    Checklist:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+
+    ChecklistItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        text:
+          type: string
+        completed:
+          type: boolean
+        position:
+          type: integer
+
+    GetChecklistsResponse:
+      type: object
+      properties:
+        checklists:
+          type: array
+          items:
+            $ref: '#/components/schemas/Checklist'
+
+    CreateChecklistRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        title:
+          type: string
+
+    UpdateChecklistRequest:
+      type: object
+      properties:
+        title:
+          type: string
+
+    AddChecklistItemRequest:
+      type: object
+      properties:
+        text:
+          type: string
+        completed:
+          type: boolean
+        position:
+          type: integer
+
+    AddChecklistItemResponse:
+      allOf:
+        - $ref: '#/components/schemas/ChecklistItem'
+
+    UpdateChecklistItemRequest:
+      type: object
+      properties:
+        text:
+          type: string
+        completed:
+          type: boolean
+        position:
+          type: integer
+
+    UpdateChecklistItemResponse:
+      allOf:
+        - $ref: '#/components/schemas/ChecklistItem'

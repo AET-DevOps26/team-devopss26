@@ -32,6 +32,7 @@ const navItems: NavItem[] = [
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/demo', label: 'Demo', icon: Palette },
+  { href: '/swagger/', label: 'API Docs', icon: BookOpen, external: true },
 ];
 
 const developerItems: NavItem[] = [

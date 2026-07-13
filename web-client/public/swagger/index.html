@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>DevOps SS26 API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="./swagger-ui.css" />
+    <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+    <style>
+      html {
+        box-sizing: border-box;
+        overflow: -moz-scrollbars-vertical;
+        overflow-y: scroll;
+      }
+
+      *,
+      *:before,
+      *:after {
+        box-sizing: inherit;
+      }
+
+      body {
+        margin: 0;
+        background: #fafafa;
+      }
+
+      /* Premium styling for Swagger UI */
+      .swagger-ui .topbar {
+        background-color: #0f172a;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        padding: 12px 0;
+      }
+      .swagger-ui .topbar a {
+        max-width: 300px;
+        text-decoration: none;
+      }
+      .swagger-ui .topbar a span {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: #f1f5f9;
+        font-size: 1.25rem;
+      }
+      .swagger-ui .topbar .download-url-wrapper select {
+        border: 1px solid #334155;
+        border-radius: 6px;
+        background: #1e293b;
+        color: #f8fafc;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+        outline: none;
+        cursor: pointer;
+        min-width: 250px;
+      }
+      .swagger-ui .topbar .download-url-wrapper select:focus {
+        border-color: #3b82f6;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="swagger-ui"></div>
+
+    <script src="./swagger-ui-bundle.js" charset="UTF-8"> </script>
+    <script src="./swagger-ui-standalone-preset.js" charset="UTF-8"> </script>
+    <script>
+    window.onload = function() {
+      const ui = SwaggerUIBundle({
+        urls: [
+  {
+    "url": "./openapi.yaml",
+    "name": "Overview / API Index"
+  },
+  {
+    "url": "./note-service.yaml",
+    "name": "Note Service"
+  },
+  {
+    "url": "./checklist-service.yaml",
+    "name": "Checklist Service"
+  },
+  {
+    "url": "./calendar-service.yaml",
+    "name": "Calendar Service"
+  },
+  {
+    "url": "./genai-service.yaml",
+    "name": "GenAI Service"
+  },
+  {
+    "url": "./user-service.yaml",
+    "name": "User Service"
+  },
+  {
+    "url": "./common.yaml",
+    "name": "Common"
+  }
+],
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout"
+      });
+
+      window.ui = ui;
+    };
+  </script>
+  </body>
+</html>

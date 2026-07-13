@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: Common Schemas
+  version: 1.0.0
+
+servers:
+  - url: /
+
+tags:
+  - name: Common
+    description: Provides common schemas used in other specs
+
+paths: {}
+
+components:
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/Identifier/properties/id'
+  schemas:
+    Identifier:
+      type: object
+      additionalProperties: true
+      properties: 
+        id:
+          type: integer
+          format: int64
+      required:
+        - id
+    Timestamped:
+      type: object
+      additionalProperties: true
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        lastUpdatedAt:
+          type: string
+          format: date-time
+      required:
+        - createdAt
+        - lastUpdatedAt
+  securitySchemes:
+    # Only intended to be used for loginUser, as every other authorized endpoint should require a JWT
+    BasicAuth:
+      type: http
+      scheme: basic
+      
+    JWTAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - JWTAuth: []
+  - BasicAuth: []
