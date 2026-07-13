@@ -20,7 +20,7 @@ if (fs.existsSync(servicesDir)) {
           ? (process.platform === 'win32' ? 'mvnw.cmd' : './mvnw')
           : 'mvn';
         
-        execSync(`${cmd} clean test spotbugs:check -Dsurefire.exitTimeout=1 -DargLine="-Dlogging.level.com.tngtech.archunit.core.importer.ClassFileProcessor=ERROR"`, {
+        execSync(`${cmd} clean verify spotbugs:check -Dsurefire.exitTimeout=1 -DargLine="-Dlogging.level.com.tngtech.archunit.core.importer.ClassFileProcessor=ERROR"`, {
           cwd: serviceDir,
           stdio: 'inherit'
         });

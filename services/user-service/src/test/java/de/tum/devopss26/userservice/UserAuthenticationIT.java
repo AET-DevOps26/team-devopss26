@@ -23,7 +23,7 @@ public class UserAuthenticationIT extends AbstractIntegrationTest {
 
     private MockMvc mockMvc;
     private UserRepository userRepository;
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     public void setMockMvc(MockMvc mockMvc) {
@@ -33,11 +33,6 @@ public class UserAuthenticationIT extends AbstractIntegrationTest {
     @Autowired
     public void setUserRepository(UserRepository userRepository) {
         this.userRepository = userRepository;
-    }
-
-    @Autowired
-    public void setObjectMapper(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
     }
 
     @BeforeEach

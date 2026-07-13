@@ -71,7 +71,7 @@ jobs:
         run: |
           mvn clean install -f services/shared/pom.xml
           cd services/${{ matrix.service }}
-          mvn clean test
+          mvn clean verify
 
       - name: Static Analysis with Spotbugs
         run: |

@@ -72,7 +72,7 @@ public class CalendarEventIT extends AbstractIntegrationTest {
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/calendar-events")
+        mockMvc.perform(post("/api/v1/events")
                         .header("Authorization", "Bearer token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
@@ -113,7 +113,7 @@ public class CalendarEventIT extends AbstractIntegrationTest {
         repository.save(eventB);
 
         mockUserAuthentication(USER_A);
-        mockMvc.perform(get("/api/v1/calendar-events")
+        mockMvc.perform(get("/api/v1/events")
                         .header("Authorization", "Bearer token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.events", hasSize(2)))
@@ -131,18 +131,18 @@ public class CalendarEventIT extends AbstractIntegrationTest {
         event = repository.save(event);
 
         mockUserAuthentication(USER_A);
-        mockMvc.perform(get("/api/v1/calendar-events/" + event.getId())
+        mockMvc.perform(get("/api/v1/events/" + event.getId())
                         .header("Authorization", "Bearer token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(event.getId()))
                 .andExpect(jsonPath("$.title").value("Important Meeting"));
 
         mockUserAuthentication(USER_B);
-        mockMvc.perform(get("/api/v1/calendar-events/" + event.getId())
+        mockMvc.perform(get("/api/v1/events/" + event.getId())
                         .header("Authorization", "Bearer token"))
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(get("/api/v1/calendar-events/99999")
+        mockMvc.perform(get("/api/v1/events/99999")
                         .header("Authorization", "Bearer token"))
                 .andExpect(status().isNotFound());
     }
@@ -165,7 +165,7 @@ public class CalendarEventIT extends AbstractIntegrationTest {
                 }
                 """;
 
-        mockMvc.perform(put("/api/v1/calendar-events/" + event.getId())
+        mockMvc.perform(put("/api/v1/events/" + event.getId())
                         .header("Authorization", "Bearer token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateJson))
@@ -179,7 +179,7 @@ public class CalendarEventIT extends AbstractIntegrationTest {
         assertThat(updated.getLocation()).isEqualTo("Munich");
 
         mockUserAuthentication(USER_B);
-        mockMvc.perform(put("/api/v1/calendar-events/" + event.getId())
+        mockMvc.perform(put("/api/v1/events/" + event.getId())
                         .header("Authorization", "Bearer token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateJson))
@@ -196,12 +196,12 @@ public class CalendarEventIT extends AbstractIntegrationTest {
         event = repository.save(event);
 
         mockUserAuthentication(USER_B);
-        mockMvc.perform(delete("/api/v1/calendar-events/" + event.getId())
+        mockMvc.perform(delete("/api/v1/events/" + event.getId())
                         .header("Authorization", "Bearer token"))
                 .andExpect(status().isForbidden());
 
         mockUserAuthentication(USER_A);
-        mockMvc.perform(delete("/api/v1/calendar-events/" + event.getId())
+        mockMvc.perform(delete("/api/v1/events/" + event.getId())
                         .header("Authorization", "Bearer token"))
                 .andExpect(status().isNoContent());
 
