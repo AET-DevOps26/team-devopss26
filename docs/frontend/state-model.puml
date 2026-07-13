@@ -1,4 +1,5 @@
 @startuml
+!pragma layout smetana
 skinparam shadowing false
 skinparam nodesep 30
 skinparam ranksep 40
@@ -18,12 +19,14 @@ title Frontend State Model — Stores, Query Hooks & Data Types
 
 rectangle "Zustand Stores (client/session state)" as STORES {
   interface "authStore" {
-    user : User | null
     token : string | null
+    userId : number | null
+    username : string | null
     isAuthenticated : boolean
     --
-    Wraps useAuth() from react-oidc-client
-    for cross-layer access (Axios interceptor)
+    setAuth(token) : void
+    clearAuth() : void
+    validateToken() : Promise
   }
 
   interface "chatStore" {
@@ -50,9 +53,8 @@ rectangle "TanStack Query (server state cache)" as TQ {
 
 rectangle "Data Types" as TYPES {
   interface "User" {
-    id : string
-    name : string
-    email : string
+    id : number
+    username : string
   }
 
   interface "Note" {
@@ -88,7 +90,7 @@ legend bottom
   Zustand stores: client-side session state, persisted to localStorage
   TanStack Query hooks: server state cache, auto-invalidated on mutation
   Data types from openapi-typescript generated code
-  Auth token obtained from OIDC provider, not from backend login
+  Auth token obtained from backend login (User Service)
 endlegend
 
 @enduml

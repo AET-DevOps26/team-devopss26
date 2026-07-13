@@ -1,4 +1,5 @@
 @startuml
+!pragma layout smetana
 skinparam shadowing false
 skinparam nodesep 40
 skinparam ranksep 50
@@ -29,6 +30,8 @@ rectangle "Pages" as PAGES {
   component "Notes\n(list + editor)" as NOTES
   component "Calendar" as CAL
   component "Chat" as CHAT
+  component "Login" as LOGIN
+  component "Register" as REGISTER
 }
 
 rectangle "Shared Components" as SHARED {
@@ -42,6 +45,8 @@ rectangle "Shared Components" as SHARED {
 }
 
 ENTRY -down-> SHELL : renders
+ENTRY -down-> LOGIN : renders
+ENTRY -down-> REGISTER : renders
 
 SHELL  -down-> SIDEBAR
 SHELL  -down-> TOPBAR
@@ -66,7 +71,7 @@ legend bottom
   Solid arrows (↓) = rendered in the layout tree.
   Dashed arrows (..>) = contextual / per-page usage.
   Skeleton replaces spinner for all loading states.
-  No login/register pages — auth handled by OIDC redirect.
+  Includes local Login & Register pages for authentication.
 endlegend
 
 @enduml
