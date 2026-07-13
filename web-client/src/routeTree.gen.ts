@@ -14,7 +14,6 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as UnauthenticatedRegisterRouteImport } from './routes/_unauthenticated/register'
 import { Route as UnauthenticatedLoginRouteImport } from './routes/_unauthenticated/login'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
 import { Route as AuthenticatedDemoIndexRouteImport } from './routes/_authenticated/demo/index'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat/index'
@@ -43,12 +42,6 @@ const UnauthenticatedLoginRoute = UnauthenticatedLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => UnauthenticatedRoute,
 } as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/settings/',
-    path: '/settings/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedNotesIndexRoute = AuthenticatedNotesIndexRouteImport.update({
   id: '/notes/',
   path: '/notes/',
@@ -79,7 +72,6 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/demo/': typeof AuthenticatedDemoIndexRoute
   '/notes/': typeof AuthenticatedNotesIndexRoute
-  '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
@@ -89,7 +81,6 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/demo': typeof AuthenticatedDemoIndexRoute
   '/notes': typeof AuthenticatedNotesIndexRoute
-  '/settings': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -102,7 +93,6 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/demo/': typeof AuthenticatedDemoIndexRoute
   '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
-  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -114,17 +104,8 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/demo/'
     | '/notes/'
-    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/login'
-    | '/register'
-    | '/calendar'
-    | '/chat'
-    | '/demo'
-    | '/notes'
-    | '/settings'
+  to: '/' | '/login' | '/register' | '/calendar' | '/chat' | '/demo' | '/notes'
   id:
     | '__root__'
     | '/_authenticated'
@@ -136,7 +117,6 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/_authenticated/demo/'
     | '/_authenticated/notes/'
-    | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -181,13 +161,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnauthenticatedLoginRouteImport
       parentRoute: typeof UnauthenticatedRoute
     }
-    '/_authenticated/settings/': {
-      id: '/_authenticated/settings/'
-      path: '/settings'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/notes/': {
       id: '/_authenticated/notes/'
       path: '/notes'
@@ -225,7 +198,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
   AuthenticatedDemoIndexRoute: typeof AuthenticatedDemoIndexRoute
   AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute
-  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -234,7 +206,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
   AuthenticatedDemoIndexRoute: AuthenticatedDemoIndexRoute,
   AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,
-  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

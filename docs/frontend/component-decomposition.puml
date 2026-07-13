@@ -29,7 +29,6 @@ rectangle "Pages" as PAGES {
   component "Notes\n(list + editor)" as NOTES
   component "Calendar" as CAL
   component "Chat" as CHAT
-  component "Settings" as SETT
 }
 
 rectangle "Shared Components" as SHARED {
@@ -50,7 +49,6 @@ SHELL  -down-> DASH
 SHELL  -down-> NOTES
 SHELL  -down-> CAL
 SHELL  -down-> CHAT
-SHELL  -down-> SETT
 
 DASH   ..> EMPTY
 DASH   ..> SKELETON

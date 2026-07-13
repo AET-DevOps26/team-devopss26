@@ -52,7 +52,6 @@ jobs:
       matrix:
         service:
           - user-service
-          - admin-service
           - checklist-service
           - calendar-service
           - note-service

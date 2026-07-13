@@ -5,12 +5,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface Note {
-  /**
-   * @maxLength 255
-   * @pattern .*\S.*
-   */
-  title?: string;
-  content?: string;
+export interface Timestamped {
+  createdAt: string;
+  lastUpdatedAt: string;
   [key: string]: unknown;
 }

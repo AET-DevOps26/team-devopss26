@@ -10,9 +10,6 @@ data:
         handle /api/v1/users/* {
             reverse_proxy http://user-service:{{ index .Values.services "user-service" "appPort" }}
         }
-        handle /api/v1/admin/* {
-            reverse_proxy http://admin-service:{{ index .Values.services "admin-service" "appPort" }}
-        }
         handle /api/v1/checklists/* {
             reverse_proxy http://checklist-service:{{ index .Values.services "checklist-service" "appPort" }}
         }

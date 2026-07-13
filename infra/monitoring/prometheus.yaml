@@ -14,10 +14,6 @@ data:
         metrics_path: '/actuator/prometheus'
         static_configs:
           - targets: ['user-service.team-devopss26-prod.svc.cluster.local:8001']
-      - job_name: 'admin-service'
-        metrics_path: '/actuator/prometheus'
-        static_configs:
-          - targets: ['admin-service.team-devopss26-prod.svc.cluster.local:8002']
       - job_name: 'checklist-service'
         metrics_path: '/actuator/prometheus'
         static_configs:

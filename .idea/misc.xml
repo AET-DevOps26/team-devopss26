@@ -6,7 +6,6 @@
       <list>
         <option value="$PROJECT_DIR$/services/user-service/user-service/pom.xml" />
         <option value="$PROJECT_DIR$/services/user-service/pom.xml" />
-        <option value="$PROJECT_DIR$/services/admin-service/pom.xml" />
         <option value="$PROJECT_DIR$/services/calendar-service/pom.xml" />
         <option value="$PROJECT_DIR$/services/checklist-service/pom.xml" />
         <option value="$PROJECT_DIR$/services/note-service/pom.xml" />
