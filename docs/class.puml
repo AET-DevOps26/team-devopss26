@@ -1,10 +1,12 @@
 @startuml
+!pragma layout smetana
 ' All class definitions required by our architecture
+
+title Analysis Object Model (Domain Entities)
 class User {
 	- id: Long
-	- email: String
-	- oauthProvider: String
-	- oauthSubject: String
+	- username: String
+	- passwordHash: String
 }
 
 class Note {
@@ -13,8 +15,6 @@ class Note {
 	- content: String
 	- createdAt: DateTime
 	- lastUpdatedAt: DateTime
-	--
-	+ updateContent(title: String, content: String): void
 }
 
 class CalendarEvent {
@@ -24,17 +24,12 @@ class CalendarEvent {
 	- startTime: DateTime
 	- endTime: DateTime
 	- location: String
-	--
-	+ updateContent(title: String, description: String, startTime: DateTime, endTime: DateTime, location: String): void
 }
 
 class Checklist {
 	- id: Long
 	- title: String
 	- createdAt: DateTime
-	--
-	+ addItem(text: String): ChecklistItem
-	+ removeItem(itemId: Long): void
 }
 
 class ChecklistItem {
@@ -48,8 +43,6 @@ class ChatConversation {
 	- id: Long
 	- title: String
 	- createdAt: DateTime
-	--
-	+ addChatMessage(role: ChatRole, content: String): ChatMessage
 }
 
 class ChatMessage {

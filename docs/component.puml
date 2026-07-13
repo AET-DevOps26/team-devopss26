@@ -1,67 +1,105 @@
 @startuml
+!pragma layout smetana
 skinparam nodesep 40
 skinparam ranksep 50
 skinparam shadowing false
 
-skinparam RectangleBackgroundColor #F2F4F4
-skinparam NodeBackgroundColor #E5E8E8
-skinparam ComponentBackgroundColor #AED6F1
-skinparam DatabaseBackgroundColor #F9E79F
+' Custom Color Palette for High-quality Visuals
+skinparam RectangleBackgroundColor #F8F9F9
+skinparam RectangleBorderColor #BDC3C7
+skinparam NodeBackgroundColor #EBEDEF
+skinparam NodeBorderColor #7F8C8D
+skinparam ComponentBackgroundColor #E8F8F5
+skinparam ComponentBorderColor #1ABC9C
+skinparam DatabaseBackgroundColor #FEF9E7
+skinparam DatabaseBorderColor #F1C40F
+skinparam ArrowColor #2C3E50
+skinparam CloudBackgroundColor #EBF5FB
+skinparam CloudBorderColor #3498DB
 
-top to bottom direction
+title Component Diagram (System Architecture)
 
-cloud "User" as user #transparent
+cloud "User (Web Browser)" as user
 
-rectangle "Network Boundary" {
-    
-    node "Frontend Server" as feServer {
-       [React Frontend] as fe
+rectangle "Docker Compose Infrastructure" {
+
+    node "Client Container" as clientContainer {
+        [React Frontend] as fe
+        [Caddy Reverse Proxy\n& API Gateway] as proxy
+        fe -[dashed]-> proxy : API Requests
     }
-    
-    node "API Gateway" as gatewayServer {
-       [Reverse Proxy] as proxy
-    }
-    
-    rectangle "Backend Microservices" {
-        
-        node "Chatbot Service" as msChat {
-            [Chatbot Engine] as sbChat
-        }
 
-        node "User Service" as msUser {
-            [Spring Boot User] as sbUser
-            database "Postgres (User)" as pgUser
-            sbUser -down-> pgUser
+    rectangle "Backend Microservices" as backend {
+        node "User Service" as nodeUser {
+            [Spring Boot App\n(Port 8001)] as appUser
         }
-        
-        node "Checklists Service" as msCheck {
-            [Spring Boot Checklists] as sbCheck
-            database "Postgres (Checklists)" as pgCheck
-            sbCheck -down-> pgCheck
+        node "Checklist Service" as nodeCheck {
+            [Spring Boot App\n(Port 8003)] as appCheck
         }
-        
-        node "Calendar Service" as msCal {
-            [Spring Boot Calendar] as sbCal
-            database "Postgres (Calendar)" as pgCal
-            sbCal -down-> pgCal
+        node "Calendar Service" as nodeCal {
+            [Spring Boot App\n(Port 8004)] as appCal
         }
-        
-        node "Notes Service" as msNotes {
-            [Spring Boot Notes] as sbNotes
-            database "Postgres (Notes)" as pgNotes
-            sbNotes -down-> pgNotes
+        node "Note Service" as nodeNote {
+            [Spring Boot App\n(Port 8005)] as appNote
+        }
+        node "GenAI Service" as nodeGenAI {
+            [FastAPI (Python) App\n(Port 8006)] as appGenAI
+        }
+    }
+
+    rectangle "Databases & Storage" as storage {
+        node "Database Server (Postgres)" as pgServer {
+            database "user_service_db" as dbUser
+            database "checklist_service_db" as dbCheck
+            database "calendar_service_db" as dbCal
+            database "note_service_db" as dbNote
+            database "genai_service_db" as dbGenAI
+        }
+        node "Weaviate Vector DB" as nodeWeaviate {
+            database "Vector Store" as dbWeaviate
+        }
+    }
+
+    rectangle "Monitoring & Observability" as monitoring {
+        node "Prometheus" as nodePrometheus {
+            [Metrics Collector] as appPrometheus
+        }
+        node "Grafana" as nodeGrafana {
+            [Visualization Engine] as appGrafana
         }
     }
 }
 
-user -down-> fe : Access App
+' User traffic
+user -down-> fe : Serves Static Files
+user -down-> proxy : HTTPS API calls
 
-fe -down-> proxy : API Requests (HTTPS)
+' Proxy routing
+proxy -down-> appUser : /api/v1/users*
+proxy -down-> appCheck : /api/v1/checklists*
+proxy -down-> appCal : /api/v1/events*
+proxy -down-> appNote : /api/v1/notes*
+proxy -down-> appGenAI : /api/v1/chat* /api/v1/conversations*
 
-proxy -down-> sbChat
-proxy -down-> sbUser
-proxy -down-> sbCheck
-proxy -down-> sbCal
-proxy -down-> sbNotes
+' Inter-service communication
+appGenAI -[#blue,bold]-> appNote : Fetch Note Context
+appGenAI -[#blue,bold]-> appCal : Fetch Event Context
+appGenAI -[#blue,bold]-> appCheck : Fetch Checklist Context
+
+' Database connections
+appUser -down-> dbUser
+appCheck -down-> dbCheck
+appCal -down-> dbCal
+appNote -down-> dbNote
+appGenAI -down-> dbGenAI
+appGenAI -down-> dbWeaviate : Store / Query Vectors (Port 8080)
+
+appGrafana -down-> appPrometheus : Queries Metrics
+
+note bottom of nodePrometheus
+  Prometheus scrapes metrics from all backend 
+  microservices (Ports 8001-8006) via their 
+  respective metrics endpoints.
+end note
 
 @enduml
