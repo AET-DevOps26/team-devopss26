@@ -6,6 +6,10 @@
  */
 
 export interface CalendarEvent {
+  /**
+   * @maxLength 255
+   * @pattern .*\S.*
+   */
   title?: string;
   description?: string;
   startTime?: string;

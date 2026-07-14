@@ -121,12 +121,76 @@
         group: devops-admin
         mode: '0644'
 
+    - name: Ensure prometheus directory exists on VM
+      ansible.builtin.file:
+        path: /home/devops-admin/app/prometheus
+        state: directory
+        owner: devops-admin
+        group: devops-admin
+        mode: '0755'
+
+    - name: Ensure any existing directory named prometheus.yml is removed
+      ansible.builtin.file:
+        path: /home/devops-admin/app/prometheus/prometheus.yml
+        state: absent
+
+    - name: Copy prometheus.yml to VM
+      ansible.builtin.copy:
+        src: ../../prometheus/prometheus.yml
+        dest: /home/devops-admin/app/prometheus/prometheus.yml
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+      notify: Restart Prometheus
+
+
+    - name: Ensure grafana directory exists on VM
+      ansible.builtin.file:
+        path: /home/devops-admin/app/grafana
+        state: directory
+        owner: devops-admin
+        group: devops-admin
+        mode: '0755'
+
+    - name: Copy grafana provisioning to VM
+      ansible.builtin.copy:
+        src: ../../grafana/provisioning/
+        dest: /home/devops-admin/app/grafana/provisioning/
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+        directory_mode: '0755'
+      notify: Restart Grafana
+
     - name: Start application with Docker Compose
       community.docker.docker_compose_v2:
         project_src: /home/devops-admin/app
         state: present
         pull: always
         remove_orphans: true
+      become: yes
+      become_user: devops-admin
+      environment:
+        BUILDKIT_NUMBER_OF_THREADS: "1"
+
+  handlers:
+    - name: Restart Prometheus
+      community.docker.docker_compose_v2:
+        project_src: /home/devops-admin/app
+        services:
+          - prometheus
+        state: restarted
+      become: yes
+      become_user: devops-admin
+      environment:
+        BUILDKIT_NUMBER_OF_THREADS: "1"
+
+    - name: Restart Grafana
+      community.docker.docker_compose_v2:
+        project_src: /home/devops-admin/app
+        services:
+          - grafana
+        state: restarted
       become: yes
       become_user: devops-admin
       environment:

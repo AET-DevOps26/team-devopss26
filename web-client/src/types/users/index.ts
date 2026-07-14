@@ -9,3 +9,4 @@ export * from './identifier.ts';
 export * from './loginResponse.ts';
 export * from './publicKeyResponse.ts';
 export * from './registerUserRequest.ts';
+export * from './timestamped.ts';

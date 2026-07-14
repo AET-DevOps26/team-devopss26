@@ -33,7 +33,7 @@ sudo chown $(id -u):$(id -g) ~/.kube/config
 ```
 
 **What it does:**
-1. Builds 7 Docker images (5 Java services + genai + client)
+1. Builds 6 Docker images (4 Java services + genai + client)
 2. Imports them into the local k3s cluster
 3. Installs the Helm chart to namespace `devopss26`
 
@@ -45,7 +45,7 @@ sudo chown $(id -u):$(id -g) ~/.kube/config
 ## Verify
 
 ```bash
-# Should show 8 pods: postgres + 5 services + genai + client
+# Should show 7 pods: postgres + 4 services + genai + client
 kubectl get pods -n devopss26
 ```
 
@@ -54,7 +54,6 @@ Expected:
 NAME                              READY   STATUS
 postgres-0                        1/1     Running
 user-service-xxx                  1/1     Running
-admin-service-xxx                 1/1     Running
 checklist-service-xxx             1/1     Running
 calendar-service-xxx              1/1     Running
 note-service-xxx                  1/1     Running
@@ -68,7 +67,6 @@ client-xxx                        1/1     Running
 |-----|------|
 | `http://localhost` | Frontend (Caddy + React) |
 | `http://localhost/api/user/*` | user-service |
-| `http://localhost/api/admin/*` | admin-service |
 | `http://localhost/api/checklist/*` | checklist-service |
 | `http://localhost/api/calendar/*` | calendar-service |
 | `http://localhost/api/note/*` | note-service |
@@ -96,7 +94,6 @@ kubectl delete namespace devopss26
 ┌─────────────┐     ┌──────────────────────────────────────────────┐
 │   Browser   │────▶│  Caddy (client pod) :80                      │
 └─────────────┘     │  ├── /api/user/*  → user-service:8001        │
-                    │  ├── /api/admin/* → admin-service:8002       │
                     │  ├── /api/checklist/* → checklist-service:8003│
                     │  ├── /api/calendar/* → calendar-service:8004 │
                     │  ├── /api/note/* → note-service:8005         │
@@ -105,7 +102,7 @@ kubectl delete namespace devopss26
                                          │
                     ┌────────────────────┴────────────────────┐
                     │  PostgreSQL (postgres:17-alpine)        │
-                    │  └── Databases: userdb, admindb, etc.   │
+                    │  └── Databases: userdb, checklistdb, etc. │
                     └─────────────────────────────────────────┘
 ```
 

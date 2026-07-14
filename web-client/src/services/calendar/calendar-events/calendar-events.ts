@@ -11,9 +11,9 @@ import type {
   GetCalendarEventResponse,
   ListCalendarEventResponse,
   UpdateCalendarEventResponse,
-} from '#/types/calendar';
+} from '../../../types/calendar';
 
-import { customInstance } from '#/lib/api/client.ts';
+import { customInstance } from '../../../lib/api/client.ts';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 

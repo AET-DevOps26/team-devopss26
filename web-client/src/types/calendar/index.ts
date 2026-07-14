@@ -12,4 +12,5 @@ export * from './getCalendarEventResponse.ts';
 export * from './identifiedCalendarEvent.ts';
 export * from './identifier.ts';
 export * from './listCalendarEventResponse.ts';
+export * from './timestamped.ts';
 export * from './updateCalendarEventResponse.ts';
