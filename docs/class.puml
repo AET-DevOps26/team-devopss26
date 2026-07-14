@@ -11,25 +11,28 @@ class User {
 
 class Note {
 	- id: Long
+	- userId: Long
 	- title: String
 	- content: String
-	- createdAt: DateTime
-	- lastUpdatedAt: DateTime
+	- createdAt: OffsetDateTime
+	- lastUpdatedAt: OffsetDateTime
 }
 
 class CalendarEvent {
 	- id: Long
+	- userId: Long
 	- title: String
 	- description: String
-	- startTime: DateTime
-	- endTime: DateTime
+	- startTime: OffsetDateTime
+	- endTime: OffsetDateTime
 	- location: String
 }
 
 class Checklist {
 	- id: Long
+	- userId: Long
 	- title: String
-	- createdAt: DateTime
+	- createdAt: OffsetDateTime
 }
 
 class ChecklistItem {
@@ -40,18 +43,19 @@ class ChecklistItem {
 }
 
 class ChatConversation {
-	- id: Long
+	- id: BigInteger
+	- user_id: BigInteger
 	- title: String
-	- createdAt: DateTime
+	- created_at: DateTime
 }
 
 class ChatMessage {
-	- id: Long
-	- content: String
-	- timestamp: Long
+	- id: BigInteger
+	- content: Text
+	- timestamp: BigInteger
 }
 
-enum ChatRole {
+enum ChatMessageRole {
 	USER
 	AGENT
 }
@@ -71,5 +75,5 @@ User "1" --> "*" Checklist
 Checklist "1" --> "*" ChecklistItem
 User "1" --> "*" ChatConversation
 ChatConversation "1" --> "*" ChatMessage
-ChatMessage --> ChatRole
+ChatMessage --> ChatMessageRole
 @enduml
