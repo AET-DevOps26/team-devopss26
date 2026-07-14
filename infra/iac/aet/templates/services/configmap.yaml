@@ -13,7 +13,7 @@ data:
   SERVICES_POSTGRES_URL: "postgres"
   SERVICES_POSTGRES_PORT_INT: "5432"
   SERVICES_POSTGRES_USER: "{{ $pg.user }}"
-  {{- if or (eq $name "calendar-service") (eq $name "note-service") }}
+  {{- if or (eq $name "calendar-service") (eq $name "note-service") (eq $name "checklist-service") }}
   USER_SERVICE_URL: "http://user-service:{{ index $.Values.services "user-service" "appPort" }}"
   {{- end }}
 {{- end }}

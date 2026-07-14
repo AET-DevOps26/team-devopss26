@@ -18,7 +18,7 @@ export const notesQueries = {
       queryKey: notesKeys.lists(),
       queryFn: async () => {
         const response = await getNotes();
-        return response.notes;
+        return Array.isArray(response.notes) ? response.notes : [];
       },
       staleTime: 30_000,
     }),

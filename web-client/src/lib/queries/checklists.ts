@@ -29,7 +29,7 @@ export const checklistQueries = {
       queryKey: checklistKeys.lists(),
       queryFn: async () => {
         const response = await getChecklists({ userId: getUserId() });
-        return response.checklists ?? [];
+        return Array.isArray(response.checklists) ? response.checklists : [];
       },
       staleTime: 30_000,
     }),
