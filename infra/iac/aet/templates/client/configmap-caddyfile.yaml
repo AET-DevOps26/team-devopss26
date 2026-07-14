@@ -7,9 +7,6 @@ data:
   Caddyfile: |
     :80 {
         # ── Prod routes ──
-        handle /api/v1/admin/* {
-            reverse_proxy http://admin-service:{{ index .Values.services "admin-service" "appPort" }}
-        }
         handle /api/v1/chat {
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
