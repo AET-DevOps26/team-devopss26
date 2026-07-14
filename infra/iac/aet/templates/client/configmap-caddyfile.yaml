@@ -7,11 +7,26 @@ data:
   Caddyfile: |
     :80 {
         # ── Prod routes ──
-        handle /api/v1/users/* {
-            reverse_proxy http://user-service:{{ index .Values.services "user-service" "appPort" }}
+        handle /api/v1/admin/* {
+            reverse_proxy http://admin-service:{{ index .Values.services "admin-service" "appPort" }}
+        }
+        handle /api/v1/chat {
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/v1/chat/* {
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/v1/checklists {
+            reverse_proxy http://checklist-service:{{ index .Values.services "checklist-service" "appPort" }}
         }
         handle /api/v1/checklists/* {
             reverse_proxy http://checklist-service:{{ index .Values.services "checklist-service" "appPort" }}
+        }
+        handle /api/v1/conversations {
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/v1/conversations/* {
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/v1/events {
             reverse_proxy http://calendar-service:{{ index .Values.services "calendar-service" "appPort" }}
@@ -19,17 +34,20 @@ data:
         handle /api/v1/events/* {
             reverse_proxy http://calendar-service:{{ index .Values.services "calendar-service" "appPort" }}
         }
-        handle /api/v1/notes/* {
-            reverse_proxy http://note-service:{{ index .Values.services "note-service" "appPort" }}
-        }
-        handle /api/v1/chat/* {
-            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
-        }
-        handle /api/v1/conversations/* {
+        handle /api/v1/health {
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/v1/health/* {
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/v1/notes {
+            reverse_proxy http://note-service:{{ index .Values.services "note-service" "appPort" }}
+        }
+        handle /api/v1/notes/* {
+            reverse_proxy http://note-service:{{ index .Values.services "note-service" "appPort" }}
+        }
+        handle /api/v1/users/* {
+            reverse_proxy http://user-service:{{ index .Values.services "user-service" "appPort" }}
         }
 
         # ── Monitoring routes (cross-namespace to monitoring) ──
