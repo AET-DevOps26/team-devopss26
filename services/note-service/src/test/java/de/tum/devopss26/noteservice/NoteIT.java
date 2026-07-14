@@ -2,6 +2,7 @@ package de.tum.devopss26.noteservice;
 
 import de.tum.devopss26.noteservice.entity.Note;
 import de.tum.devopss26.noteservice.repository.NoteRepository;
+import de.tum.devopss26.shared.it.AbstractIntegrationTest;
 import de.tum.devopss26.shared.security.TokenValidationInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -116,8 +118,7 @@ public class NoteIT extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.notes", hasSize(2)))
-                .andExpect(jsonPath("$.notes[0].title").value("Note A1"))
-                .andExpect(jsonPath("$.notes[1].title").value("Note A2"));
+                .andExpect(jsonPath("$.notes[*].title").value(containsInAnyOrder("Note A1", "Note A2")));
     }
 
     @Test

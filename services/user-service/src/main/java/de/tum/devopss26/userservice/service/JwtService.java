@@ -1,6 +1,7 @@
 package de.tum.devopss26.userservice.service;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.Getter;
 import org.springframework.stereotype.Service;
@@ -94,7 +95,7 @@ public final class JwtService {
         try {
             final String username = extractUsername(token);
             return username != null && !isTokenExpired(token);
-        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }

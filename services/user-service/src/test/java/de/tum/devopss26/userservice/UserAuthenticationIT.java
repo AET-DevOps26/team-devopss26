@@ -1,5 +1,6 @@
 package de.tum.devopss26.userservice;
 
+import de.tum.devopss26.shared.it.AbstractIntegrationTest;
 import de.tum.devopss26.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ public class UserAuthenticationIT extends AbstractIntegrationTest {
 
     private MockMvc mockMvc;
     private UserRepository userRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper;
 
     @Autowired
     public void setMockMvc(MockMvc mockMvc) {
@@ -35,13 +36,44 @@ public class UserAuthenticationIT extends AbstractIntegrationTest {
         this.userRepository = userRepository;
     }
 
+    @Autowired
+    public void setObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
     }
 
+    private void registerUser(String username, String password) throws Exception {
+        String registerJson = String.format("""
+                {
+                  "username": "%s",
+                  "password": "%s"
+                }
+                """, username, password);
+
+        mockMvc.perform(post("/api/v1/users/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson))
+                .andExpect(status().isCreated());
+    }
+
+    private String loginUser(String username, String password) throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/users/auth/login")
+                        .with(httpBasic(username, password)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").exists())
+                .andReturn();
+
+        String tokenResponseStr = loginResult.getResponse().getContentAsString();
+        LoginResponse loginResponse = objectMapper.readValue(tokenResponseStr, LoginResponse.class);
+        return loginResponse.getToken();
+    }
+
     @Test
-    void testRegisterUserAndLogin() throws Exception {
+    void testRegisterUser() throws Exception {
         String registerJson = """
                 {
                   "username": "testuser",
@@ -55,11 +87,28 @@ public class UserAuthenticationIT extends AbstractIntegrationTest {
                 .andExpect(status().isCreated());
 
         assertThat(userRepository.existsByUsername("testuser")).isTrue();
+    }
+
+    @Test
+    void testRegisterDuplicateUser() throws Exception {
+        registerUser("testuser", "securepassword");
+
+        String registerJson = """
+                {
+                  "username": "testuser",
+                  "password": "securepassword"
+                }
+                """;
 
         mockMvc.perform(post("/api/v1/users/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void testLoginSuccess() throws Exception {
+        registerUser("testuser", "securepassword");
 
         MvcResult loginResult = mockMvc.perform(post("/api/v1/users/auth/login")
                         .with(httpBasic("testuser", "securepassword")))
@@ -71,19 +120,36 @@ public class UserAuthenticationIT extends AbstractIntegrationTest {
         LoginResponse loginResponse = objectMapper.readValue(tokenResponseStr, LoginResponse.class);
         String token = loginResponse.getToken();
         assertThat(token).isNotEmpty();
+    }
+
+    @Test
+    void testLoginWrongPassword() throws Exception {
+        registerUser("testuser", "securepassword");
 
         mockMvc.perform(post("/api/v1/users/auth/login")
                         .with(httpBasic("testuser", "wrongpassword")))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testCheckTokenSuccess() throws Exception {
+        registerUser("testuser", "securepassword");
+        String token = loginUser("testuser", "securepassword");
 
         mockMvc.perform(get("/api/v1/users/auth/check-token")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
+    }
 
+    @Test
+    void testCheckTokenInvalid() throws Exception {
         mockMvc.perform(get("/api/v1/users/auth/check-token")
                         .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized());
+    }
 
+    @Test
+    void testCheckTokenMissing() throws Exception {
         mockMvc.perform(get("/api/v1/users/auth/check-token"))
                 .andExpect(status().isUnauthorized());
     }

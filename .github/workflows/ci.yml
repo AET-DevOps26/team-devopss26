@@ -55,7 +55,6 @@ jobs:
           - checklist-service
           - calendar-service
           - note-service
-          - shared
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

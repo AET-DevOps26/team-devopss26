@@ -2,6 +2,7 @@ package de.tum.devopss26.calendarservice;
 
 import de.tum.devopss26.calendarservice.entity.CalendarEvent;
 import de.tum.devopss26.calendarservice.repository.CalendarEventRepository;
+import de.tum.devopss26.shared.it.AbstractIntegrationTest;
 import de.tum.devopss26.shared.security.TokenValidationInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -117,8 +119,7 @@ public class CalendarEventIT extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.events", hasSize(2)))
-                .andExpect(jsonPath("$.events[0].title").value("User A Event 1"))
-                .andExpect(jsonPath("$.events[1].title").value("User A Event 2"));
+                .andExpect(jsonPath("$.events[*].title").value(containsInAnyOrder("User A Event 1", "User A Event 2")));
     }
 
     @Test

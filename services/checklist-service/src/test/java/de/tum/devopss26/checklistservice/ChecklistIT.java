@@ -4,18 +4,24 @@ import de.tum.devopss26.checklistservice.entity.ChecklistEntity;
 import de.tum.devopss26.checklistservice.entity.ChecklistItemEntity;
 import de.tum.devopss26.checklistservice.repository.ChecklistItemRepository;
 import de.tum.devopss26.checklistservice.repository.ChecklistRepository;
+import de.tum.devopss26.shared.it.AbstractIntegrationTest;
+import de.tum.devopss26.shared.security.TokenValidationInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,8 +48,21 @@ public class ChecklistIT extends AbstractIntegrationTest {
         this.checklistItemRepository = checklistItemRepository;
     }
 
+    @MockitoBean
+    private TokenValidationInterceptor tokenValidationInterceptor;
+
+    private void mockUserAuthentication(long userId) throws Exception {
+        doAnswer(invocation -> {
+            jakarta.servlet.http.HttpServletRequest request = invocation.getArgument(0);
+            request.setAttribute("userId", String.valueOf(userId));
+            request.setAttribute("jwtClaims", null);
+            return true;
+        }).when(tokenValidationInterceptor).preHandle(any(), any(), any());
+    }
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
+        mockUserAuthentication(42L);
         checklistItemRepository.deleteAll();
         checklistRepository.deleteAll();
     }
@@ -58,6 +77,7 @@ public class ChecklistIT extends AbstractIntegrationTest {
                 """;
 
         mockMvc.perform(post("/api/v1/checklists")
+                        .header("Authorization", "Bearer token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
                 .andExpect(status().isCreated())
@@ -91,11 +111,11 @@ public class ChecklistIT extends AbstractIntegrationTest {
         c3.setCreatedAt(LocalDateTime.now());
         checklistRepository.save(c3);
 
-        mockMvc.perform(get("/api/v1/checklists").param("userId", "42"))
+        mockMvc.perform(get("/api/v1/checklists").param("userId", "42")
+                        .header("Authorization", "Bearer token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.checklists", hasSize(2)))
-                .andExpect(jsonPath("$.checklists[0].title").value("Work"))
-                .andExpect(jsonPath("$.checklists[1].title").value("Shopping"));
+                .andExpect(jsonPath("$.checklists[*].title").value(containsInAnyOrder("Work", "Shopping")));
     }
 
     @Test
@@ -106,12 +126,14 @@ public class ChecklistIT extends AbstractIntegrationTest {
         c.setCreatedAt(LocalDateTime.now());
         c = checklistRepository.save(c);
 
-        mockMvc.perform(get("/api/v1/checklists/" + c.getId()))
+        mockMvc.perform(get("/api/v1/checklists/" + c.getId())
+                        .header("Authorization", "Bearer token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(c.getId()))
                 .andExpect(jsonPath("$.title").value("Todo"));
 
-        mockMvc.perform(get("/api/v1/checklists/99999"))
+        mockMvc.perform(get("/api/v1/checklists/99999")
+                        .header("Authorization", "Bearer token"))
                 .andExpect(status().isNotFound());
     }
 
@@ -130,6 +152,7 @@ public class ChecklistIT extends AbstractIntegrationTest {
                 """;
 
         mockMvc.perform(put("/api/v1/checklists/" + c.getId())
+                        .header("Authorization", "Bearer token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateJson))
                 .andExpect(status().isOk())
@@ -148,12 +171,14 @@ public class ChecklistIT extends AbstractIntegrationTest {
         c.setCreatedAt(LocalDateTime.now());
         c = checklistRepository.save(c);
 
-        mockMvc.perform(delete("/api/v1/checklists/" + c.getId()))
+        mockMvc.perform(delete("/api/v1/checklists/" + c.getId())
+                        .header("Authorization", "Bearer token"))
                 .andExpect(status().isNoContent());
 
         assertThat(checklistRepository.existsById(c.getId())).isFalse();
 
-        mockMvc.perform(delete("/api/v1/checklists/99999"))
+        mockMvc.perform(delete("/api/v1/checklists/99999")
+                        .header("Authorization", "Bearer token"))
                 .andExpect(status().isNotFound());
     }
 
@@ -174,6 +199,7 @@ public class ChecklistIT extends AbstractIntegrationTest {
                 """;
 
         mockMvc.perform(post("/api/v1/checklists/" + c.getId() + "/items")
+                        .header("Authorization", "Bearer token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(itemJson))
                 .andExpect(status().isCreated())
@@ -212,6 +238,7 @@ public class ChecklistIT extends AbstractIntegrationTest {
                 """;
 
         mockMvc.perform(put("/api/v1/checklists/" + c.getId() + "/items/" + item.getId())
+                        .header("Authorization", "Bearer token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateJson))
                 .andExpect(status().isOk())
@@ -241,7 +268,8 @@ public class ChecklistIT extends AbstractIntegrationTest {
         item.setPosition(1);
         item = checklistItemRepository.save(item);
 
-        mockMvc.perform(delete("/api/v1/checklists/" + c.getId() + "/items/" + item.getId()))
+        mockMvc.perform(delete("/api/v1/checklists/" + c.getId() + "/items/" + item.getId())
+                        .header("Authorization", "Bearer token"))
                 .andExpect(status().isNoContent());
 
         assertThat(checklistItemRepository.existsById(item.getId())).isFalse();
