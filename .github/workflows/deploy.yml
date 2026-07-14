@@ -58,7 +58,7 @@ jobs:
               {service: "checklist-service", context: "./",             dockerfile: "./services/checklist-service/Dockerfile"},
               {service: "calendar-service", context: "./",              dockerfile: "./services/calendar-service/Dockerfile"},
               {service: "note-service",    context: "./",               dockerfile: "./services/note-service/Dockerfile"},
-              {service: "genai-service",   context: "./services/genai-service", dockerfile: "./services/genai-service/Dockerfile"},
+              {service: "genai-service",   context: "./",               dockerfile: "./services/genai-service/Dockerfile"},
               {service: "client",          context: "./",               dockerfile: "./web-client/Dockerfile"}
             ];
             const ALL_NAMES = ALL.map(s => s.service);
