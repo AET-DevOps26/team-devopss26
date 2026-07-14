@@ -9,173 +9,226 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as SettingsIndexRouteImport } from './routes/settings/index'
-import { Route as NotesIndexRouteImport } from './routes/notes/index'
-import { Route as DemoIndexRouteImport } from './routes/demo/index'
-import { Route as ChatIndexRouteImport } from './routes/chat/index'
-import { Route as CalendarIndexRouteImport } from './routes/calendar/index'
+import { Route as UnauthenticatedRouteImport } from './routes/_unauthenticated'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as UnauthenticatedRegisterRouteImport } from './routes/_unauthenticated/register'
+import { Route as UnauthenticatedLoginRouteImport } from './routes/_unauthenticated/login'
+import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
+import { Route as AuthenticatedDemoIndexRouteImport } from './routes/_authenticated/demo/index'
+import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated/chat/index'
+import { Route as AuthenticatedCalendarIndexRouteImport } from './routes/_authenticated/calendar/index'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const UnauthenticatedRoute = UnauthenticatedRouteImport.update({
+  id: '/_unauthenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const SettingsIndexRoute = SettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => rootRouteImport,
+const UnauthenticatedRegisterRoute = UnauthenticatedRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => UnauthenticatedRoute,
 } as any)
-const NotesIndexRoute = NotesIndexRouteImport.update({
+const UnauthenticatedLoginRoute = UnauthenticatedLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => UnauthenticatedRoute,
+} as any)
+const AuthenticatedNotesIndexRoute = AuthenticatedNotesIndexRouteImport.update({
   id: '/notes/',
   path: '/notes/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const DemoIndexRoute = DemoIndexRouteImport.update({
+const AuthenticatedDemoIndexRoute = AuthenticatedDemoIndexRouteImport.update({
   id: '/demo/',
   path: '/demo/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const ChatIndexRoute = ChatIndexRouteImport.update({
+const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const CalendarIndexRoute = CalendarIndexRouteImport.update({
-  id: '/calendar/',
-  path: '/calendar/',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedCalendarIndexRoute =
+  AuthenticatedCalendarIndexRouteImport.update({
+    id: '/calendar/',
+    path: '/calendar/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/calendar/': typeof CalendarIndexRoute
-  '/chat/': typeof ChatIndexRoute
-  '/demo/': typeof DemoIndexRoute
-  '/notes/': typeof NotesIndexRoute
-  '/settings/': typeof SettingsIndexRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/login': typeof UnauthenticatedLoginRoute
+  '/register': typeof UnauthenticatedRegisterRoute
+  '/calendar/': typeof AuthenticatedCalendarIndexRoute
+  '/chat/': typeof AuthenticatedChatIndexRoute
+  '/demo/': typeof AuthenticatedDemoIndexRoute
+  '/notes/': typeof AuthenticatedNotesIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/calendar': typeof CalendarIndexRoute
-  '/chat': typeof ChatIndexRoute
-  '/demo': typeof DemoIndexRoute
-  '/notes': typeof NotesIndexRoute
-  '/settings': typeof SettingsIndexRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/login': typeof UnauthenticatedLoginRoute
+  '/register': typeof UnauthenticatedRegisterRoute
+  '/calendar': typeof AuthenticatedCalendarIndexRoute
+  '/chat': typeof AuthenticatedChatIndexRoute
+  '/demo': typeof AuthenticatedDemoIndexRoute
+  '/notes': typeof AuthenticatedNotesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/calendar/': typeof CalendarIndexRoute
-  '/chat/': typeof ChatIndexRoute
-  '/demo/': typeof DemoIndexRoute
-  '/notes/': typeof NotesIndexRoute
-  '/settings/': typeof SettingsIndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/_unauthenticated': typeof UnauthenticatedRouteWithChildren
+  '/_unauthenticated/login': typeof UnauthenticatedLoginRoute
+  '/_unauthenticated/register': typeof UnauthenticatedRegisterRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/calendar/': typeof AuthenticatedCalendarIndexRoute
+  '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
+  '/_authenticated/demo/': typeof AuthenticatedDemoIndexRoute
+  '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
+    | '/register'
     | '/calendar/'
     | '/chat/'
     | '/demo/'
     | '/notes/'
-    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/calendar' | '/chat' | '/demo' | '/notes' | '/settings'
+  to: '/' | '/login' | '/register' | '/calendar' | '/chat' | '/demo' | '/notes'
   id:
     | '__root__'
-    | '/'
-    | '/login'
-    | '/calendar/'
-    | '/chat/'
-    | '/demo/'
-    | '/notes/'
-    | '/settings/'
+    | '/_authenticated'
+    | '/_unauthenticated'
+    | '/_unauthenticated/login'
+    | '/_unauthenticated/register'
+    | '/_authenticated/'
+    | '/_authenticated/calendar/'
+    | '/_authenticated/chat/'
+    | '/_authenticated/demo/'
+    | '/_authenticated/notes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  LoginRoute: typeof LoginRoute
-  CalendarIndexRoute: typeof CalendarIndexRoute
-  ChatIndexRoute: typeof ChatIndexRoute
-  DemoIndexRoute: typeof DemoIndexRoute
-  NotesIndexRoute: typeof NotesIndexRoute
-  SettingsIndexRoute: typeof SettingsIndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  UnauthenticatedRoute: typeof UnauthenticatedRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/_unauthenticated': {
+      id: '/_unauthenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof UnauthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/settings/': {
-      id: '/settings/'
-      path: '/settings'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof SettingsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_unauthenticated/register': {
+      id: '/_unauthenticated/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof UnauthenticatedRegisterRouteImport
+      parentRoute: typeof UnauthenticatedRoute
     }
-    '/notes/': {
-      id: '/notes/'
+    '/_unauthenticated/login': {
+      id: '/_unauthenticated/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof UnauthenticatedLoginRouteImport
+      parentRoute: typeof UnauthenticatedRoute
+    }
+    '/_authenticated/notes/': {
+      id: '/_authenticated/notes/'
       path: '/notes'
       fullPath: '/notes/'
-      preLoaderRoute: typeof NotesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedNotesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/demo/': {
-      id: '/demo/'
+    '/_authenticated/demo/': {
+      id: '/_authenticated/demo/'
       path: '/demo'
       fullPath: '/demo/'
-      preLoaderRoute: typeof DemoIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedDemoIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/chat/': {
-      id: '/chat/'
+    '/_authenticated/chat/': {
+      id: '/_authenticated/chat/'
       path: '/chat'
       fullPath: '/chat/'
-      preLoaderRoute: typeof ChatIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/calendar/': {
-      id: '/calendar/'
+    '/_authenticated/calendar/': {
+      id: '/_authenticated/calendar/'
       path: '/calendar'
       fullPath: '/calendar/'
-      preLoaderRoute: typeof CalendarIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedCalendarIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCalendarIndexRoute: typeof AuthenticatedCalendarIndexRoute
+  AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
+  AuthenticatedDemoIndexRoute: typeof AuthenticatedDemoIndexRoute
+  AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCalendarIndexRoute: AuthenticatedCalendarIndexRoute,
+  AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
+  AuthenticatedDemoIndexRoute: AuthenticatedDemoIndexRoute,
+  AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
+interface UnauthenticatedRouteChildren {
+  UnauthenticatedLoginRoute: typeof UnauthenticatedLoginRoute
+  UnauthenticatedRegisterRoute: typeof UnauthenticatedRegisterRoute
+}
+
+const UnauthenticatedRouteChildren: UnauthenticatedRouteChildren = {
+  UnauthenticatedLoginRoute: UnauthenticatedLoginRoute,
+  UnauthenticatedRegisterRoute: UnauthenticatedRegisterRoute,
+}
+
+const UnauthenticatedRouteWithChildren = UnauthenticatedRoute._addFileChildren(
+  UnauthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  LoginRoute: LoginRoute,
-  CalendarIndexRoute: CalendarIndexRoute,
-  ChatIndexRoute: ChatIndexRoute,
-  DemoIndexRoute: DemoIndexRoute,
-  NotesIndexRoute: NotesIndexRoute,
-  SettingsIndexRoute: SettingsIndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  UnauthenticatedRoute: UnauthenticatedRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

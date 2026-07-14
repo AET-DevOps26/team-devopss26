@@ -1,10 +1,9 @@
-import { createRootRoute, Link } from '@tanstack/react-router';
+import { createRootRoute, Outlet, Link } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { TanStackDevtools } from '@tanstack/react-devtools';
 import { HomeIcon } from 'lucide-react';
 
 import 'src/styles.css';
-import { AppShell } from 'src/components/layout/AppShell';
 import { buttonVariants } from 'src/components/ui/button';
 import { cn } from 'src/lib/utils';
 
@@ -16,7 +15,7 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <>
-      <AppShell />
+      <Outlet />
       <TanStackDevtools
         config={{
           position: 'bottom-right',

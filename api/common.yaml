@@ -30,6 +30,19 @@ components:
           format: int64
       required:
         - id
+    Timestamped:
+      type: object
+      additionalProperties: true
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        lastUpdatedAt:
+          type: string
+          format: date-time
+      required:
+        - createdAt
+        - lastUpdatedAt
   securitySchemes:
     # Only intended to be used for loginUser, as every other authorized endpoint should require a JWT
     BasicAuth:

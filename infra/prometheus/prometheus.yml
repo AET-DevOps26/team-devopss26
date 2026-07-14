@@ -7,11 +7,6 @@ scrape_configs:
     static_configs:
       - targets: ['user-service-app:8001']
 
-  - job_name: 'admin-service'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: ['admin-service-app:8002']
-
   - job_name: 'checklist-service'
     metrics_path: '/actuator/prometheus'
     static_configs:

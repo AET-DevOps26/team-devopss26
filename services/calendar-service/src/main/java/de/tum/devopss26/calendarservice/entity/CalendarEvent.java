@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,6 +32,8 @@ public class CalendarEvent {
 	@Column(name = "user_id", nullable = false)
 	private Long userId;
 
+	@NotBlank
+	@Size(max = 255)
 	@Column(nullable = false)
 	private String title;
 

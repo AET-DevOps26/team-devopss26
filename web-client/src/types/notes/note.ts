@@ -6,9 +6,11 @@
  */
 
 export interface Note {
-  id?: number;
+  /**
+   * @maxLength 255
+   * @pattern .*\S.*
+   */
   title?: string;
   content?: string;
-  createdAt?: string;
-  lastUpdatedAt?: string;
+  [key: string]: unknown;
 }

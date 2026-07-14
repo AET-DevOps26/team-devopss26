@@ -16,9 +16,11 @@ export const handlers = [
 
   // ── Note Service ────────────────────────────────────────────
   http.get(`${API_BASE}/api/v1/notes`, () =>
-    HttpResponse.json([
-      { id: 1, title: 'Test Note', content: 'Content', createdAt: '2024-01-01T00:00:00Z', lastUpdatedAt: '2024-01-01T00:00:00Z' },
-    ]),
+    HttpResponse.json({
+      notes: [
+        { id: 1, title: 'Test Note', content: 'Content', createdAt: '2024-01-01T00:00:00Z', lastUpdatedAt: '2024-01-01T00:00:00Z' },
+      ],
+    }),
   ),
   http.post(`${API_BASE}/api/v1/notes`, () =>
     HttpResponse.json({ id: 2, title: 'New Note', content: 'New', createdAt: '2024-01-01T00:00:00Z', lastUpdatedAt: '2024-01-01T00:00:00Z' }, { status: 201 }),
@@ -33,9 +35,11 @@ export const handlers = [
 
   // ── Checklist Service ───────────────────────────────────────
   http.get(`${API_BASE}/api/v1/checklists`, () =>
-    HttpResponse.json([
-      { id: 1, title: 'Test Checklist', createdAt: '2024-01-01T00:00:00Z', items: [] },
-    ]),
+    HttpResponse.json({
+      checklists: [
+        { id: 1, title: 'Test Checklist', createdAt: '2024-01-01T00:00:00Z', items: [] },
+      ],
+    }),
   ),
   http.post(`${API_BASE}/api/v1/checklists`, () =>
     HttpResponse.json({ id: 2, title: 'New Checklist', createdAt: '2024-01-01T00:00:00Z', items: [] }, { status: 201 }),
@@ -57,9 +61,11 @@ export const handlers = [
 
   // ── Calendar Service ────────────────────────────────────────
   http.get(`${API_BASE}/api/v1/events`, () =>
-    HttpResponse.json([
-      { id: 1, title: 'Test Event', description: 'Desc', startTime: '2024-01-01T00:00:00Z', endTime: '2024-01-01T01:00:00Z', location: 'Room 1' },
-    ]),
+    HttpResponse.json({
+      events: [
+        { id: 1, title: 'Test Event', description: 'Desc', startTime: '2024-01-01T00:00:00Z', endTime: '2024-01-01T01:00:00Z', location: 'Room 1' },
+      ],
+    }),
   ),
   http.post(`${API_BASE}/api/v1/events`, () =>
     HttpResponse.json({ id: 2, title: 'New Event', description: '', startTime: '2024-01-01T00:00:00Z', endTime: '2024-01-01T01:00:00Z', location: '' }, { status: 201 }),

@@ -108,7 +108,6 @@ jobs:
       matrix:
         service:
           - user-service
-          - admin-service
           - checklist-service
           - calendar-service
           - note-service
@@ -129,6 +128,11 @@ jobs:
           mvn clean install -f services/shared/pom.xml
           cd services/${{ matrix.service }}
           mvn clean test
+
+      - name: Static Analysis with Spotbugs
+        run: |
+          cd services/${{ matrix.service }}
+          mvn compile spotbugs:check
 
   frontend-test:
     name: Build & Test Frontend

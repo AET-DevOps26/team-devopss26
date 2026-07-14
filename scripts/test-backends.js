@@ -11,7 +11,7 @@ if (fs.existsSync(servicesDir)) {
     const pomPath = path.join(servicesDir, service, 'pom.xml');
     if (fs.existsSync(pomPath)) {
       console.log(`\n========================================`);
-      console.log(`Running tests for service: ${service}`);
+      console.log(`Running tests and static analysis for service: ${service}`);
       console.log(`========================================`);
       try {
         const serviceDir = path.join(servicesDir, service);
@@ -20,12 +20,12 @@ if (fs.existsSync(servicesDir)) {
           ? (process.platform === 'win32' ? 'mvnw.cmd' : './mvnw')
           : 'mvn';
         
-        execSync(`${cmd} clean test -Dsurefire.exitTimeout=1 -DargLine="-Dlogging.level.com.tngtech.archunit.core.importer.ClassFileProcessor=ERROR"`, {
+        execSync(`${cmd} clean test spotbugs:check -Dsurefire.exitTimeout=1 -DargLine="-Dlogging.level.com.tngtech.archunit.core.importer.ClassFileProcessor=ERROR"`, {
           cwd: serviceDir,
           stdio: 'inherit'
         });
       } catch (error) {
-        console.error(`\nTests failed for service: ${service}`);
+        console.error(`\nTests or static analysis failed for service: ${service}`);
         failed = true;
       }
     }
@@ -35,5 +35,5 @@ if (fs.existsSync(servicesDir)) {
 if (failed) {
   process.exit(1);
 } else {
-  console.log('\nAll backend tests completed successfully.');
+  console.log('\nAll backend tests and static analysis completed successfully.');
 }

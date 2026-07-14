@@ -30,14 +30,6 @@ package "AI-integrated Life Management App" {
 		(Delete Checklist)
 		(Manage Items in Checklist)
 	}
-	
-	package Settings as Settings {
-		(Change Time Display)
-	}
-	
-	package Administrator as Administrator {
-		(Manage User)
-	}
 
 }
 
@@ -45,6 +37,4 @@ User --> Notes
 User --> Calendar
 User --> Checklists
 User --> Chatbot
-User --> Settings
-Admin --> Administrator
 @enduml

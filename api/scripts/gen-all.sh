@@ -33,9 +33,9 @@ for spec in api/*.yaml api/*.yml; do
     echo "Skipping backend generation (directory $backend_dir does not exist)"
   fi
 
-  # 2. TypeScript Frontend Code
-  echo "Generating TypeScript types for $service_name..."
-  npx openapi-typescript "$spec" -o "web-client/src/$service_name.ts"
-
   echo ""
 done
+
+# 2. Frontend TypeScript Code (Orval)
+echo "=== Generating TypeScript frontend code ==="
+npm --prefix web-client run codegen

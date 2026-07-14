@@ -6,7 +6,7 @@ on:
     types:
       - completed
     branches:
-      - release
+      - main
   workflow_dispatch:
 
 env:
@@ -17,38 +17,104 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-and-push:
+  # ── Detect changed services ─────────────────────────────────
+  detect:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    outputs:
+      services: ${{ steps.build-matrix.outputs.services }}
+      skip-tags: ${{ steps.build-matrix.outputs['skip-tags'] }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            user-service:
+              - 'services/user-service/**'
+            checklist-service:
+              - 'services/checklist-service/**'
+            calendar-service:
+              - 'services/calendar-service/**'
+            note-service:
+              - 'services/note-service/**'
+            genai-service:
+              - 'services/genai-service/**'
+            client:
+              - 'web-client/**'
+            shared:
+              - 'services/shared/**'
+            api:
+              - 'api/**'
+
+      - name: Build service matrix
+        id: build-matrix
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ALL = [
+              {service: "user-service",    context: "./",               dockerfile: "./services/user-service/Dockerfile"},
+              {service: "checklist-service", context: "./",             dockerfile: "./services/checklist-service/Dockerfile"},
+              {service: "calendar-service", context: "./",              dockerfile: "./services/calendar-service/Dockerfile"},
+              {service: "note-service",    context: "./",               dockerfile: "./services/note-service/Dockerfile"},
+              {service: "genai-service",   context: "./services/genai-service", dockerfile: "./services/genai-service/Dockerfile"},
+              {service: "client",          context: "./",               dockerfile: "./web-client/Dockerfile"}
+            ];
+            const ALL_NAMES = ALL.map(s => s.service);
+            const REGISTRY = 'ghcr.io/aet-devops26/team-devopss26';
+
+            // Manual trigger: build everything, nothing to skip-tag
+            if (context.eventName === 'workflow_dispatch') {
+              core.setOutput('services', JSON.stringify(ALL));
+              core.setOutput('skip-tags', JSON.stringify([]));
+              return;
+            }
+
+            const changed = ${{ toJSON(steps.filter.outputs) }};
+            const services = [];
+            const javaServices = ['user-service', 'checklist-service', 'calendar-service', 'note-service'];
+
+            // Shared/api changes cascade to all Java services
+            if (changed.shared === 'true' || changed.api === 'true') {
+              javaServices.forEach(s => services.push(ALL.find(a => a.service === s)));
+            } else {
+              javaServices.forEach(s => {
+                if (changed[s] === 'true') services.push(ALL.find(a => a.service === s));
+              });
+            }
+
+            // GenAI and client are independent
+            for (const s of ['genai-service', 'client']) {
+              if (changed[s] === 'true') services.push(ALL.find(a => a.service === s));
+            }
+
+            // Fallback: if nothing was detected (helm-only, infra, etc.), build all
+            if (services.length === 0) {
+              core.setOutput('services', JSON.stringify(ALL));
+              core.setOutput('skip-tags', JSON.stringify([]));
+              return;
+            }
+
+            core.setOutput('services', JSON.stringify(services));
+
+            // Skipped services: copy latest→SHA tag so Helm can pull
+            const builtNames = services.map(s => s.service);
+            const skippedNames = ALL_NAMES.filter(n => !builtNames.includes(n));
+            const skipTags = skippedNames.map(n => `${REGISTRY}/${n}`);
+            core.setOutput('skip-tags', JSON.stringify(skipTags));
+
+  # ── Build & push only the changed services ──────────────────
+  build-and-push:
+    needs: detect
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
 
     strategy:
       matrix:
-        include:
-          - service: user-service
-            context: ./
-            dockerfile: ./services/user-service/Dockerfile
-          - service: admin-service
-            context: ./
-            dockerfile: ./services/admin-service/Dockerfile
-          - service: checklist-service
-            context: ./
-            dockerfile: ./services/checklist-service/Dockerfile
-          - service: calendar-service
-            context: ./
-            dockerfile: ./services/calendar-service/Dockerfile
-          - service: note-service
-            context: ./
-            dockerfile: ./services/note-service/Dockerfile
-          - service: genai-service
-            context: ./
-            dockerfile: ./services/genai-service/Dockerfile
-          - service: client
-            context: ./
-            dockerfile: ./web-client/Dockerfile
-            build_args: VITE_API_URL=/api
+        service: ${{ fromJSON(needs.detect.outputs.services) }}
 
     steps:
       - name: Checkout
@@ -64,19 +130,50 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build & push ${{ matrix.service }}
+      - name: Build & push ${{ matrix.service.service }}
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
           push: true
           tags: |
-            ${{ env.REGISTRY }}/aet-devops26/team-devopss26/${{ matrix.service }}:latest
-            ${{ env.REGISTRY }}/aet-devops26/team-devopss26/${{ matrix.service }}:${{ github.sha }}
-          build-args: ${{ matrix.build_args }}
+            ${{ env.REGISTRY }}/aet-devops26/team-devopss26/${{ matrix.service.service }}:latest
+            ${{ env.REGISTRY }}/aet-devops26/team-devopss26/${{ matrix.service.service }}:${{ github.sha }}
 
+  # ── Tag skipped services with SHA (copy latest→SHA) ─────────
+  tag-skipped:
+    needs: detect
+    runs-on: ubuntu-latest
+    if: ${{ needs.detect.outputs['skip-tags'] != '[]' }}
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        image: ${{ fromJSON(needs.detect.outputs['skip-tags']) }}
+
+    steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Tag ${{ matrix.image }} with SHA
+        run: |
+          docker buildx imagetools create \
+            --tag ${{ matrix.image }}:${{ github.sha }} \
+            ${{ matrix.image }}:latest
+
+  # ── Deploy to AET cluster ───────────────────────────────────
   deploy-to-k8s:
-    needs: build-and-push
+    needs: [detect, build-and-push, tag-skipped]
+    if: ${{ (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped') && (needs.tag-skipped.result == 'success' || needs.tag-skipped.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -111,7 +208,7 @@ jobs:
           helm upgrade --install devopss26 ./infra/iac/aet \
             --namespace team-devopss26-prod \
             --create-namespace \
-            --atomic \
+            --rollback-on-failure \
             --set global.imageTag=${{ github.sha }} \
             --set ingress.host="$INGRESS_HOST" \
             -f infra/iac/aet/values-prod.yaml \

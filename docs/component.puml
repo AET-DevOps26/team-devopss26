@@ -27,13 +27,7 @@ rectangle "Network Boundary" {
         node "Chatbot Service" as msChat {
             [Chatbot Engine] as sbChat
         }
-        
-        node "Admin Service" as msAdmin {
-            [Spring Boot Admin] as sbAdmin
-            database "Postgres (Admin)" as pgAdmin
-            sbAdmin -down-> pgAdmin
-        }
-        
+
         node "User Service" as msUser {
             [Spring Boot User] as sbUser
             database "Postgres (User)" as pgUser
@@ -65,7 +59,6 @@ user -down-> fe : Access App
 fe -down-> proxy : API Requests (HTTPS)
 
 proxy -down-> sbChat
-proxy -down-> sbAdmin
 proxy -down-> sbUser
 proxy -down-> sbCheck
 proxy -down-> sbCal

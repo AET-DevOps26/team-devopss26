@@ -4,7 +4,7 @@
  * User Service API
  * OpenAPI spec version: 1.0.0
  */
-import type { LoginResponse, RegisterUserRequest } from '../../../types/users';
+import type { LoginResponse, PublicKeyResponse, RegisterUserRequest } from '../../../types/users';
 
 import { customInstance } from '../../../lib/api/client.ts';
 
@@ -42,6 +42,16 @@ export const loginUser = (options?: SecondParameter<typeof customInstance<LoginR
 export const checkToken = (options?: SecondParameter<typeof customInstance<void>>) => {
   return customInstance<void>({ url: `/api/v1/users/auth/check-token`, method: 'GET' }, options);
 };
+/**
+ * @summary Provides other services with public key for JWT validation
+ */
+export const publicKey = (options?: SecondParameter<typeof customInstance<PublicKeyResponse>>) => {
+  return customInstance<PublicKeyResponse>(
+    { url: `/api/v1/users/auth/public-key`, method: 'GET' },
+    options,
+  );
+};
 export type RegisterUserResult = NonNullable<Awaited<ReturnType<typeof registerUser>>>;
 export type LoginUserResult = NonNullable<Awaited<ReturnType<typeof loginUser>>>;
 export type CheckTokenResult = NonNullable<Awaited<ReturnType<typeof checkToken>>>;
+export type PublicKeyResult = NonNullable<Awaited<ReturnType<typeof publicKey>>>;

@@ -7,14 +7,14 @@ import {
   getNoteById,
   updateNote,
   deleteNote,
-} from '../../services/notes/notes/notes';
+} from '#/services/notes/notes/notes.ts';
 
 describe('notes service', () => {
-  it('getNotes sends GET with userId query param', async () => {
-    const notes = await getNotes({ userId: 1 });
-    expect(Array.isArray(notes)).toBe(true);
-    expect(notes.length).toBeGreaterThan(0);
-    expect(notes[0]).toHaveProperty('title');
+  it('getNotes sends GET and returns list of notes', async () => {
+    const result = await getNotes();
+    expect(Array.isArray(result.notes)).toBe(true);
+    expect(result.notes.length).toBeGreaterThan(0);
+    expect(result.notes[0]).toHaveProperty('title');
   });
 
   it('createNote sends POST and returns created note', async () => {
@@ -43,7 +43,7 @@ describe('notes service', () => {
     server.use(
       http.get('*/api/v1/notes', () => HttpResponse.json({ message: 'Server error' }, { status: 500 })),
     );
-    await expect(getNotes({ userId: 1 })).rejects.toThrow();
+    await expect(getNotes()).rejects.toThrow();
   });
 
   it('getNoteById throws on 404 not found', async () => {
