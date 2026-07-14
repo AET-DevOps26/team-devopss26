@@ -177,7 +177,7 @@ function DemoPage() {
         />
       )}
     >
-      {crash ? <ThrowError /> : <DemoContent onCrash={() => setCrash(true)} />}
+      {crash ? <ThrowError /> : <DemoContent onCrash={() => { setCrash(true); }} />}
     </ErrorBoundary>
   );
 }

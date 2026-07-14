@@ -4,7 +4,14 @@
  * Calendar Service API
  * OpenAPI spec version: 1.0.0
  */
-import type { CalendarEvent, GetEventsParams } from '../../../types/calendar';
+import type {
+  CalendarEvent,
+  CreateCalendarEventRequest,
+  CreateCalendarEventResponse,
+  GetCalendarEventResponse,
+  ListCalendarEventResponse,
+  UpdateCalendarEventResponse,
+} from '../../../types/calendar';
 
 import { customInstance } from '../../../lib/api/client.ts';
 
@@ -14,24 +21,26 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  * @summary Get all calendar events for a user
  */
 export const getEvents = (
-  params: GetEventsParams,
-  options?: SecondParameter<typeof customInstance<CalendarEvent[]>>,
+  options?: SecondParameter<typeof customInstance<ListCalendarEventResponse>>,
 ) => {
-  return customInstance<CalendarEvent[]>({ url: `/api/v1/events`, method: 'GET', params }, options);
+  return customInstance<ListCalendarEventResponse>(
+    { url: `/api/v1/events`, method: 'GET' },
+    options,
+  );
 };
 /**
  * @summary Create a new calendar event
  */
 export const createEvent = (
-  calendarEvent: CalendarEvent,
-  options?: SecondParameter<typeof customInstance<CalendarEvent>>,
+  createCalendarEventRequest: CreateCalendarEventRequest,
+  options?: SecondParameter<typeof customInstance<CreateCalendarEventResponse>>,
 ) => {
-  return customInstance<CalendarEvent>(
+  return customInstance<CreateCalendarEventResponse>(
     {
       url: `/api/v1/events`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      data: calendarEvent,
+      data: createCalendarEventRequest,
     },
     options,
   );
@@ -41,9 +50,12 @@ export const createEvent = (
  */
 export const getEventById = (
   id: number,
-  options?: SecondParameter<typeof customInstance<CalendarEvent>>,
+  options?: SecondParameter<typeof customInstance<GetCalendarEventResponse>>,
 ) => {
-  return customInstance<CalendarEvent>({ url: `/api/v1/events/${id}`, method: 'GET' }, options);
+  return customInstance<GetCalendarEventResponse>(
+    { url: `/api/v1/events/${id}`, method: 'GET' },
+    options,
+  );
 };
 /**
  * Updates title, description, startTime, endTime, and location
@@ -52,9 +64,9 @@ export const getEventById = (
 export const updateEvent = (
   id: number,
   calendarEvent: CalendarEvent,
-  options?: SecondParameter<typeof customInstance<CalendarEvent>>,
+  options?: SecondParameter<typeof customInstance<UpdateCalendarEventResponse>>,
 ) => {
-  return customInstance<CalendarEvent>(
+  return customInstance<UpdateCalendarEventResponse>(
     {
       url: `/api/v1/events/${id}`,
       method: 'PUT',

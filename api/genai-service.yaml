@@ -34,12 +34,8 @@ paths:
       tags: [GenAI]
       summary: Create a new chat conversation
       operationId: createConversation
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConversationCreateRequest'
+      security:
+        - JWTAuth: []
       responses:
         '200':
           description: Conversation created
@@ -47,12 +43,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Token either does not exist or is already expired
 
   /api/v1/conversations/{conversationId}:
     get:
       tags: [GenAI]
       summary: Get a conversation by ID including all messages
       operationId: getConversation
+      security:
+        - JWTAuth: []
       parameters:
         - $ref: '#/components/parameters/conversationId'
       responses:
@@ -62,6 +62,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Conversation'
+        '401':
+          description: Token either does not exist or is already expired
         '403':
           description: Access denied
         '404':
@@ -71,6 +73,8 @@ paths:
       tags: [GenAI]
       summary: Delete a conversation by ID
       operationId: deleteConversation
+      security:
+        - JWTAuth: []
       parameters:
         - $ref: '#/components/parameters/conversationId'
       responses:
@@ -84,6 +88,8 @@ paths:
                   message:
                     type: string
                     example: Conversation deleted
+        '401':
+          description: Token either does not exist or is already expired
         '403':
           description: Access denied
         '404':
@@ -94,6 +100,8 @@ paths:
       tags: [GenAI]
       summary: Send a message and get an AI response
       operationId: chat
+      security:
+        - JWTAuth: []
       requestBody:
         required: true
         content:
@@ -109,12 +117,20 @@ paths:
                 $ref: '#/components/schemas/ChatResponse'
         '400':
           description: Message must not be empty
+        '401':
+          description: Token either does not exist or is already expired
         '403':
           description: Access denied
         '404':
           description: Conversation not found
 
 components:
+
+  securitySchemes:
+    JWTAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   parameters:
     conversationId:
@@ -124,22 +140,18 @@ components:
       schema:
         type: integer
         format: int64
+        minimum: -9223372036854775808
+        maximum: 9223372036854775807
 
   schemas:
-    ConversationCreateRequest:
-      type: object
-      required: [user_id]
-      properties:
-        user_id:
-          type: integer
-          format: int64
-
     ChatMessage:
       type: object
       properties:
         id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
         role:
           type: string
           enum: [USER, AGENT]
@@ -148,6 +160,8 @@ components:
         timestamp:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
 
     Conversation:
       type: object
@@ -155,11 +169,16 @@ components:
         id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
         user_id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
         title:
           type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -170,16 +189,15 @@ components:
 
     ChatRequest:
       type: object
-      required: [message, user_id]
+      required: [message]
       properties:
         message:
           type: string
-        user_id:
-          type: integer
-          format: int64
         conversation_id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
           nullable: true
         model:
           type: string
@@ -194,3 +212,5 @@ components:
         conversation_id:
           type: integer
           format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807

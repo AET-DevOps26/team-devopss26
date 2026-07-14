@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../setup';
-import { getEvents, createEvent, getEventById, updateEvent, deleteEvent } from '../../services/calendar/calendar-events/calendar-events';
+import { getEvents, createEvent, getEventById, updateEvent, deleteEvent } from '#/services/calendar/calendar-events/calendar-events.ts';
 
 describe('calendar service', () => {
-  it('getEvents sends GET with userId query param', async () => {
-    const result = await getEvents({ userId: 1 });
-    expect(Array.isArray(result)).toBe(true);
-    expect(result[0]).toHaveProperty('title');
+  it('getEvents returns events list', async () => {
+    const result = await getEvents();
+    expect(result.events).toBeDefined();
+    expect(result.events[0]).toHaveProperty('title');
   });
 
   it('createEvent sends POST and returns created event', async () => {
@@ -33,6 +33,6 @@ describe('calendar service', () => {
     server.use(
       http.get('*/api/v1/events', () => HttpResponse.json(null, { status: 500 })),
     );
-    await expect(getEvents({ userId: 1 })).rejects.toThrow();
+    await expect(getEvents()).rejects.toThrow();
   });
 });

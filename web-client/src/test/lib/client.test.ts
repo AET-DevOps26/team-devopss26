@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../setup';
-import { api } from '../../lib/api/client';
-import { useAuthStore } from '../../stores/authStore';
+import { api } from '#/lib/api/client.ts';
+import { useAuthStore } from '#/stores/authStore.ts';
 
 beforeEach(() => {
   useAuthStore.getState().clearAuth();
@@ -22,7 +22,7 @@ describe('request interceptor', () => {
     useAuthStore.getState().setAuth('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsIm5hbWUiOiJ0ZXN0dXNlciJ9.fake-signature');
     await api.get('/api/v1/notes');
 
-    expect(capturedHeaders['authorization']).toBe('Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsIm5hbWUiOiJ0ZXN0dXNlciJ9.fake-signature');
+    expect(capturedHeaders.authorization).toBe('Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsIm5hbWUiOiJ0ZXN0dXNlciJ9.fake-signature');
   });
 
   it('does not attach Authorization header when no token', async () => {
@@ -37,7 +37,7 @@ describe('request interceptor', () => {
 
     await api.get('/api/v1/notes');
 
-    expect(capturedHeaders['authorization']).toBeUndefined();
+    expect(capturedHeaders.authorization).toBeUndefined();
   });
 
   it('does not attach Authorization header when token is cleared', async () => {
@@ -54,7 +54,7 @@ describe('request interceptor', () => {
     useAuthStore.getState().clearAuth();
     await api.get('/api/v1/notes');
 
-    expect(capturedHeaders['authorization']).toBeUndefined();
+    expect(capturedHeaders.authorization).toBeUndefined();
   });
 });
 

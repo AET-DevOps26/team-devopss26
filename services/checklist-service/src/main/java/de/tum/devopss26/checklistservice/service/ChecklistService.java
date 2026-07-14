@@ -1,25 +1,29 @@
 package de.tum.devopss26.checklistservice.service;
 
+import org.openapitools.model.AddChecklistItemResponse;
 import org.openapitools.model.Checklist;
 import org.openapitools.model.ChecklistItem;
-
-import java.util.List;
+import org.openapitools.model.CreateChecklistResponse;
+import org.openapitools.model.GetChecklistResponse;
+import org.openapitools.model.GetChecklistsResponse;
+import org.openapitools.model.UpdateChecklistItemResponse;
+import org.openapitools.model.UpdateChecklistResponse;
 
 public interface ChecklistService {
 
-    List<Checklist> getChecklists(Long userId);
+    GetChecklistsResponse getChecklists(Long userId);
 
-    Checklist getChecklistById(Long id);
+    GetChecklistResponse getChecklistById(Long userId, Long id);
 
-    Checklist createChecklist(Long userId, Checklist checklist);
+    CreateChecklistResponse createChecklist(Long userId, Checklist checklist);
 
-    Checklist updateChecklist(Long id, Checklist checklist);
+    UpdateChecklistResponse updateChecklist(Long userId, Long id, Checklist checklist);
 
-    void deleteChecklist(Long id);
+    void deleteChecklist(Long userId, Long id);
 
-    ChecklistItem addChecklistItem(Long checklistId, ChecklistItem item);
+    AddChecklistItemResponse addChecklistItem(Long userId, Long checklistId, ChecklistItem item);
 
-    ChecklistItem updateChecklistItem(Long checklistId, Long itemId, ChecklistItem item);
+    UpdateChecklistItemResponse updateChecklistItem(Long userId, Long checklistId, Long itemId, ChecklistItem item);
 
-    void deleteChecklistItem(Long checklistId, Long itemId);
+    void deleteChecklistItem(Long userId, Long checklistId, Long itemId);
 }

@@ -6,4 +6,11 @@
  */
 
 export * from './calendarEvent.ts';
-export * from './getEventsParams.ts';
+export * from './createCalendarEventRequest.ts';
+export * from './createCalendarEventResponse.ts';
+export * from './getCalendarEventResponse.ts';
+export * from './identifiedCalendarEvent.ts';
+export * from './identifier.ts';
+export * from './listCalendarEventResponse.ts';
+export * from './timestamped.ts';
+export * from './updateCalendarEventResponse.ts';

@@ -218,11 +218,11 @@ function NotesToolbar({
         <Input
           placeholder="Search notes..."
           value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => { onSearchChange(e.target.value); }}
           className="pl-8"
         />
       </div>
-      <Select value={typeFilter} onValueChange={(v) => v && onTypeFilterChange(v)}>
+      <Select value={typeFilter} onValueChange={(v) => { if (v) onTypeFilterChange(v); }}>
         <SelectTrigger className="w-[130px]">
           <SelectValue>
             {(value: string | null) => {
@@ -264,7 +264,7 @@ function NoteCard({ note, onClick }: { note: DisplayNote; onClick: () => void })
       <CardContent>
         <p className="text-sm text-muted-foreground line-clamp-2">
           {note.type === 'checklist'
-            ? `${doneCount}/${note.checklist.length} tasks completed`
+            ? `${String(doneCount)}/${String(note.checklist.length)} tasks completed`
             : note.body}
         </p>
         <p className="mt-2 text-xs text-muted-foreground/60">{formatDate(note.updatedAt)}</p>
@@ -394,7 +394,7 @@ function NoteForm({
       <div className="space-y-4">
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Title</label>
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Note title" />
+          <Input value={title} onChange={(e) => { setTitle(e.target.value); }} placeholder="Note title" />
         </div>
 
         <div className="flex items-center gap-2">
@@ -407,7 +407,7 @@ function NoteForm({
           ) : (
             // Creating — allow type selection
             (['note', 'checklist'] as const).map((t) => (
-              <Button key={t} size="xs" variant={type === t ? 'default' : 'outline'} onClick={() => setType(t)}>
+              <Button key={t} size="xs" variant={type === t ? 'default' : 'outline'} onClick={() => { setType(t); }}>
                 {t === 'note' ? 'Note' : 'Checklist'}
               </Button>
             ))
@@ -417,7 +417,7 @@ function NoteForm({
         {type === 'note' ? (
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Body (Markdown)</label>
-            <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write in markdown..." className="min-h-[200px]" />
+            <Textarea value={body} onChange={(e) => { setBody(e.target.value); }} placeholder="Write in markdown..." className="min-h-[200px]" />
           </div>
         ) : (
           <div>
@@ -425,11 +425,11 @@ function NoteForm({
             <div className="space-y-2">
               {items.map((item) => (
                 <div key={item.id} className="flex items-center gap-2">
-                  <Checkbox checked={item.done} onCheckedChange={() => toggleItem(item.id)} />
+                  <Checkbox checked={item.done} onCheckedChange={() => { toggleItem(item.id); }} />
                   <span className={`flex-1 text-sm ${item.done ? 'text-muted-foreground line-through' : ''}`}>
                     {item.text}
                   </span>
-                  <Button variant="ghost" size="icon-xs" onClick={() => removeItem(item.id)}>
+                  <Button variant="ghost" size="icon-xs" onClick={() => { removeItem(item.id); }}>
                     <XIcon className="size-3" />
                   </Button>
                 </div>
@@ -438,7 +438,7 @@ function NoteForm({
             <div className="mt-2 flex gap-2">
               <Input
                 value={newItemText}
-                onChange={(e) => setNewItemText(e.target.value)}
+                onChange={(e) => { setNewItemText(e.target.value); }}
                 placeholder="Add item..."
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addItem(); } }}
                 className="flex-1"
@@ -451,7 +451,7 @@ function NoteForm({
         )}
 
         <div className="flex gap-2 pt-2">
-          <Button onClick={() => onSave({ ...note, id: note.id || 0, title, body, type, checklist: items })} disabled={!canSave}>
+          <Button onClick={() => { onSave({ ...note, id: note.id || 0, title, body, type, checklist: items }); }} disabled={!canSave}>
             <CheckIcon data-icon="inline-start" />Save
           </Button>
           <Button variant="outline" onClick={onCancel}>Cancel</Button>
@@ -695,7 +695,7 @@ export function NotesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((note) => (
-              <NoteCard key={`${note.type}-${note.id}`} note={note} onClick={() => handleSelect(note)} />
+              <NoteCard key={`${note.type}-${note.id}`} note={note} onClick={() => { handleSelect(note); }} />
             ))}
           </div>
         )}

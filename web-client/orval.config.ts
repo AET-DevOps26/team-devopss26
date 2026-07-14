@@ -81,20 +81,4 @@ export default defineConfig({
       clean: true,
     },
   },
-  adminService: {
-    input: '../api/admin-service.yaml',
-    output: {
-      target: 'src/services/admin',
-      client: 'axios-functions',
-      mode: 'tags-split',
-      schemas: 'src/types/admin',
-      override: {
-        mutator: {
-          path: 'src/lib/api/client.ts',
-          name: 'customInstance',
-        },
-      },
-      clean: true,
-    },
-  },
 });

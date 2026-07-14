@@ -5,5 +5,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export * from './getNotesParams.ts';
+export * from './createNoteRequest.ts';
+export * from './createNoteResponse.ts';
+export * from './getNoteResponse.ts';
+export * from './identifiedNote.ts';
+export * from './identifiedTimestampedNote.ts';
+export * from './identifier.ts';
+export * from './listNotesResponse.ts';
 export * from './note.ts';
+export * from './timestamped.ts';
+export * from './updateNoteResponse.ts';
