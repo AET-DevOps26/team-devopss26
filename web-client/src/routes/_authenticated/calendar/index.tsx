@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import {
   useSuspenseQuery,
@@ -51,14 +51,14 @@ const calendarQueries = {
       queryKey: calendarKeys.events(),
       queryFn: async () => {
         const response = await getEvents();
-        return response.events ?? [];
+        return response.events;
       },
       staleTime: 30_000,
     }),
 };
 
 function localDateStr(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 const today = new Date();
@@ -113,14 +113,14 @@ function addHour(hhmm: string): string {
 
 /** Convert YYYY-MM-DD to DD.MM.YYYY for localized display. */
 function toDisplayDate(isoDate: string): string {
-  const match = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
   if (!match) return isoDate;
   return `${match[3]}.${match[2]}.${match[1]}`;
 }
 
 /** Convert DD.MM.YYYY back to YYYY-MM-DD for internal state / API. */
 function fromDisplayDate(dmy: string): string {
-  const match = dmy.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(dmy);
   if (!match) return '';
   return `${match[3]}-${match[2]}-${match[1]}`;
 }
@@ -139,7 +139,7 @@ function toApiEvent(form: CalendarFormEvent): CreateCalendarEventRequest {
     title: form.title,
     startTime: `${form.date}T${form.startTime}:00Z`,
     endTime: `${form.date}T${form.endTime}:00Z`,
-    description: form.description || undefined,
+    description: form.description ?? undefined,
   };
 }
 
@@ -200,7 +200,7 @@ function EventSheet({
     onError: () => toast.error('Failed to create event'),
     onSuccess: () => {
       toast.success('Event created');
-      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
     },
   });
 
@@ -210,7 +210,7 @@ function EventSheet({
     onError: () => toast.error('Failed to update event'),
     onSuccess: () => {
       toast.success('Event updated');
-      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
     },
   });
 
@@ -219,7 +219,7 @@ function EventSheet({
     onError: () => toast.error('Failed to delete event'),
     onSuccess: () => {
       toast.success('Event deleted');
-      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
     },
   });
 
@@ -237,16 +237,7 @@ function EventSheet({
     onOpenChange(open);
   };
 
-  // Sync form when editing event changes while sheet is open
-  useEffect(() => {
-    if (isOpen && event) {
-      setTitle(event.title);
-      setDateDisplay(toDisplayDate(event.date));
-      setStartTime(event.startTime);
-      setEndTime(event.endTime);
-      setDescription(event.description ?? '');
-    }
-  }, [isOpen, event]);
+  /* Form sync is handled by key-based remount of EventSheet in CalendarPage */
 
   const handleSave = () => {
     if (!title.trim() || !parsedDate || !isTimeValid || isPending) return;
@@ -288,7 +279,7 @@ function EventSheet({
         <div className="flex-1 space-y-4 p-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Title</label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Event title" />
+            <Input value={title} onChange={(e) => { setTitle(e.target.value); }} placeholder="Event title" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Date</label>
@@ -297,7 +288,7 @@ function EventSheet({
                 inputMode="numeric"
                 placeholder="DD.MM.YYYY"
                 value={dateDisplay}
-                onChange={(e) => setDateDisplay(e.target.value)}
+                onChange={(e) => { setDateDisplay(e.target.value); }}
                 onBlur={() => {
                   const parsed = fromDisplayDate(dateDisplay);
                   if (parsed) setDateDisplay(toDisplayDate(parsed));
@@ -306,7 +297,7 @@ function EventSheet({
               />
               <button
                 type="button"
-                onClick={() => datePickerRef.current?.showPicker()}
+                onClick={() => { datePickerRef.current?.showPicker(); }}
                 className="absolute right-1 top-1/2 -translate-y-1/2 flex size-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
                 tabIndex={-1}
               >
@@ -318,7 +309,7 @@ function EventSheet({
                 className="sr-only"
                 value={parsedDate}
                 tabIndex={-1}
-                onChange={(e) => setDateDisplay(toDisplayDate(e.target.value))}
+                onChange={(e) => { setDateDisplay(toDisplayDate(e.target.value)); }}
               />
             </div>
           </div>
@@ -329,10 +320,10 @@ function EventSheet({
                 inputMode="numeric"
                 placeholder="HH:MM"
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(e) => { setStartTime(e.target.value); }}
                 onBlur={(e) => {
                   const v = e.target.value;
-                  const m = v.match(/^(\d{1,2}):?(\d{0,2})$/);
+                  const m = /^(\d{1,2}):?(\d{0,2})$/.exec(v);
                   if (m) {
                     const norm = `${m[1].padStart(2, '0')}:${(m[2] || '00').padStart(2, '0')}`;
                     setStartTime(norm);
@@ -349,10 +340,10 @@ function EventSheet({
                 inputMode="numeric"
                 placeholder="HH:MM"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e) => { setEndTime(e.target.value); }}
                 onBlur={(e) => {
                   const v = e.target.value;
-                  const m = v.match(/^(\d{1,2}):?(\d{0,2})$/);
+                  const m = /^(\d{1,2}):?(\d{0,2})$/.exec(v);
                   if (m) {
                     setEndTime(`${m[1].padStart(2, '0')}:${(m[2] || '00').padStart(2, '0')}`);
                   }
@@ -365,7 +356,7 @@ function EventSheet({
           )}
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">Description (optional)</label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add description..." />
+            <Input value={description} onChange={(e) => { setDescription(e.target.value); }} placeholder="Add description..." />
           </div>
         </div>
 
@@ -381,7 +372,7 @@ function EventSheet({
               <Trash2Icon data-icon="inline-start" />Delete
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={() => { onOpenChange(false); }} disabled={isPending}>Cancel</Button>
           <Button size="sm" onClick={handleSave} disabled={!title.trim() || !parsedDate || !isTimeValid || isPending}>
             {isPending ? 'Saving...' : event?.id ? 'Update' : 'Create'}
           </Button>
@@ -433,17 +424,15 @@ export function CalendarPage() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDayOfMonth(year, month);
-
   // Build grid: leading blanks + day numbers
   const gridDays = useMemo(() => {
-    const cells: (number | null)[] = Array(firstDay).fill(null);
-    for (let d = 1; d <= daysInMonth; d++) {
-      cells.push(d);
-    }
+    const firstDay = getFirstDayOfMonth(year, month);
+    const daysInMonth = getDaysInMonth(year, month);
+    const cells: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
     return cells;
-  }, [year, month, daysInMonth, firstDay]);
+  }, [year, month]);
 
   // Events mapped by date string (derived from startTime ISO string)
   const eventsByDate = useMemo(() => {
@@ -518,16 +507,16 @@ export function CalendarPage() {
 
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="icon-sm" onClick={() => navigateMonth(-1)}>
+        <Button variant="ghost" size="icon-sm" onClick={() => { navigateMonth(-1); }}>
           <ChevronLeftIcon className="size-5" />
         </Button>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={goToToday}>Today</Button>
           <h2 className="text-lg font-semibold">
-            {MONTHS[month]} {year}
+            {MONTHS[month]} {String(year)}
           </h2>
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={() => navigateMonth(1)}>
+        <Button variant="ghost" size="icon-sm" onClick={() => { navigateMonth(1); }}>
           <ChevronRightIcon className="size-5" />
         </Button>
       </div>
@@ -547,7 +536,7 @@ export function CalendarPage() {
           <div className="grid grid-cols-7">
             {gridDays.map((day, i) => {
               const dateStr = day
-                ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                ? `${String(year)}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                 : '';
               const dayEvents = dateStr ? eventsByDate.get(dateStr) ?? [] : [];
               const isCurrent = day !== null && isToday(day);
@@ -557,7 +546,7 @@ export function CalendarPage() {
               return (
                 <div
                   key={i}
-                  onClick={() => day && handleDayClick(day)}
+                  onClick={() => { if (day) handleDayClick(day); }}
                   className={`relative min-h-[60px] border-b border-r p-1.5 text-sm transition-colors sm:min-h-[80px] sm:p-2 ${
                     isCurrent
                       ? 'bg-primary/10 ring-1 ring-inset ring-primary'
@@ -627,7 +616,7 @@ export function CalendarPage() {
               <div
                 key={ev.id}
                 className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors hover:border-ring/30"
-                onClick={() => openEditSheet(ev)}
+                onClick={() => { openEditSheet(ev); }}
               >
                 <div className="flex flex-col items-center text-xs">
                   <span className="font-medium text-primary">{formatTime(ev.startTime)}</span>
@@ -648,6 +637,7 @@ export function CalendarPage() {
 
       {/* Event create/edit sheet */}
       <EventSheet
+        key={editingEvent?.id ?? 'create'}
         event={editingEvent}
         isOpen={sheetOpen}
         onOpenChange={setSheetOpen}

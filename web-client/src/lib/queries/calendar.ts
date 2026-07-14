@@ -29,7 +29,7 @@ export const calendarQueries = {
       queryKey: calendarKeys.events(),
       queryFn: async () => {
         const response = await getEvents();
-        return response.events ?? [];
+        return response.events;
       },
       staleTime: 30_000,
     }),
@@ -78,7 +78,7 @@ export function useCreateEvent() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
     },
   });
 }
@@ -98,7 +98,7 @@ export function useUpdateEvent() {
 
     onSuccess: () => {
       toast.success('Event updated');
-      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
     },
   });
 }
@@ -135,7 +135,7 @@ export function useDeleteEvent() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
+      void queryClient.invalidateQueries({ queryKey: calendarKeys.events() });
     },
   });
 }

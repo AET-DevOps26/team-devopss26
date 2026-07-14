@@ -8,7 +8,7 @@ import { CalendarPage } from '#/routes/_authenticated/calendar';
 
 /** Format a Date as YYYY-MM-DD in local timezone. */
 function localDateStr(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 const todayStr = localDateStr(new Date());

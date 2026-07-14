@@ -10,7 +10,7 @@ export const api: AxiosInstance = axios.create({
 // Request interceptor: attach Bearer token from auth store
 api.interceptors.request.use((config) => {
   const { token } = useAuthStore.getState();
-  if (token && config.headers) {
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

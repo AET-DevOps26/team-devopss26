@@ -1,8 +1,4 @@
-import type {
-  CreateCalendarEventRequest,
-  IdentifiedCalendarEvent,
-  CalendarEvent,
-} from '#/types/calendar';
+import type {CreateCalendarEventRequest, IdentifiedCalendarEvent,} from '#/types/calendar';
 
 export interface CalendarFormEvent {
   id?: number;
@@ -14,14 +10,13 @@ export interface CalendarFormEvent {
 }
 
 export function toApiEvent(form: CalendarFormEvent): CreateCalendarEventRequest {
-  const apiEvent: CalendarEvent & Required<Pick<CalendarEvent, 'title' | 'startTime' | 'endTime'>> = {
+  return {
     title: form.title,
     startTime: `${form.date}T${form.startTime}:00Z`,
     endTime: `${form.date}T${form.endTime}:00Z`,
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- need to coerce '' to undefined
     description: form.description || undefined,
   };
-
-  return apiEvent as CreateCalendarEventRequest;
 }
 
 export function fromApiEvent(event: IdentifiedCalendarEvent): CalendarFormEvent {
