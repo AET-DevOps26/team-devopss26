@@ -9,6 +9,9 @@ data:
     global:
       scrape_interval: 15s
 
+    rule_files:
+      - /etc/prometheus/rules.yml
+
     scrape_configs:
       - job_name: 'user-service'
         metrics_path: '/actuator/prometheus'
@@ -30,6 +33,48 @@ data:
         metrics_path: '/metrics'
         static_configs:
           - targets: ['genai-service.team-devopss26-prod.svc.cluster.local:8006']
+  rules.yml: |
+    groups:
+      - name: service-availability
+        rules:
+          - alert: ServiceDown
+            expr: up{job=~"user-service|checklist-service|calendar-service|note-service|genai-service"} == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Service {{ $labels.job }} is down"
+              description: "Prometheus has been unable to scrape {{ $labels.job }} ({{ $labels.instance }}) for more than 1 minute."
+      - name: service-latency
+        rules:
+          - alert: HighLatencyJavaService
+            expr: histogram_quantile(0.95, sum by (job, le) (rate(http_server_requests_seconds_bucket{job=~"user-service|checklist-service|calendar-service|note-service"}[5m]))) > 2
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High p95 latency on {{ $labels.job }}"
+              description: "95th percentile request latency for {{ $labels.job }} has been above 2s for 5 minutes (current: {{ $value | printf \"%.2f\" }}s)."
+          - alert: HighLatencyGenAI
+            expr: histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job="genai-service"}[5m]))) > 5
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High p95 latency on genai-service"
+              description: "95th percentile request latency for genai-service has been above 5s for 5 minutes (current: {{ $value | printf \"%.2f\" }}s)."
+      - name: service-errors
+        rules:
+          - alert: HighErrorRateJavaService
+            expr: |
+              100 * sum by (job) (rate(http_server_requests_seconds_count{job=~"user-service|checklist-service|calendar-service|note-service", outcome="SERVER_ERROR"}[5m]))
+              / clamp_min(sum by (job) (rate(http_server_requests_seconds_count{job=~"user-service|checklist-service|calendar-service|note-service"}[5m])), 1) > 5
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High 5xx error rate on {{ $labels.job }}"
+              description: "{{ $labels.job }} has been returning more than 5% server errors for 5 minutes (current: {{ $value | printf \"%.1f\" }}%)."
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -66,6 +111,9 @@ spec:
             - name: config
               mountPath: /etc/prometheus/prometheus.yml
               subPath: prometheus.yml
+            - name: config
+              mountPath: /etc/prometheus/rules.yml
+              subPath: rules.yml
       volumes:
         - name: config
           configMap:
