@@ -5,7 +5,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ChatRequestModel = (typeof ChatRequestModel)[keyof typeof ChatRequestModel];
+export type ChatRequestModel = typeof ChatRequestModel[keyof typeof ChatRequestModel];
+
 
 export const ChatRequestModel = {
   gemini: 'gemini',

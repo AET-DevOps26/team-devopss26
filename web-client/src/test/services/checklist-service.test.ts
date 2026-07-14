@@ -13,8 +13,8 @@ import {
 } from '#/services/checklist/checklists/checklists.ts';
 
 describe('checklist service', () => {
-  it('getChecklists sends GET with userId query param', async () => {
-    const result = await getChecklists({ userId: 1 });
+  it('getChecklists sends GET', async () => {
+    const result = await getChecklists();
     expect(result.checklists).toBeDefined();
     expect(Array.isArray(result.checklists)).toBe(true);
     if (result.checklists) {
@@ -61,7 +61,7 @@ describe('checklist service', () => {
     server.use(
       http.get('*/api/v1/checklists', () => HttpResponse.json(null, { status: 500 })),
     );
-    await expect(getChecklists({ userId: 1 })).rejects.toThrow();
+    await expect(getChecklists()).rejects.toThrow();
   });
 
   it('addChecklistItem throws on 404 for missing checklist', async () => {

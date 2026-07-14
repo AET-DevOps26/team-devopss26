@@ -8,8 +8,11 @@ import type { ChatRequestModel } from './chatRequestModel.ts';
 
 export interface ChatRequest {
   message: string;
-  user_id: number;
-  /** @nullable */
+  /**
+     * @minimum -9223372036854776000
+     * @maximum 9223372036854776000
+     * @nullable
+     */
   conversation_id?: number | null;
   model?: ChatRequestModel;
 }

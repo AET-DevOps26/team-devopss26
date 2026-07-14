@@ -4,8 +4,6 @@
  * Checklist Service API
  * OpenAPI spec version: 1.0.0
  */
+import type { Checklist } from './checklist.ts';
 
-export interface CreateChecklistRequest {
-  userId?: number;
-  title?: string;
-}
+export type CreateChecklistRequest = Checklist & { [key: string]: unknown } & Required<Pick<Checklist & { [key: string]: unknown }, 'title'>>;

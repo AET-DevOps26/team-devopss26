@@ -4,9 +4,6 @@
  * Checklist Service API
  * OpenAPI spec version: 1.0.0
  */
+import type { ChecklistItem } from './checklistItem.ts';
 
-export interface UpdateChecklistItemRequest {
-  text?: string;
-  completed?: boolean;
-  position?: number;
-}
+export type UpdateChecklistItemRequest = ChecklistItem;

@@ -38,10 +38,6 @@ const developerItems: NavItem[] = [
   { href: '/swagger/', label: 'API Docs', icon: BookOpen, external: true },
 ];
 
-const developerItems: NavItem[] = [
-  { href: '/swagger/', label: 'API Docs', icon: BookOpen, external: true },
-];
-
 export function AppSidebar() {
   const matchRoute = useMatchRoute();
   const isLinkActive = (to: string) =>

@@ -8,81 +8,75 @@ import type {
   ChatRequest,
   ChatResponse,
   Conversation,
-  ConversationCreateRequest,
   DeleteConversation200,
-  Health200,
+  Health200
 } from '../../../types/genai';
 
 import { customInstance } from '../../../lib/api/client.ts';
 
+
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-/**
+
+  /**
  * @summary Health check
  */
-export const health = (options?: SecondParameter<typeof customInstance<Health200>>) => {
-  return customInstance<Health200>({ url: `/api/v1/health`, method: 'GET' }, options);
-};
-/**
+export const health = (
+
+ options?: SecondParameter<typeof customInstance<Health200>>,) => {
+      return customInstance<Health200>(
+      {url: `/api/v1/health`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * @summary Create a new chat conversation
  */
 export const createConversation = (
-  conversationCreateRequest: ConversationCreateRequest,
-  options?: SecondParameter<typeof customInstance<Conversation>>,
-) => {
-  return customInstance<Conversation>(
-    {
-      url: `/api/v1/conversations`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: conversationCreateRequest,
+
+ options?: SecondParameter<typeof customInstance<Conversation>>,) => {
+      return customInstance<Conversation>(
+      {url: `/api/v1/conversations`, method: 'POST'
     },
-    options,
-  );
-};
-/**
+      options);
+    }
+  /**
  * @summary Get a conversation by ID including all messages
  */
 export const getConversation = (
-  conversationId: number,
-  options?: SecondParameter<typeof customInstance<Conversation>>,
-) => {
-  return customInstance<Conversation>(
-    { url: `/api/v1/conversations/${conversationId}`, method: 'GET' },
-    options,
-  );
-};
-/**
+    conversationId: number,
+ options?: SecondParameter<typeof customInstance<Conversation>>,) => {
+      return customInstance<Conversation>(
+      {url: `/api/v1/conversations/${conversationId}`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * @summary Delete a conversation by ID
  */
 export const deleteConversation = (
-  conversationId: number,
-  options?: SecondParameter<typeof customInstance<DeleteConversation200>>,
-) => {
-  return customInstance<DeleteConversation200>(
-    { url: `/api/v1/conversations/${conversationId}`, method: 'DELETE' },
-    options,
-  );
-};
-/**
+    conversationId: number,
+ options?: SecondParameter<typeof customInstance<DeleteConversation200>>,) => {
+      return customInstance<DeleteConversation200>(
+      {url: `/api/v1/conversations/${conversationId}`, method: 'DELETE'
+    },
+      options);
+    }
+  /**
  * @summary Send a message and get an AI response
  */
 export const chat = (
-  chatRequest: ChatRequest,
-  options?: SecondParameter<typeof customInstance<ChatResponse>>,
-) => {
-  return customInstance<ChatResponse>(
-    {
-      url: `/api/v1/chat`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: chatRequest,
+    chatRequest: ChatRequest,
+ options?: SecondParameter<typeof customInstance<ChatResponse>>,) => {
+      return customInstance<ChatResponse>(
+      {url: `/api/v1/chat`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: chatRequest
     },
-    options,
-  );
-};
-export type HealthResult = NonNullable<Awaited<ReturnType<typeof health>>>;
-export type CreateConversationResult = NonNullable<Awaited<ReturnType<typeof createConversation>>>;
-export type GetConversationResult = NonNullable<Awaited<ReturnType<typeof getConversation>>>;
-export type DeleteConversationResult = NonNullable<Awaited<ReturnType<typeof deleteConversation>>>;
-export type ChatResult = NonNullable<Awaited<ReturnType<typeof chat>>>;
+      options);
+    }
+  export type HealthResult = NonNullable<Awaited<ReturnType<typeof health>>>
+export type CreateConversationResult = NonNullable<Awaited<ReturnType<typeof createConversation>>>
+export type GetConversationResult = NonNullable<Awaited<ReturnType<typeof getConversation>>>
+export type DeleteConversationResult = NonNullable<Awaited<ReturnType<typeof deleteConversation>>>
+export type ChatResult = NonNullable<Awaited<ReturnType<typeof chat>>>

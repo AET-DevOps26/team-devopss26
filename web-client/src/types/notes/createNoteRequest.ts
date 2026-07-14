@@ -6,6 +6,4 @@
  */
 import type { Note } from './note.ts';
 
-export type CreateNoteRequest = Note & { [key: string]: unknown } & Required<
-    Pick<Note & { [key: string]: unknown }, 'title' | 'content'>
-  >;
+export type CreateNoteRequest = Note & { [key: string]: unknown } & Required<Pick<Note & { [key: string]: unknown }, 'title' | 'content'>>;
