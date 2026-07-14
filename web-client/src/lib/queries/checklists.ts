@@ -9,7 +9,6 @@ import {
   updateChecklistItem,
   deleteChecklistItem,
 } from '#/services/checklist/checklists/checklists';
-import type { CreateChecklistRequest, UpdateChecklistRequest, AddChecklistItemRequest, UpdateChecklistItemRequest } from '#/types/checklist';
 import { useAuthStore } from '#/stores/authStore';
 
 export const checklistKeys = {
@@ -18,13 +17,18 @@ export const checklistKeys = {
   list: (filters: string) => [...checklistKeys.lists(), filters] as const,
 };
 
+function getUserId(): number {
+  const userId = useAuthStore.getState().userId;
+  if (userId == null) throw new Error('User not authenticated');
+  return userId;
+}
+
 export const checklistQueries = {
   all: () =>
     queryOptions({
       queryKey: checklistKeys.lists(),
       queryFn: async () => {
-        const userId = useAuthStore.getState().userId;
-        const response = await getChecklists({ userId: userId! });
+        const response = await getChecklists({ userId: getUserId() });
         return response.checklists ?? [];
       },
       staleTime: 30_000,
@@ -36,12 +40,12 @@ export function useCreateChecklist() {
 
   return useMutation({
     mutationFn: (data: { title: string }) => {
-      const userId = useAuthStore.getState().userId;
-      return createChecklist({ userId: userId!, title: data.title } as CreateChecklistRequest);
+      const userId = getUserId();
+      return createChecklist({ userId, title: data.title });
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
       toast.success('Checklist created');
     },
 
@@ -56,10 +60,10 @@ export function useUpdateChecklist() {
 
   return useMutation({
     mutationFn: ({ id, title }: { id: number; title: string }) =>
-      updateChecklist(id, { title } as UpdateChecklistRequest),
+      updateChecklist(id, { title }),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
       toast.success('Checklist updated');
     },
 
@@ -76,7 +80,7 @@ export function useDeleteChecklist() {
     mutationFn: (id: number) => deleteChecklist(id),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
       toast.success('Checklist deleted');
     },
 
@@ -91,10 +95,10 @@ export function useAddChecklistItem() {
 
   return useMutation({
     mutationFn: ({ checklistId, text }: { checklistId: number; text: string }) =>
-      addChecklistItem(checklistId, { text } as AddChecklistItemRequest),
+      addChecklistItem(checklistId, { text }),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
       toast.success('Item added');
     },
 
@@ -109,10 +113,10 @@ export function useUpdateChecklistItem() {
 
   return useMutation({
     mutationFn: ({ checklistId, itemId, completed, text }: { checklistId: number; itemId: number; completed?: boolean; text?: string }) =>
-      updateChecklistItem(checklistId, itemId, { completed, text } as UpdateChecklistItemRequest),
+      updateChecklistItem(checklistId, itemId, { completed, text }),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
     },
 
     onError: () => {
@@ -129,7 +133,7 @@ export function useDeleteChecklistItem() {
       deleteChecklistItem(checklistId, itemId),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: checklistKeys.lists() });
       toast.success('Item deleted');
     },
 

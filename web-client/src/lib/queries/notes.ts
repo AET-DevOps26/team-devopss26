@@ -6,9 +6,6 @@ import {
   updateNote,
   deleteNote,
 } from '#/services/notes/notes/notes';
-import type { Note } from '#/types/notes';
-import { useAuthStore } from '#/stores/authStore';
-
 export const notesKeys = {
   all: ['notes'] as const,
   lists: () => [...notesKeys.all, 'list'] as const,
@@ -20,11 +17,8 @@ export const notesQueries = {
     queryOptions({
       queryKey: notesKeys.lists(),
       queryFn: async () => {
-        const userId = useAuthStore.getState().userId;
-        if (!userId) throw new Error('User not authenticated');
-        const response = await getNotes({ userId });
-        // getNotes is typed as Note[] but the backend returns { notes: Note[] } envelope.
-        return (response as unknown as { notes: Note[] }).notes ?? [];
+        const response = await getNotes();
+        return response.notes;
       },
       staleTime: 30_000,
     }),
@@ -34,11 +28,11 @@ export function useCreateNote() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (note: { title: string; content: string }) =>
-      createNote(note as Note),
+    mutationFn: ({ title, content }: { title: string; content: string }) =>
+      createNote({ title, content }),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notesKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: notesKeys.lists() });
       toast.success('Note created');
     },
 
@@ -53,10 +47,10 @@ export function useUpdateNote() {
 
   return useMutation({
     mutationFn: ({ id, title, content }: { id: number; title: string; content: string }) =>
-      updateNote(id, { title, content } as Note),
+      updateNote(id, { title, content }),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notesKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: notesKeys.lists() });
       toast.success('Note updated');
     },
 
@@ -73,7 +67,7 @@ export function useDeleteNote() {
     mutationFn: (id: number) => deleteNote(id),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notesKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: notesKeys.lists() });
       toast.success('Note deleted');
     },
 

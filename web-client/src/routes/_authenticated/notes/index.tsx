@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useSuspenseQuery, useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card.tsx';
@@ -43,7 +43,7 @@ import {
   useUpdateChecklistItem,
   useDeleteChecklistItem,
 } from '#/lib/queries/checklists.ts';
-import type { Note as ApiNote } from '#/types/notes';
+import type { IdentifiedTimestampedNote as ApiNote } from '#/types/notes';
 import type { Checklist as ApiChecklist } from '#/types/checklist';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -101,13 +101,13 @@ function formatDate(isoString: string | undefined | null): string {
 
 function fromApiNote(note: ApiNote): DisplayNote {
   return {
-    id: note.id ?? 0,
-    title: note.title ?? '',
-    body: note.content ?? '',
+    id: note.id,
+    title: note.title,
+    body: note.content,
     type: 'note',
     checklist: [],
-    createdAt: note.createdAt ?? '',
-    updatedAt: note.lastUpdatedAt ?? '',
+    createdAt: note.createdAt,
+    updatedAt: note.lastUpdatedAt,
   };
 }
 
@@ -312,7 +312,7 @@ function NoteDetail({
               <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-border hover:bg-muted/50">
                 <Checkbox
                   checked={item.done}
-                  onCheckedChange={(checked) => onItemToggle(item.id, checked)}
+                  onCheckedChange={(checked) => { onItemToggle(item.id, checked); }}
                 />
                 <span className={`text-sm ${item.done ? 'text-muted-foreground line-through' : ''}`}>
                   {item.text}
@@ -465,7 +465,7 @@ function NoteForm({
 
 export function NotesPage() {
   const [view, setView] = useState<ViewMode>('list');
-  const [selectedNote, setSelectedNote] = useState<DisplayNote | null>(null);
+  const [selectedNoteKey, setSelectedNoteKey] = useState<{ type: NoteType; id: number } | null>(null);
   const [editingNote, setEditingNote] = useState<DisplayNote>(emptyDisplayNote());
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -485,8 +485,8 @@ export function NotesPage() {
 
   // Merge notes + checklists into unified display list sorted by createdAt
   const displayList = useMemo(() => {
-    const notes = (apiNotes ?? []).map(fromApiNote);
-    const checklists = (apiChecklists ?? []).map(fromApiChecklist);
+    const notes = apiNotes.map(fromApiNote);
+    const checklists = apiChecklists.map(fromApiChecklist);
     return [...notes, ...checklists].sort((a, b) => {
       if (!a.createdAt) return 1;
       if (!b.createdAt) return -1;
@@ -494,16 +494,12 @@ export function NotesPage() {
     });
   }, [apiNotes, apiChecklists]);
 
-  // Keep selectedNote in sync when query data refetches after mutation
-  // Match by both type AND id to avoid collisions (note=1, checklist=1)
-  useEffect(() => {
-    if (selectedNote && view === 'detail') {
-      const fresh = displayList.find((n) => n.type === selectedNote.type && n.id === selectedNote.id);
-      if (fresh && fresh !== selectedNote) {
-        setSelectedNote(fresh);
-      }
-    }
-  }, [displayList]);
+  // Derive selectedNote from displayList by stored key — automatically stays fresh
+  // after query refetches without needing a useEffect to sync
+  const selectedNote = useMemo(() => {
+    if (!selectedNoteKey) return null;
+    return displayList.find((n) => n.type === selectedNoteKey.type && n.id === selectedNoteKey.id) ?? null;
+  }, [selectedNoteKey, displayList]);
 
   const filtered = useMemo(() => {
     return displayList.filter((n) => {
@@ -520,33 +516,34 @@ export function NotesPage() {
     setView('create');
   };
 
-  const handleSelect = (note: DisplayNote) => {
-    setSelectedNote(note);
+  const handleSelect = useCallback((note: DisplayNote) => {
+    setSelectedNoteKey({ type: note.type, id: note.id });
     setView('detail');
-  };
+  }, []);
 
   const handleEdit = () => {
-    if (selectedNote) {
-      setEditingNote({ ...selectedNote });
+    const note = selectedNote;
+    if (note) {
+      setEditingNote({ ...note });
       setView('edit');
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedNote) return;
-    const item = selectedNote;
+  const handleDelete = () => {
+    const note = selectedNote;
+    if (!note) return;
     setView('list');
-    setSelectedNote(null);
-    try {
-      if (item.type === 'note') {
-        await deleteNote.mutateAsync(item.id);
-      } else {
-        await deleteChecklist.mutateAsync(item.id);
-      }
-    } catch {
-      // Error toast handled by hook
-    }
+    setSelectedNoteKey(null);
+    const promise = note.type === 'note'
+      ? deleteNote.mutateAsync(note.id)
+      : deleteChecklist.mutateAsync(note.id);
+    promise.catch(() => { /* Error toast handled by hook */ });
   };
+
+  const handleBack = useCallback(() => {
+    setView('list');
+    setSelectedNoteKey(null);
+  }, []);
 
   const handleSave = async (note: DisplayNote) => {
     const isNew = !note.id;
@@ -563,7 +560,7 @@ export function NotesPage() {
           );
         }
         setView('list');
-        setSelectedNote(null);
+        setSelectedNoteKey(null);
       } else {
         if (isNew) {
           const created = await createChecklist.mutateAsync(
@@ -612,7 +609,7 @@ export function NotesPage() {
           }
 
           setView('list');
-          setSelectedNote(null);
+          setSelectedNoteKey(null);
         }
       }
     } catch {
@@ -629,11 +626,6 @@ export function NotesPage() {
       const item = selectedNote.checklist.find((i) => i.id === itemId);
       updateChecklistItem.mutate({ checklistId, itemId, completed: done, text: item?.text });
     }
-  };
-
-  const handleBack = () => {
-    setView('list');
-    setSelectedNote(null);
   };
 
   if (view === 'detail' && selectedNote) {
@@ -653,7 +645,7 @@ export function NotesPage() {
   if (view === 'create' || view === 'edit') {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-2xl">
-        <NoteForm note={editingNote} onSave={handleSave} onCancel={handleBack} />
+        <NoteForm note={editingNote} onSave={(n) => { void handleSave(n); }} onCancel={handleBack} />
       </div>
     );
   }
@@ -695,7 +687,7 @@ export function NotesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((note) => (
-              <NoteCard key={`${note.type}-${note.id}`} note={note} onClick={() => { handleSelect(note); }} />
+              <NoteCard key={`${note.type}-${String(note.id)}`} note={note} onClick={() => { handleSelect(note); }} />
             ))}
           </div>
         )}
