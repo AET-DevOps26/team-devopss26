@@ -10,6 +10,12 @@
         reverse_proxy /api/v1/health* http://genai-service-app:8006
     }
 
+    # Serve swagger documentation directly
+    handle /swagger* {
+        root * /usr/share/caddy
+        file_server
+    }
+
     # Serve static frontend files for all other routes
     handle {
         root * /usr/share/caddy

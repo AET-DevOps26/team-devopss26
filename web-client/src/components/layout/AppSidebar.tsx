@@ -1,10 +1,12 @@
 import { Link, useMatchRoute } from '@tanstack/react-router';
+import type { ComponentType } from 'react';
 import {
   LayoutDashboard,
   FileText,
   Calendar,
   MessageSquare,
   Palette,
+  BookOpen,
 } from 'lucide-react';
 
 import {
@@ -20,12 +22,20 @@ import {
   SidebarTrigger,
 } from 'src/components/ui/sidebar';
 
-const navItems = [
+type NavItem = 
+  | { to: string; label: string; icon: ComponentType<{ className?: string }> }
+  | { href: string; label: string; icon: ComponentType<{ className?: string }>; external: true };
+
+const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/notes', label: 'Notes', icon: FileText },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/chat', label: 'Chat', icon: MessageSquare },
   { to: '/demo', label: 'Demo', icon: Palette },
+];
+
+const developerItems: NavItem[] = [
+  { href: '/swagger/', label: 'API Docs', icon: BookOpen, external: true },
 ];
 
 export function AppSidebar() {
@@ -59,9 +69,41 @@ export function AppSidebar() {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
-                    isActive={isLinkActive(item.to)}
+                    isActive={'href' in item ? false : isLinkActive(item.to)}
                     tooltip={item.label}
-                    render={<Link to={item.to} />}
+                    render={
+                      'href' in item ? (
+                        <a href={item.href} target="_blank" rel="noopener noreferrer" />
+                      ) : (
+                        <Link to={item.to} />
+                      )
+                    }
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupLabel>Developer</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {developerItems.map((item) => (
+                <SidebarMenuItem key={item.label}>
+                  <SidebarMenuButton
+                    isActive={false}
+                    tooltip={item.label}
+                    render={
+                      'href' in item ? (
+                        <a href={item.href} target="_blank" rel="noopener noreferrer" />
+                      ) : (
+                        <Link to={item.to} />
+                      )
+                    }
                   >
                     <item.icon />
                     <span>{item.label}</span>
