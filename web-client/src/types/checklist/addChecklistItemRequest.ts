@@ -6,4 +6,6 @@
  */
 import type { ChecklistItem } from './checklistItem.ts';
 
-export type AddChecklistItemRequest = ChecklistItem & { [key: string]: unknown } & Required<Pick<ChecklistItem & { [key: string]: unknown }, 'text'>>;
+export type AddChecklistItemRequest = ChecklistItem & { [key: string]: unknown } & Required<
+    Pick<ChecklistItem & { [key: string]: unknown }, 'text'>
+  >;

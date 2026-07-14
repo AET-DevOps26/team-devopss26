@@ -10,4 +10,4 @@ export interface ChecklistItem {
   completed?: boolean;
   position?: number;
   [key: string]: unknown;
- }
+}

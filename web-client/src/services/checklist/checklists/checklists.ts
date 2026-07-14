@@ -27,11 +27,10 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  * @summary Get all checklists for the authenticated user
  */
 export const getChecklists = (
-
- options?: SecondParameter<typeof customInstance<GetChecklistsResponse>>,) => {
-      return customInstance<GetChecklistsResponse>(
-      {url: `/api/v1/checklists`, method: 'GET'
-    },
+  options?: SecondParameter<typeof customInstance<GetChecklistsResponse>>,
+) => {
+  return customInstance<GetChecklistsResponse>(
+    { url: `/api/v1/checklists`, method: 'GET' },
       options);
     }
   /**

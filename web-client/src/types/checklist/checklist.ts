@@ -8,9 +8,9 @@ import type { IdentifiedChecklistItem } from './identifiedChecklistItem.ts';
 
 export interface Checklist {
   /**
-     * @maxLength 255
-     * @pattern .*\S.*
-     */
+   * @maxLength 255
+   * @pattern .*\S.*
+   */
   title?: string;
   createdAt?: string;
   items?: IdentifiedChecklistItem[];

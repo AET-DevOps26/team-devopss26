@@ -8,4 +8,4 @@
 export interface Identifier {
   id: number;
   [key: string]: unknown;
- }
+}
