@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '#/stores/authStore.ts';
 
 // Reset store between tests
 beforeEach(() => {
@@ -46,7 +46,7 @@ describe('auth store', () => {
     const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MiIsIm5hbWUiOiJ0ZXN0dXNlciJ9.fake-signature';
     useAuthStore.getState().setAuth(token);
 
-    const stored = JSON.parse(localStorage.getItem('auth-storage') ?? '{}');
+    const stored = JSON.parse(localStorage.getItem('auth-storage') ?? '{}') as { state: { token: string | null; userId: number | null; username: string | null } };
     expect(stored.state.token).toBe(token);
     expect(stored.state.userId).toBe(42);
     expect(stored.state.username).toBe('testuser');
@@ -57,7 +57,7 @@ describe('auth store', () => {
     useAuthStore.getState().setAuth(token);
     useAuthStore.getState().clearAuth();
 
-    const stored = JSON.parse(localStorage.getItem('auth-storage') ?? '{}');
+    const stored = JSON.parse(localStorage.getItem('auth-storage') ?? '{}') as { state: { token: null; userId: null; username: null } };
     expect(stored.state.token).toBeNull();
     expect(stored.state.userId).toBeNull();
     expect(stored.state.username).toBeNull();

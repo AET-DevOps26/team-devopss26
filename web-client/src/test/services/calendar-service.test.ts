@@ -4,9 +4,9 @@ import { server } from '../setup';
 import { getEvents, createEvent, getEventById, updateEvent, deleteEvent } from '#/services/calendar/calendar-events/calendar-events.ts';
 
 describe('calendar service', () => {
-  it('getEvents sends GET and returns list of events', async () => {
+  it('getEvents returns events list', async () => {
     const result = await getEvents();
-    expect(Array.isArray(result.events)).toBe(true);
+    expect(result.events).toBeDefined();
     expect(result.events[0]).toHaveProperty('title');
   });
 

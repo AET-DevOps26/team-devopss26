@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.method.HandlerMethod;
@@ -13,6 +14,8 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -43,6 +46,12 @@ class TokenValidationInterceptorTest {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048);
         keyPair = keyGen.generateKeyPair();
+    }
+
+    private Map<String, String> publicKeyResponse(String base64Key) {
+        Map<String, String> map = new HashMap<>();
+        map.put("publicKey", base64Key);
+        return map;
     }
 
     @Test
@@ -113,7 +122,7 @@ class TokenValidationInterceptorTest {
         when(handlerMethod.hasMethodAnnotation(RequireTokenValidation.class)).thenReturn(true);
         when(handlerMethod.getBeanType()).thenAnswer(inv -> Object.class);
         when(request.getHeader("Authorization")).thenReturn("Bearer sampletoken");
-        when(responseSpec.body(String.class)).thenThrow(new RuntimeException("Connection refused"));
+        when(responseSpec.body(any(ParameterizedTypeReference.class))).thenThrow(new RuntimeException("Connection refused"));
 
         boolean result = interceptor.preHandle(request, response, handlerMethod);
 
@@ -142,7 +151,7 @@ class TokenValidationInterceptorTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
 
         String base64PublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-        when(responseSpec.body(String.class)).thenReturn(base64PublicKey);
+        when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(publicKeyResponse(base64PublicKey));
 
         boolean result = interceptor.preHandle(request, response, handlerMethod);
 
@@ -167,7 +176,7 @@ class TokenValidationInterceptorTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
 
         String base64PublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-        when(responseSpec.body(String.class)).thenReturn(base64PublicKey);
+        when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(publicKeyResponse(base64PublicKey));
 
         // First invocation: fetches public key
         boolean result1 = interceptor.preHandle(request, response, handlerMethod);
@@ -189,7 +198,7 @@ class TokenValidationInterceptorTest {
 
         // 1. Initial configuration with keyPair (old key)
         String base64OldPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-        when(responseSpec.body(String.class)).thenReturn(base64OldPublicKey);
+        when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(publicKeyResponse(base64OldPublicKey));
 
         // We mock Request and HandlerMethod for the warm-up call
         HttpServletRequest warmUpRequest = mock(HttpServletRequest.class);
@@ -221,7 +230,7 @@ class TokenValidationInterceptorTest {
 
         // Configure restClient to return new public key on next fetch
         String base64NewPublicKey = Base64.getEncoder().encodeToString(newKeyPair.getPublic().getEncoded());
-        when(responseSpec.body(String.class)).thenReturn(base64NewPublicKey);
+        when(responseSpec.body(any(ParameterizedTypeReference.class))).thenReturn(publicKeyResponse(base64NewPublicKey));
 
         // We mock the lastFetchTime to be in the past so the rate limit allows refetching
         ReflectionTestUtils.setField(interceptor, "lastFetchTime", java.time.Instant.now().minusSeconds(60));

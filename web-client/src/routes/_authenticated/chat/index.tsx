@@ -48,7 +48,7 @@ function WelcomeState({ onChipClick }: { onChipClick: (text: string) => void }) 
             variant="outline"
             size="sm"
             className="rounded-full"
-            onClick={() => onChipClick(chip)}
+            onClick={() => { onChipClick(chip); }}
           >
             <SparklesIcon className="size-3.5 mr-1.5 text-primary" />
             {chip}
@@ -205,7 +205,7 @@ function ChatPage() {
         <div className="flex items-end gap-2 max-w-4xl mx-auto">
           <Textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { setInput(e.target.value); }}
             onKeyDown={handleKeyDown}
             placeholder="Ask anything..."
             disabled={isLoading}
@@ -214,7 +214,7 @@ function ChatPage() {
           />
           <Button
             size="icon"
-            onClick={() => sendMessage(input)}
+            onClick={() => { sendMessage(input); }}
             disabled={!input.trim() || isLoading}
             className="shrink-0 mb-0.5"
           >
