@@ -94,19 +94,4 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.noContent().build();
     }
 
-    private AddChecklistItemResponse toAddChecklistItemResponse(ChecklistItem item) {
-        return new AddChecklistItemResponse()
-                .id(item.getId())
-                .text(item.getText())
-                .completed(item.getCompleted())
-                .position(item.getPosition());
-    }
-
-    private UpdateChecklistItemResponse toUpdateChecklistItemResponse(ChecklistItem item) {
-        return new UpdateChecklistItemResponse()
-                .id(item.getId())
-                .text(item.getText())
-                .completed(item.getCompleted())
-                .position(item.getPosition());
-    }
 }
