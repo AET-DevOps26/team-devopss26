@@ -9,10 +9,11 @@ export function getRouter() {
     routeTree,
     basepath: import.meta.env.VITE_BASE_PATH ?? '/',
     context: {queryClient},
-    scrollRestoration: true,
-    defaultPreload: 'intent',
-    defaultPreloadStaleTime: 0,
-  });
+      scrollRestoration: true,
+      defaultPreload: 'intent',
+      defaultPreloadStaleTime: 0,
+    });
+
   return router;
 }
 

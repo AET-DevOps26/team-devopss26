@@ -173,7 +173,7 @@ jobs:
   # ── Deploy to AET cluster ───────────────────────────────────
   deploy-to-k8s:
     needs: [detect, build-and-push, tag-skipped]
-    if: ${{ (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped') && (needs.tag-skipped.result == 'success' || needs.tag-skipped.result == 'skipped') }}
+    if: ${{ needs.build-and-push.result != 'failure' && needs.build-and-push.result != 'cancelled' && needs.tag-skipped.result != 'failure' && needs.tag-skipped.result != 'cancelled' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
