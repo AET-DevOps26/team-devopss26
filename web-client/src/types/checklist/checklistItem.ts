@@ -6,6 +6,7 @@
  */
 
 export interface ChecklistItem {
+  /** @maxLength 1000 */
   text?: string;
   completed?: boolean;
   position?: number;
