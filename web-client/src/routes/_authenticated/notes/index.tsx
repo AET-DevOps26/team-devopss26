@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useSearch } from '@tanstack/react-router';
 import { useSuspenseQuery, useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card.tsx';
 import { Button } from '#/components/ui/button.tsx';
@@ -68,9 +68,22 @@ interface DisplayNote {
 
 type ViewMode = 'list' | 'detail' | 'create' | 'edit';
 
-// ── Route config ───────────────────────────────────────────────
+// ── Search params ──────────────────────────────────────────────
+
+interface NotesSearch {
+  action?: 'create';
+  type?: 'note' | 'checklist';
+  detailId?: string;
+  detailType?: 'note' | 'checklist';
+}
 
 export const Route = createFileRoute('/_authenticated/notes/')({
+  validateSearch: (input: Record<string, unknown>): NotesSearch => ({
+    action: input.action === 'create' ? 'create' : undefined,
+    type: input.type === 'checklist' ? 'checklist' : input.type === 'note' ? 'note' : undefined,
+    detailId: typeof input.detailId === 'string' ? input.detailId : undefined,
+    detailType: input.detailType === 'checklist' ? 'checklist' : input.detailType === 'note' ? 'note' : undefined,
+  }),
   loader: async ({ context: { queryClient } }) => {
     await Promise.all([
       queryClient.ensureQueryData(notesQueries.all()),
@@ -79,8 +92,14 @@ export const Route = createFileRoute('/_authenticated/notes/')({
   },
   pendingComponent: NotesSkeleton,
   errorComponent: NotesError,
-  component: NotesPage,
+  component: NotesPageWithKey,
 });
+
+// Remount wrapper: re-mounts NotesPage when search params change so state resets cleanly
+function NotesPageWithKey() {
+  const search = useSearch({ from: '/_authenticated/notes/' });
+  return <NotesPage key={`${search.action ?? ''}-${search.detailId ?? ''}-${search.detailType ?? ''}`} />;
+}
 
 // ── Helpers ─────────────────────────────────────────────────────
 
@@ -464,9 +483,26 @@ function NoteForm({
 // ── Main page component ────────────────────────────────────────
 
 export function NotesPage() {
-  const [view, setView] = useState<ViewMode>('list');
-  const [selectedNoteKey, setSelectedNoteKey] = useState<{ type: NoteType; id: number } | null>(null);
-  const [editingNote, setEditingNote] = useState<DisplayNote>(emptyDisplayNote());
+  const routeSearch = useSearch({ from: '/_authenticated/notes/' }) as NotesSearch;
+  const [view, setView] = useState<ViewMode>(() => {
+    if (routeSearch.action === 'create') return 'create';
+    if (routeSearch.detailId) return 'detail';
+    return 'list';
+  });
+  const [selectedNoteKey, setSelectedNoteKey] = useState<{ type: NoteType; id: number } | null>(() => {
+    if (routeSearch.detailId && routeSearch.detailType) {
+      return { type: routeSearch.detailType, id: Number(routeSearch.detailId) };
+    }
+    return null;
+  });
+  const [editingNote, setEditingNote] = useState<DisplayNote>(() => {
+    if (routeSearch.action === 'create') {
+      const prefill = sessionStorage.getItem('chat-quick-note');
+      if (prefill) sessionStorage.removeItem('chat-quick-note');
+      return { ...emptyDisplayNote(), body: prefill ?? '' };
+    }
+    return emptyDisplayNote();
+  });
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 

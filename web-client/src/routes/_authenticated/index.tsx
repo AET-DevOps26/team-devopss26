@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card.tsx';
 import { Button } from '#/components/ui/button.tsx';
 import { Skeleton } from '#/components/ui/skeleton.tsx';
@@ -96,17 +96,18 @@ function StatCardsSkeleton() {
 }
 
 function QuickActions() {
+  const router = useRouter();
   const actions = [
-    { icon: SquarePenIcon, label: 'New Note', variant: 'default' as const },
-    { icon: PlusCircleIcon, label: 'Add Event', variant: 'outline' as const },
-    { icon: CheckSquareIcon, label: 'New Task', variant: 'outline' as const },
-    { icon: BotIcon, label: 'Ask AI', variant: 'secondary' as const },
+    { icon: SquarePenIcon, label: 'New Note', variant: 'default' as const, to: '/notes' as const, search: { action: 'create' as const, type: 'note' as const } },
+    { icon: PlusCircleIcon, label: 'Add Event', variant: 'outline' as const, to: '/calendar' as const, search: { action: 'create' as const } },
+    { icon: CheckSquareIcon, label: 'New Task', variant: 'outline' as const, to: '/notes' as const, search: { action: 'create' as const, type: 'checklist' as const } },
+    { icon: BotIcon, label: 'Ask AI', variant: 'secondary' as const, to: '/chat' as const, search: {} },
   ];
 
   return (
     <div className="flex flex-wrap gap-2">
       {actions.map((action) => (
-        <Button key={action.label} variant={action.variant} size="sm">
+        <Button key={action.label} variant={action.variant} size="sm" onClick={() => { router.navigate({ to: action.to, search: action.search }); }}>
           <action.icon data-icon="inline-start" />
           {action.label}
         </Button>
@@ -287,7 +288,7 @@ type DemoState = 'populated' | 'empty' | 'loading' | 'error';
 
 // ── Page component ─────────────────────────────────────────────
 
-function Home() {
+export function Home() {
   const [statState] = useState<DemoState>('populated');
   const [eventsState, setEventsState] = useState<WidgetState>('populated');
   const [notesState, setNotesState] = useState<WidgetState>('populated');

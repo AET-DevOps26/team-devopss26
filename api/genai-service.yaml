@@ -201,8 +201,8 @@ components:
           nullable: true
         model:
           type: string
-          enum: [gemini, groq-llama, mistral, cohere]
-          default: gemini
+          enum: [gemini, gemini-lite, groq-llama, mistral, cohere]
+          default: gemini-lite
 
     ChatResponse:
       type: object

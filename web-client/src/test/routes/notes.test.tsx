@@ -1,9 +1,18 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotesPage } from '#/routes/_authenticated/notes';
+
+// useSearch requires RouterProvider context; mock for isolated tests
+vi.mock('@tanstack/react-router', async () => {
+  const actual = await vi.importActual('@tanstack/react-router');
+  return {
+    ...actual,
+    useSearch: () => ({ action: undefined, type: undefined, detailId: undefined }),
+  };
+});
 import { notesKeys } from '#/lib/queries/notes.ts';
 import { checklistKeys } from '#/lib/queries/checklists.ts';
 import type { Note } from '#/types/notes';
@@ -54,9 +63,7 @@ function seedDefaultData(queryClient: QueryClient) {
   queryClient.setQueryData(checklistKeys.lists(), [mockChecklist]);
 }
 
-beforeEach(() => {
-  // Clear any lingering state between tests
-});
+
 
 describe('notes page — happy path', () => {
   it('renders notes and checklists from API', async () => {
