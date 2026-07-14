@@ -165,7 +165,8 @@ services:
     image: ghcr.io/aet-devops26/team-devopss26/genai-service:7435acd8700e13487e824899ffaa5df167e53792
     container_name: genai-service-app
     build:
-      context: ../services/genai-service
+      context: ..
+      dockerfile: services/genai-service/Dockerfile
     ports:
       - "${GENAI_SERVICE_APP_PORT}:${GENAI_SERVICE_APP_PORT}"
     networks:
@@ -178,7 +179,7 @@ services:
       weaviate:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:${GENAI_SERVICE_APP_PORT}/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:${GENAI_SERVICE_APP_PORT}/api/genai/api/v1/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

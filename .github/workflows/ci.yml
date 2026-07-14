@@ -43,6 +43,62 @@ jobs:
       - name: Run Ruff Linter
         run: ruff check services/genai-service
 
+  python-test:
+    name: Test Python (GenAI Service)
+    needs: openapi-lint
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: genai_service_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SERVICES_POSTGRES_USER: postgres
+      SERVICES_POSTGRES_PASSWORD: postgres
+      SERVICES_POSTGRES_URL: localhost
+      SERVICES_POSTGRES_PORT_INT: 5432
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21 (Corretto)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate OpenAPI client
+        run: |
+          npx @openapitools/openapi-generator-cli generate -i api/genai-service.yaml -g python-fastapi \
+            -o services/genai-service/generated --skip-validate-spec
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: services/genai-service/requirements-dev.txt
+
+      - name: Install Dependencies
+        run: pip install -r services/genai-service/requirements-dev.txt
+
+      - name: Run Pytest
+        run: cd services/genai-service && pytest
+
   backend-test:
     name: Build & Test Backend - ${{ matrix.service }}
     needs: openapi-lint

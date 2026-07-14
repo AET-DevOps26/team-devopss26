@@ -79,6 +79,10 @@ web-client/src/*-service.ts
 web-client/src/openapi.ts
 web-client/src/api.ts
 
+# ============== Python test artifacts =================
+.hypothesis/
+.pytest_cache/
+
 # ============== Postman =================
 # Ignore local Postman environments and globals (which may contain sensitive secrets)
 *.postman_environment.json
