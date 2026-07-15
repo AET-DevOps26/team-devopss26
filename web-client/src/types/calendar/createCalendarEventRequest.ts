@@ -6,6 +6,4 @@
  */
 import type { CalendarEvent } from './calendarEvent.ts';
 
-export type CreateCalendarEventRequest = CalendarEvent & { [key: string]: unknown } & Required<
-    Pick<CalendarEvent & { [key: string]: unknown }, 'title' | 'startTime' | 'endTime'>
-  >;
+export type CreateCalendarEventRequest = CalendarEvent & { [key: string]: unknown } & Required<Pick<CalendarEvent & { [key: string]: unknown }, 'title' | 'startTime' | 'endTime'>>;

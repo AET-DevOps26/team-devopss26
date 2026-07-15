@@ -7,6 +7,4 @@
 import type { Identifier } from './identifier.ts';
 import type { Note } from './note.ts';
 
-export type IdentifiedNote = Identifier &
-  Note &
-  Required<Pick<Identifier & Note, 'title' | 'content'>>;
+export type IdentifiedNote = Identifier & Note & Required<Pick<Identifier & Note, 'title' | 'content'>>;

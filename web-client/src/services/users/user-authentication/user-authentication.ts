@@ -4,54 +4,65 @@
  * User Service API
  * OpenAPI spec version: 1.0.0
  */
-import type { LoginResponse, PublicKeyResponse, RegisterUserRequest } from '../../../types/users';
+import type {
+  LoginResponse,
+  PublicKeyResponse,
+  RegisterUserRequest
+} from '../../../types/users';
 
 import { customInstance } from '../../../lib/api/client.ts';
 
+
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-/**
+
+  /**
  * @summary Register a new user
  */
 export const registerUser = (
-  registerUserRequest: RegisterUserRequest,
-  options?: SecondParameter<typeof customInstance<void>>,
-) => {
-  return customInstance<void>(
-    {
-      url: `/api/v1/users/auth/register`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: registerUserRequest,
+    registerUserRequest: RegisterUserRequest,
+ options?: SecondParameter<typeof customInstance<void>>,) => {
+      return customInstance<void>(
+      {url: `/api/v1/users/auth/register`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: registerUserRequest
     },
-    options,
-  );
-};
-/**
+      options);
+    }
+  /**
  * @summary Login to get a JWT token using Basic Auth
  */
-export const loginUser = (options?: SecondParameter<typeof customInstance<LoginResponse>>) => {
-  return customInstance<LoginResponse>(
-    { url: `/api/v1/users/auth/login`, method: 'POST' },
-    options,
-  );
-};
-/**
+export const loginUser = (
+
+ options?: SecondParameter<typeof customInstance<LoginResponse>>,) => {
+      return customInstance<LoginResponse>(
+      {url: `/api/v1/users/auth/login`, method: 'POST'
+    },
+      options);
+    }
+  /**
  * @summary Check for the validity of a JWT
  */
-export const checkToken = (options?: SecondParameter<typeof customInstance<void>>) => {
-  return customInstance<void>({ url: `/api/v1/users/auth/check-token`, method: 'GET' }, options);
-};
-/**
+export const checkToken = (
+
+ options?: SecondParameter<typeof customInstance<void>>,) => {
+      return customInstance<void>(
+      {url: `/api/v1/users/auth/check-token`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * @summary Provides other services with public key for JWT validation
  */
-export const publicKey = (options?: SecondParameter<typeof customInstance<PublicKeyResponse>>) => {
-  return customInstance<PublicKeyResponse>(
-    { url: `/api/v1/users/auth/public-key`, method: 'GET' },
-    options,
-  );
-};
-export type RegisterUserResult = NonNullable<Awaited<ReturnType<typeof registerUser>>>;
-export type LoginUserResult = NonNullable<Awaited<ReturnType<typeof loginUser>>>;
-export type CheckTokenResult = NonNullable<Awaited<ReturnType<typeof checkToken>>>;
-export type PublicKeyResult = NonNullable<Awaited<ReturnType<typeof publicKey>>>;
+export const publicKey = (
+
+ options?: SecondParameter<typeof customInstance<PublicKeyResponse>>,) => {
+      return customInstance<PublicKeyResponse>(
+      {url: `/api/v1/users/auth/public-key`, method: 'GET'
+    },
+      options);
+    }
+  export type RegisterUserResult = NonNullable<Awaited<ReturnType<typeof registerUser>>>
+export type LoginUserResult = NonNullable<Awaited<ReturnType<typeof loginUser>>>
+export type CheckTokenResult = NonNullable<Awaited<ReturnType<typeof checkToken>>>
+export type PublicKeyResult = NonNullable<Awaited<ReturnType<typeof publicKey>>>

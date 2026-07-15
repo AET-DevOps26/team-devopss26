@@ -7,8 +7,16 @@
 import type { ChatMessageRole } from './chatMessageRole.ts';
 
 export interface ChatMessage {
+  /**
+     * @minimum -9223372036854776000
+     * @maximum 9223372036854776000
+     */
   id?: number;
   role?: ChatMessageRole;
   content?: string;
+  /**
+     * @minimum -9223372036854776000
+     * @maximum 9223372036854776000
+     */
   timestamp?: number;
 }

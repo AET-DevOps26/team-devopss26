@@ -6,8 +6,4 @@
  */
 import type { IdentifiedCalendarEvent } from './identifiedCalendarEvent.ts';
 
-export type UpdateCalendarEventResponse = IdentifiedCalendarEvent & {
-  [key: string]: unknown;
-} & Required<
-    Pick<IdentifiedCalendarEvent & { [key: string]: unknown }, 'title' | 'startTime' | 'endTime'>
-  >;
+export type UpdateCalendarEventResponse = IdentifiedCalendarEvent & { [key: string]: unknown } & Required<Pick<IdentifiedCalendarEvent & { [key: string]: unknown }, 'title' | 'startTime' | 'endTime'>>;

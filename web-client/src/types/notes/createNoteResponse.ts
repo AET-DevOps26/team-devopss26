@@ -6,7 +6,4 @@
  */
 import type { IdentifiedTimestampedNote } from './identifiedTimestampedNote.ts';
 
-export type CreateNoteResponse = IdentifiedTimestampedNote &
-  Required<
-    Pick<IdentifiedTimestampedNote, 'id' | 'title' | 'content' | 'createdAt' | 'lastUpdatedAt'>
-  >;
+export type CreateNoteResponse = IdentifiedTimestampedNote & Required<Pick<IdentifiedTimestampedNote, 'id' | 'title' | 'content' | 'createdAt' | 'lastUpdatedAt'>>;

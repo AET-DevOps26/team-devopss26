@@ -7,8 +7,4 @@
 import type { IdentifiedNote } from './identifiedNote.ts';
 import type { Timestamped } from './timestamped.ts';
 
-export type IdentifiedTimestampedNote = Timestamped &
-  IdentifiedNote &
-  Required<
-    Pick<Timestamped & IdentifiedNote, 'id' | 'title' | 'content' | 'id' | 'title' | 'content'>
-  >;
+export type IdentifiedTimestampedNote = Timestamped & IdentifiedNote & Required<Pick<Timestamped & IdentifiedNote, 'id' | 'title' | 'content' | 'id' | 'title' | 'content'>>;

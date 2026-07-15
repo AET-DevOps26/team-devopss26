@@ -7,10 +7,10 @@
 
 export interface Note {
   /**
-   * @maxLength 255
-   * @pattern .*\S.*
-   */
+     * @maxLength 255
+     * @pattern .*\S.*
+     */
   title?: string;
   content?: string;
   [key: string]: unknown;
-}
+ }

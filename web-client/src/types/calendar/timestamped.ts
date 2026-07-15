@@ -9,4 +9,4 @@ export interface Timestamped {
   createdAt: string;
   lastUpdatedAt: string;
   [key: string]: unknown;
-}
+ }

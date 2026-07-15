@@ -44,7 +44,7 @@ import {
   useDeleteChecklistItem,
 } from '#/lib/queries/checklists.ts';
 import type { IdentifiedTimestampedNote as ApiNote } from '#/types/notes';
-import type { Checklist as ApiChecklist } from '#/types/checklist';
+import type { IdentifiedChecklist as ApiChecklist } from '#/types/checklist';
 
 // ── Types ──────────────────────────────────────────────────────
 
