@@ -93,6 +93,7 @@ proxy -down-> calendarApp : /api/v1/events*
 proxy -down-> noteApp : /api/v1/notes*
 proxy -down-> genaiApp : /api/v1/chat* \n /api/v1/conversations*
 proxy -up-> grafanaApp : /grafana
+proxy -right-> appPrometheus : /prometheus
 proxy -right-> swaggerApp : /swagger
 
 ' Inter-service communication

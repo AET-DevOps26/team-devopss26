@@ -34,13 +34,12 @@ rectangle "Web Client" #F8F9FA {
 
   rectangle "UI Layer" as UI {
     component "React 19 + shadcn/ui" as REACT
-    component "AppShell + Pages\n(incl. Login / Register)" as PAGES
+    component "AppShell + Pages\n(_authenticated routes)" as PAGES
+    component "Login / Register\n(_unauthenticated routes)" as AUTH_PAGES
   }
 
   rectangle "State Management" as STATE {
     component "authStore (Zustand)" as AUTHSTORE
-    component "chatStore (Zustand)" as CHATSTORE
-    component "TanStack Query" as TQ
   }
 
   rectangle "API Layer" as API {
@@ -69,13 +68,13 @@ rectangle "External Infrastructure" #FFF3E0 {
 VITE     -down-> REACT : bundles
 TW       -down-> REACT
 ROUTER   -down-> PAGES : routes
+ROUTER   -down-> AUTH_PAGES : routes
 
 PAGES    -left-> REACT
 PAGES    -down-> AUTHSTORE
-PAGES    -down-> CHATSTORE
-PAGES    -down-> TQ
 
-TQ       -down-> SVCS : queries
+AUTH_PAGES -down-> AUTHSTORE
+
 SVCS     -down-> AXIOS
 AXIOS    -right-> AUTHSTORE : JWT
 AXIOS    -down-> PROXY : REST

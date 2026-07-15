@@ -15,7 +15,7 @@ skinparam packageBackgroundColor #FAFAFA
 skinparam packageBorderColor #E0E0E0
 skinparam arrowColor #616161
 
-title Frontend State Model — Stores, Query Hooks & Data Types
+title Frontend State Model — Zustand Stores & Data Types
 
 rectangle "Zustand Stores (client/session state)" as STORES {
   interface "authStore" {
@@ -28,27 +28,6 @@ rectangle "Zustand Stores (client/session state)" as STORES {
     clearAuth() : void
     validateToken() : Promise
   }
-
-  interface "chatStore" {
-    messages : Message[]
-    isLoading : boolean
-    sessionId : string | null
-    --
-    sendMessage(content)
-    retryLastMessage()
-  }
-}
-
-rectangle "TanStack Query (server state cache)" as TQ {
-  interface "useNotes / useNote" {
-    returns Note[]
-  }
-  interface "useCreateNote / useUpdateNote / useDeleteNote" {
-    mutate(dto) → invalidates notes cache
-  }
-  interface "useEvents / useCreateEvent / useUpdateEvent / useDeleteEvent" {
-    mutate(dto) → invalidates events cache
-  }
 }
 
 rectangle "Data Types" as TYPES {
@@ -58,37 +37,49 @@ rectangle "Data Types" as TYPES {
   }
 
   interface "Note" {
-    id : string
+    id : number
     title : string
-    body : string (Markdown)
-    isChecklist : boolean
-    checklistItems : ChecklistItem[]
-  }
-
-  interface "Event" {
-    id : string
-    title : string
-    start : string (ISO 8601)
-    end : string (ISO 8601)
-    allDay : boolean
-  }
-
-  interface "Message" {
-    id : string
-    role : "user" | "assistant"
     content : string
+    createdAt : string
+    lastUpdatedAt : string
+  }
+
+  interface "CalendarEvent" {
+    id : number
+    title : string
+    description : string
+    startTime : string (ISO 8601)
+    endTime : string (ISO 8601)
+    location : string
+  }
+
+  interface "ChatMessage" {
+    id : number
+    role : "USER" | "AGENT"
+    content : string
+    timestamp : number
+  }
+
+  interface "Checklist" {
+    id : number
+    userId : number
+    title : string
+    createdAt : string
+    items : ChecklistItem[]
+  }
+
+  interface "ChecklistItem" {
+    id : number
+    text : string
+    completed : boolean
+    position : number
   }
 }
 
 "authStore" "1" o-- "0..1" "User"
-"chatStore" "1" o-- "0..*" "Message"
-"useNotes / useNote" ..> "Note"
-"useCreateNote / useUpdateNote / useDeleteNote" ..> "Note"
-"useEvents / useCreateEvent / useUpdateEvent / useDeleteEvent" ..> "Event"
 
 legend bottom
   Zustand stores: client-side session state, persisted to localStorage
-  TanStack Query hooks: server state cache, auto-invalidated on mutation
   Data types from openapi-typescript generated code
   Auth token obtained from backend login (User Service)
 endlegend
