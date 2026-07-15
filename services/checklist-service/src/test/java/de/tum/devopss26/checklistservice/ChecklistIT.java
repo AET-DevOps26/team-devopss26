@@ -1,7 +1,7 @@
 package de.tum.devopss26.checklistservice;
 
-import de.tum.devopss26.checklistservice.entity.ChecklistEntity;
-import de.tum.devopss26.checklistservice.entity.ChecklistItemEntity;
+import de.tum.devopss26.checklistservice.entity.Checklist;
+import de.tum.devopss26.checklistservice.entity.ChecklistItem;
 import de.tum.devopss26.checklistservice.repository.ChecklistItemRepository;
 import de.tum.devopss26.checklistservice.repository.ChecklistRepository;
 import de.tum.devopss26.shared.it.AbstractIntegrationTest;
@@ -14,7 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -85,7 +85,7 @@ public class ChecklistIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.userId").value(42))
                 .andExpect(jsonPath("$.title").value("Groceries"));
 
-        List<ChecklistEntity> checklists = checklistRepository.findAll();
+        List<Checklist> checklists = checklistRepository.findAll();
         assertThat(checklists).hasSize(1);
         assertThat(checklists.getFirst().getUserId()).isEqualTo(42L);
         assertThat(checklists.getFirst().getTitle()).isEqualTo("Groceries");
@@ -93,22 +93,22 @@ public class ChecklistIT extends AbstractIntegrationTest {
 
     @Test
     void testGetChecklists() throws Exception {
-        ChecklistEntity c1 = new ChecklistEntity();
+        Checklist c1 = new Checklist();
         c1.setUserId(42L);
         c1.setTitle("Work");
-        c1.setCreatedAt(LocalDateTime.now());
+        c1.setCreatedAt(OffsetDateTime.now());
         checklistRepository.save(c1);
 
-        ChecklistEntity c2 = new ChecklistEntity();
+        Checklist c2 = new Checklist();
         c2.setUserId(42L);
         c2.setTitle("Shopping");
-        c2.setCreatedAt(LocalDateTime.now());
+        c2.setCreatedAt(OffsetDateTime.now());
         checklistRepository.save(c2);
 
-        ChecklistEntity c3 = new ChecklistEntity();
+        Checklist c3 = new Checklist();
         c3.setUserId(99L);
         c3.setTitle("Other User");
-        c3.setCreatedAt(LocalDateTime.now());
+        c3.setCreatedAt(OffsetDateTime.now());
         checklistRepository.save(c3);
 
         mockMvc.perform(get("/api/v1/checklists").param("userId", "42")
@@ -120,10 +120,10 @@ public class ChecklistIT extends AbstractIntegrationTest {
 
     @Test
     void testGetChecklistById() throws Exception {
-        ChecklistEntity c = new ChecklistEntity();
+        Checklist c = new Checklist();
         c.setUserId(42L);
         c.setTitle("Todo");
-        c.setCreatedAt(LocalDateTime.now());
+        c.setCreatedAt(OffsetDateTime.now());
         c = checklistRepository.save(c);
 
         mockMvc.perform(get("/api/v1/checklists/" + c.getId())
@@ -139,10 +139,10 @@ public class ChecklistIT extends AbstractIntegrationTest {
 
     @Test
     void testUpdateChecklist() throws Exception {
-        ChecklistEntity c = new ChecklistEntity();
+        Checklist c = new Checklist();
         c.setUserId(42L);
         c.setTitle("Old Title");
-        c.setCreatedAt(LocalDateTime.now());
+        c.setCreatedAt(OffsetDateTime.now());
         c = checklistRepository.save(c);
 
         String updateJson = """
@@ -159,16 +159,16 @@ public class ChecklistIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.id").value(c.getId()))
                 .andExpect(jsonPath("$.title").value("New Title"));
 
-        ChecklistEntity updated = checklistRepository.findById(c.getId()).orElseThrow();
+        Checklist updated = checklistRepository.findById(c.getId()).orElseThrow();
         assertThat(updated.getTitle()).isEqualTo("New Title");
     }
 
     @Test
     void testDeleteChecklist() throws Exception {
-        ChecklistEntity c = new ChecklistEntity();
+        Checklist c = new Checklist();
         c.setUserId(42L);
         c.setTitle("ToDelete");
-        c.setCreatedAt(LocalDateTime.now());
+        c.setCreatedAt(OffsetDateTime.now());
         c = checklistRepository.save(c);
 
         mockMvc.perform(delete("/api/v1/checklists/" + c.getId())
@@ -184,10 +184,10 @@ public class ChecklistIT extends AbstractIntegrationTest {
 
     @Test
     void testAddChecklistItem() throws Exception {
-        ChecklistEntity c = new ChecklistEntity();
+        Checklist c = new Checklist();
         c.setUserId(42L);
         c.setTitle("My Checklist");
-        c.setCreatedAt(LocalDateTime.now());
+        c.setCreatedAt(OffsetDateTime.now());
         c = checklistRepository.save(c);
 
         String itemJson = """
@@ -208,7 +208,7 @@ public class ChecklistIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.completed").value(false))
                 .andExpect(jsonPath("$.position").value(1));
 
-        List<ChecklistItemEntity> items = checklistItemRepository.findAll();
+        List<ChecklistItem> items = checklistItemRepository.findAll();
         assertThat(items).hasSize(1);
         assertThat(items.getFirst().getText()).isEqualTo("Task 1");
         assertThat(items.getFirst().getChecklist().getId()).isEqualTo(c.getId());
@@ -216,13 +216,13 @@ public class ChecklistIT extends AbstractIntegrationTest {
 
     @Test
     void testUpdateChecklistItem() throws Exception {
-        ChecklistEntity c = new ChecklistEntity();
+        Checklist c = new Checklist();
         c.setUserId(42L);
         c.setTitle("My Checklist");
-        c.setCreatedAt(LocalDateTime.now());
+        c.setCreatedAt(OffsetDateTime.now());
         c = checklistRepository.save(c);
 
-        ChecklistItemEntity item = new ChecklistItemEntity();
+        ChecklistItem item = new ChecklistItem();
         item.setChecklist(c);
         item.setText("Old Item Text");
         item.setCompleted(false);
@@ -247,7 +247,7 @@ public class ChecklistIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.completed").value(true))
                 .andExpect(jsonPath("$.position").value(2));
 
-        ChecklistItemEntity updated = checklistItemRepository.findById(item.getId()).orElseThrow();
+        ChecklistItem updated = checklistItemRepository.findById(item.getId()).orElseThrow();
         assertThat(updated.getText()).isEqualTo("New Item Text");
         assertThat(updated.isCompleted()).isTrue();
         assertThat(updated.getPosition()).isEqualTo(2);
@@ -255,13 +255,13 @@ public class ChecklistIT extends AbstractIntegrationTest {
 
     @Test
     void testDeleteChecklistItem() throws Exception {
-        ChecklistEntity c = new ChecklistEntity();
+        Checklist c = new Checklist();
         c.setUserId(42L);
         c.setTitle("My Checklist");
-        c.setCreatedAt(LocalDateTime.now());
+        c.setCreatedAt(OffsetDateTime.now());
         c = checklistRepository.save(c);
 
-        ChecklistItemEntity item = new ChecklistItemEntity();
+        ChecklistItem item = new ChecklistItem();
         item.setChecklist(c);
         item.setText("Item to delete");
         item.setCompleted(false);
