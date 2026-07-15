@@ -7,13 +7,14 @@
 import type {
   AddChecklistItemRequest,
   AddChecklistItemResponse,
-  Checklist,
+  ChecklistItem,
   CreateChecklistRequest,
-  GetChecklistsParams,
+  CreateChecklistResponse,
+  GetChecklistResponse,
   GetChecklistsResponse,
-  UpdateChecklistItemRequest,
   UpdateChecklistItemResponse,
   UpdateChecklistRequest,
+  UpdateChecklistResponse,
 } from '../../../types/checklist';
 
 import { customInstance } from '../../../lib/api/client.ts';
@@ -21,14 +22,13 @@ import { customInstance } from '../../../lib/api/client.ts';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
- * @summary Get all checklists for a user
+ * @summary Get all checklists for the authenticated user
  */
 export const getChecklists = (
-  params: GetChecklistsParams,
   options?: SecondParameter<typeof customInstance<GetChecklistsResponse>>,
 ) => {
   return customInstance<GetChecklistsResponse>(
-    { url: `/api/v1/checklists`, method: 'GET', params },
+    { url: `/api/v1/checklists`, method: 'GET' },
     options,
   );
 };
@@ -37,9 +37,9 @@ export const getChecklists = (
  */
 export const createChecklist = (
   createChecklistRequest: CreateChecklistRequest,
-  options?: SecondParameter<typeof customInstance<Checklist>>,
+  options?: SecondParameter<typeof customInstance<CreateChecklistResponse>>,
 ) => {
-  return customInstance<Checklist>(
+  return customInstance<CreateChecklistResponse>(
     {
       url: `/api/v1/checklists`,
       method: 'POST',
@@ -54,9 +54,12 @@ export const createChecklist = (
  */
 export const getChecklistById = (
   id: number,
-  options?: SecondParameter<typeof customInstance<Checklist>>,
+  options?: SecondParameter<typeof customInstance<GetChecklistResponse>>,
 ) => {
-  return customInstance<Checklist>({ url: `/api/v1/checklists/${id}`, method: 'GET' }, options);
+  return customInstance<GetChecklistResponse>(
+    { url: `/api/v1/checklists/${id}`, method: 'GET' },
+    options,
+  );
 };
 /**
  * @summary Update a checklist's title
@@ -64,9 +67,9 @@ export const getChecklistById = (
 export const updateChecklist = (
   id: number,
   updateChecklistRequest: UpdateChecklistRequest,
-  options?: SecondParameter<typeof customInstance<Checklist>>,
+  options?: SecondParameter<typeof customInstance<UpdateChecklistResponse>>,
 ) => {
-  return customInstance<Checklist>(
+  return customInstance<UpdateChecklistResponse>(
     {
       url: `/api/v1/checklists/${id}`,
       method: 'PUT',
@@ -110,7 +113,7 @@ export const addChecklistItem = (
 export const updateChecklistItem = (
   id: number,
   itemId: number,
-  updateChecklistItemRequest: UpdateChecklistItemRequest,
+  checklistItem: ChecklistItem,
   options?: SecondParameter<typeof customInstance<UpdateChecklistItemResponse>>,
 ) => {
   return customInstance<UpdateChecklistItemResponse>(
@@ -118,7 +121,7 @@ export const updateChecklistItem = (
       url: `/api/v1/checklists/${id}/items/${itemId}`,
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      data: updateChecklistItemRequest,
+      data: checklistItem,
     },
     options,
   );

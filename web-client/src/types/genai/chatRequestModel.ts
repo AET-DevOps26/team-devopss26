@@ -9,6 +9,7 @@ export type ChatRequestModel = (typeof ChatRequestModel)[keyof typeof ChatReques
 
 export const ChatRequestModel = {
   gemini: 'gemini',
+  'gemini-lite': 'gemini-lite',
   'groq-llama': 'groq-llama',
   mistral: 'mistral',
   cohere: 'cohere',

@@ -93,8 +93,6 @@ class ChatMessage(Base):
 # RSA public key from user-service, cache it, and refetch on signature failure
 # (e.g. user-service restarted with a new key) at most once per interval.
 _USER_SERVICE_URL = os.environ.get("USER_SERVICE_URL", "http://user-service-app:8001").rstrip("/")
-# user-service mounts its API under this Spring context-path; the shared
-# USER_SERVICE_URL env var only carries scheme+host+port, so we append it here.
 _PUBLIC_KEY_PATH = "/api/v1/users/auth/public-key"
 _MIN_REFETCH_INTERVAL_S = 30.0
 
@@ -224,7 +222,7 @@ async def lifespan(app: FastAPI):
     gemini_api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if gemini_api_key:
         _embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-001",
             google_api_key=gemini_api_key,
         )
 
@@ -234,32 +232,27 @@ async def lifespan(app: FastAPI):
         _weaviate_client.close()
 
 
-async def _fetch_user_data(user_id: int) -> list[str]:
-    # *_SERVICE_URL env vars only carry scheme+host+port; each service serves its API
-    # under its own Spring context path, so it must be appended here (same as
-    # _PUBLIC_KEY_PATH above).
+async def _fetch_user_data() -> list[str]:
     note_url = os.environ.get("NOTE_SERVICE_URL", "http://note-service-app:8005")
     calendar_url = os.environ.get("CALENDAR_SERVICE_URL", "http://calendar-service-app:8004")
     checklist_url = os.environ.get("CHECKLIST_SERVICE_URL", "http://checklist-service-app:8003")
 
-    # calendar-service and checklist-service validate the JWT themselves and derive the
-    # user id from it (no userId query param accepted); note-service is still an
-    # unauthenticated openapi stub that takes userId directly.
+    # note-service, calendar-service, and checklist-service all validate the JWT
+    # themselves and derive the user id from it.
     auth_headers = {"Authorization": _require_auth_header()}
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         notes_resp, events_resp, checklists_resp = await asyncio.gather(
-            client.get(f"{note_url}/api/v1/notes", headers=auth_headers, params={"userId": user_id}),
+            client.get(f"{note_url}/api/v1/notes", headers=auth_headers),
             client.get(f"{calendar_url}/api/v1/events", headers=auth_headers),
             client.get(f"{checklist_url}/api/v1/checklists", headers=auth_headers),
             return_exceptions=True,
         )
-        print(f"DEBUG RAG: note={notes_resp} cal={events_resp} chk={checklists_resp}", flush=True)
 
     chunks = []
 
     if not isinstance(notes_resp, Exception) and notes_resp.status_code == 200:
-        for note in notes_resp.json():
+        for note in notes_resp.json().get("notes", []):
             title = note.get("title", "")
             content = note.get("content", "")
             if title or content:
@@ -341,6 +334,17 @@ def _build_chain(model: str):
         if not key:
             raise ValueError("COHERE_API_KEY environment variable is not set")
         llm = ChatCohere(model="command-r", cohere_api_key=key)
+    elif model == "local":
+        # Local / self-hosted LLM option: talk to an Ollama server running an open model
+        # (e.g. Llama 3.1) so the service can operate fully offline with no hosted API key.
+        # Not deployed in our environment — a local model is too heavy for the target infra —
+        # so `langchain_ollama` is imported lazily and only used if someone explicitly
+        # selects model="local" against a reachable OLLAMA_BASE_URL.
+        from langchain_ollama import ChatOllama
+        llm = ChatOllama(
+            model=os.environ.get("LOCAL_LLM_MODEL", "llama3.1"),
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+        )
     else:
         key = os.environ.get("GEMINI_API_KEY")
         if not key:
@@ -448,7 +452,9 @@ class GenAIApiImpl(BaseGenAIApi):
 
     async def chat(self, chat_request: ChatRequest) -> ChatResponse:
         user_id = _require_user_id()
-        if not chat_request.message.strip():
+        # Reject blank messages and messages containing NUL (\x00): PostgreSQL text
+        # columns can't store null bytes, so they'd otherwise blow up the INSERT below.
+        if not chat_request.message.strip() or "\x00" in chat_request.message:
             raise HTTPException(status_code=400, detail="message must not be empty")
 
         async with _sessions() as db:
@@ -473,7 +479,7 @@ class GenAIApiImpl(BaseGenAIApi):
 
             context = ""
             try:
-                chunks = await _fetch_user_data(user_id)
+                chunks = await _fetch_user_data()
                 context = await _rag_retrieve(chat_request.message, chunks)
             except Exception:
                 pass

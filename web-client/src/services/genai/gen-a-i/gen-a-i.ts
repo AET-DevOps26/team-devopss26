@@ -8,7 +8,6 @@ import type {
   ChatRequest,
   ChatResponse,
   Conversation,
-  ConversationCreateRequest,
   DeleteConversation200,
   Health200,
 } from '../../../types/genai';
@@ -27,18 +26,9 @@ export const health = (options?: SecondParameter<typeof customInstance<Health200
  * @summary Create a new chat conversation
  */
 export const createConversation = (
-  conversationCreateRequest: ConversationCreateRequest,
   options?: SecondParameter<typeof customInstance<Conversation>>,
 ) => {
-  return customInstance<Conversation>(
-    {
-      url: `/api/v1/conversations`,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      data: conversationCreateRequest,
-    },
-    options,
-  );
+  return customInstance<Conversation>({ url: `/api/v1/conversations`, method: 'POST' }, options);
 };
 /**
  * @summary Get a conversation by ID including all messages

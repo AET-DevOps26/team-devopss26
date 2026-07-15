@@ -4,6 +4,8 @@
  * Checklist Service API
  * OpenAPI spec version: 1.0.0
  */
-import type { ChecklistItem } from './checklistItem.ts';
+import type { IdentifiedChecklistItem } from './identifiedChecklistItem.ts';
 
-export type UpdateChecklistItemResponse = ChecklistItem;
+export type UpdateChecklistItemResponse = IdentifiedChecklistItem & {
+  [key: string]: unknown;
+} & Required<Pick<IdentifiedChecklistItem & { [key: string]: unknown }, 'text'>>;

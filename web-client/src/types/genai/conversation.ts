@@ -7,9 +7,18 @@
 import type { ChatMessage } from './chatMessage.ts';
 
 export interface Conversation {
+  /**
+   * @minimum -9223372036854776000
+   * @maximum 9223372036854776000
+   */
   id?: number;
+  /**
+   * @minimum -9223372036854776000
+   * @maximum 9223372036854776000
+   */
   user_id?: number;
-  title?: string;
+  /** @nullable */
+  title?: string | null;
   created_at?: string;
   messages?: ChatMessage[];
 }

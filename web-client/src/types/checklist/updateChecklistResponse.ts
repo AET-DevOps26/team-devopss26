@@ -6,6 +6,6 @@
  */
 import type { IdentifiedChecklist } from './identifiedChecklist.ts';
 
-export interface GetChecklistsResponse {
-  checklists: IdentifiedChecklist[];
-}
+export type UpdateChecklistResponse = IdentifiedChecklist & { [key: string]: unknown } & Required<
+    Pick<IdentifiedChecklist & { [key: string]: unknown }, 'title'>
+  >;

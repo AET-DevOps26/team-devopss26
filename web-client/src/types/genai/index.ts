@@ -11,6 +11,5 @@ export * from './chatRequest.ts';
 export * from './chatRequestModel.ts';
 export * from './chatResponse.ts';
 export * from './conversation.ts';
-export * from './conversationCreateRequest.ts';
 export * from './deleteConversation200.ts';
 export * from './health200.ts';

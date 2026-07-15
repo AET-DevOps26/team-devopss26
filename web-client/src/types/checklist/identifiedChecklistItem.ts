@@ -5,7 +5,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ChecklistItem } from './checklistItem.ts';
+import type { Identifier } from './identifier.ts';
 
-export type AddChecklistItemRequest = ChecklistItem & { [key: string]: unknown } & Required<
-    Pick<ChecklistItem & { [key: string]: unknown }, 'text'>
-  >;
+export type IdentifiedChecklistItem = Identifier & ChecklistItem;

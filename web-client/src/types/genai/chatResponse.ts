@@ -7,5 +7,9 @@
 
 export interface ChatResponse {
   response?: string;
+  /**
+   * @minimum -9223372036854776000
+   * @maximum 9223372036854776000
+   */
   conversation_id?: number;
 }

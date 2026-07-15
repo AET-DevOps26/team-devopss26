@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { chat, deleteConversation } from '#/services/genai/gen-a-i/gen-a-i';
-import { useAuthStore } from '#/stores/authStore';
 
 export function useSendMessage() {
   return useMutation({
@@ -10,10 +9,7 @@ export function useSendMessage() {
     }: {
       message: string;
       conversationId?: number;
-    }) => {
-      const userId = useAuthStore.getState().userId ?? 1;
-      return chat({ message, user_id: userId, conversation_id: conversationId ?? null });
-    },
+    }) => chat({ message, conversation_id: conversationId ?? null }),
   });
 }
 

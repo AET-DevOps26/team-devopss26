@@ -6,8 +6,8 @@
  */
 
 export interface ChecklistItem {
-  id?: number;
   text?: string;
   completed?: boolean;
   position?: number;
+  [key: string]: unknown;
 }
