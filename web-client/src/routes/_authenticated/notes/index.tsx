@@ -68,7 +68,14 @@ interface DisplayNote {
 
 type ViewMode = 'list' | 'detail' | 'create' | 'edit';
 
-// ── Route config ───────────────────────────────────────────────
+// ── Search params ──────────────────────────────────────────────
+
+interface NotesSearch {
+  action?: 'create';
+  type?: 'note' | 'checklist';
+  detailId?: string;
+  detailType?: 'note' | 'checklist';
+}
 
 interface NotesSearch {
   action?: 'create';
@@ -131,7 +138,7 @@ function fromApiNote(note: ApiNote): DisplayNote {
 
 function fromApiChecklist(checklist: ApiChecklist): DisplayNote {
   return {
-    id: checklist.id ?? 0,
+    id: (checklist as { id?: number }).id ?? 0,
     title: checklist.title ?? '',
     body: '',
     type: 'checklist',
@@ -482,22 +489,24 @@ function NoteForm({
 // ── Main page component ────────────────────────────────────────
 
 export function NotesPage() {
-  const routeSearch: NotesSearch = useSearch({ from: '/_authenticated/notes/' });
   const router = useRouter();
+  const routeSearch = useSearch({ from: '/_authenticated/notes/' }) as NotesSearch;
   const [view, setView] = useState<ViewMode>(() => {
     if (routeSearch.action === 'create') return 'create';
     if (routeSearch.detailId) return 'detail';
     return 'list';
   });
   const [selectedNoteKey, setSelectedNoteKey] = useState<{ type: NoteType; id: number } | null>(() => {
-    if (!routeSearch.detailId) return null;
-    return { type: routeSearch.detailType ?? 'note', id: Number(routeSearch.detailId) };
+    if (routeSearch.detailId && routeSearch.detailType) {
+      return { type: routeSearch.detailType, id: Number(routeSearch.detailId) };
+    }
+    return null;
   });
   const [editingNote, setEditingNote] = useState<DisplayNote>(() => {
     if (routeSearch.action === 'create') {
-      const note = emptyDisplayNote();
-      note.type = routeSearch.type ?? 'note';
-      return note;
+      const prefill = sessionStorage.getItem('chat-quick-note');
+      if (prefill) sessionStorage.removeItem('chat-quick-note');
+      return { ...emptyDisplayNote(), body: prefill ?? '' };
     }
     return emptyDisplayNote();
   });

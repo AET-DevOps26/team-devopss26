@@ -81,7 +81,7 @@ async def app(rsa_key, monkeypatch):
 @pytest_asyncio.fixture
 async def client(app):
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test/api/genai") as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 
