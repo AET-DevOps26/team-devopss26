@@ -183,6 +183,13 @@ function QuickActions() {
 
 // ── Events Widget ──────────────────────────────────────────────
 
+function formatDateStr(isoDate: string | undefined): string {
+  if (!isoDate) return '';
+  const d = new Date(isoDate + 'T00:00:00');
+  if (isNaN(d.getTime())) return isoDate;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 function EventsWidget({ events }: { events: { id: number; title: string; time: string; dateStr?: string }[] }) {
   const router = useRouter();
   return (
@@ -212,7 +219,10 @@ function EventsWidget({ events }: { events: { id: number; title: string; time: s
                 <div className="size-2 shrink-0 rounded-full bg-primary" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{event.title}</p>
-                  <p className="text-xs text-muted-foreground">{event.time}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {event.dateStr && <>{formatDateStr(event.dateStr)} &middot; </>}
+                    {event.time}
+                  </p>
                 </div>
               </div>
             ))}
