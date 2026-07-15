@@ -7,8 +7,7 @@
 import type { Checklist } from './checklist.ts';
 import type { Identifier } from './identifier.ts';
 
-export type IdentifiedChecklist = Identifier &
-  Checklist & {
-    userId?: number;
-    [key: string]: unknown;
-  };
+export type IdentifiedChecklist = Identifier & Checklist & {
+  userId?: number;
+  [key: string]: unknown;
+ };

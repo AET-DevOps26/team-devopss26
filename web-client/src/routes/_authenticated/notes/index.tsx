@@ -107,12 +107,6 @@ export const Route = createFileRoute('/_authenticated/notes/')({
   component: NotesPageWithKey,
 });
 
-// Remount wrapper: re-mounts NotesPage when search params change so state resets cleanly
-function NotesPageWithKey() {
-  const search = useSearch({ from: '/_authenticated/notes/' });
-  return <NotesPage key={`${search.action ?? ''}-${search.detailId ?? ''}-${search.detailType ?? ''}`} />;
-}
-
 // ── Helpers ─────────────────────────────────────────────────────
 
 function formatDate(isoString: string | undefined | null): string {
@@ -495,6 +489,7 @@ function NoteForm({
 // ── Main page component ────────────────────────────────────────
 
 export function NotesPage() {
+  const router = useRouter();
   const routeSearch = useSearch({ from: '/_authenticated/notes/' }) as NotesSearch;
   const [view, setView] = useState<ViewMode>(() => {
     if (routeSearch.action === 'create') return 'create';
