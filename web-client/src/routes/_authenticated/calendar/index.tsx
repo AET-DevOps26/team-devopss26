@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useSearch, useRouter } from '@tanstack/react-router';
 import {
   useSuspenseQuery,
   useMutation,
@@ -32,7 +32,16 @@ import { Skeleton } from '#/components/ui/skeleton.tsx';
 import { getEvents, createEvent, updateEvent, deleteEvent } from '#/services/calendar/calendar-events/calendar-events.ts';
 import type { IdentifiedCalendarEvent, CreateCalendarEventRequest } from '#/types/calendar';
 
+interface CalendarSearch {
+  action?: 'create';
+  date?: string;
+}
+
 export const Route = createFileRoute('/_authenticated/calendar/')({
+  validateSearch: (input: Record<string, unknown>): CalendarSearch => ({
+    action: input.action === 'create' ? 'create' : undefined,
+    date: typeof input.date === 'string' ? input.date : undefined,
+  }),
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(calendarQueries.all()),
   pendingComponent: CalendarSkeleton,
@@ -415,9 +424,18 @@ function CalendarSkeleton() {
 }
 
 export function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(today);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const routeSearch: CalendarSearch = useSearch({ from: '/_authenticated/calendar/' });
+  const router = useRouter();
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (routeSearch.date) {
+      const d = new Date(routeSearch.date);
+      return isNaN(d.getTime()) ? today : d;
+    }
+    return today;
+  });
+  const [sheetOpen, setSheetOpen] = useState(routeSearch.action === 'create');
   const [editingEvent, setEditingEvent] = useState<CalendarFormEvent | null>(null);
+  const [selectedDate, setSelectedDate] = useState(routeSearch.date ?? todayStr);
 
   const { data: events, isFetching } = useSuspenseQuery(calendarQueries.all());
 
@@ -447,9 +465,6 @@ export function CalendarPage() {
     return map;
   }, [events]);
 
-  // Currently selected day
-  const [selectedDate, setSelectedDate] = useState(todayStr);
-
   // Events for the selected day
   const selectedDayEvents = useMemo(() => {
     return events.filter((ev) => getDateStr(ev.startTime) === selectedDate);
@@ -461,8 +476,13 @@ export function CalendarPage() {
 
   const goToToday = () => {
     const now = new Date();
+    const dateStr = localDateStr(now);
     setCurrentDate(now);
-    setSelectedDate(localDateStr(now));
+    setSelectedDate(dateStr);
+    void router.navigate({
+      to: '/calendar',
+      search: { date: dateStr },
+    });
   };
 
   const openCreateSheet = () => {
@@ -473,6 +493,10 @@ export function CalendarPage() {
       endTime: '10:00',
     });
     setSheetOpen(true);
+    void router.navigate({
+      to: '/calendar',
+      search: { date: selectedDate, action: 'create' },
+    });
   };
 
   const openEditSheet = (event: IdentifiedCalendarEvent) => {
@@ -488,6 +512,10 @@ export function CalendarPage() {
   const handleDayClick = (day: number) => {
     const dateStr = localDateStr(new Date(year, month, day));
     setSelectedDate(dateStr);
+    void router.navigate({
+      to: '/calendar',
+      search: { date: dateStr },
+    });
   };
 
   return (
@@ -640,7 +668,15 @@ export function CalendarPage() {
         key={editingEvent?.id ?? 'create'}
         event={editingEvent}
         isOpen={sheetOpen}
-        onOpenChange={setSheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) {
+            void router.navigate({
+              to: '/calendar',
+              search: { date: selectedDate, action: undefined },
+            });
+          }
+        }}
       />
     </div>
   );
