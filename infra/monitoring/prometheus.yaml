@@ -85,6 +85,8 @@ metadata:
     app: prometheus
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: prometheus
@@ -100,13 +102,14 @@ spec:
         - name: prometheus
           image: prom/prometheus:latest
           args:
+            - --config.file=/etc/prometheus/prometheus.yml
             - --web.external-url=/prometheus/
             - --web.route-prefix=/
           ports:
             - containerPort: 9090
           resources:
             requests: { memory: "256Mi", cpu: "100m" }
-            limits:   { memory: "512Mi", cpu: "256m" }
+            limits:   { memory: "384Mi", cpu: "256m" }
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus/prometheus.yml
