@@ -28,7 +28,7 @@ export const checklistQueries = {
     queryOptions({
       queryKey: checklistKeys.lists(),
       queryFn: async () => {
-        const response = await getChecklists({ userId: getUserId() });
+        const response = await getChecklists();
         return Array.isArray(response.checklists) ? response.checklists : [];
       },
       staleTime: 30_000,

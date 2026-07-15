@@ -111,7 +111,7 @@ _current_auth_header: ContextVar[Optional[str]] = ContextVar("_current_auth_head
 # The Caddy gateway forwards /api/genai/* to this service without stripping the
 # prefix (mirroring how Spring's server.servlet.context-path works for the other
 # services), so routes must actually be mounted under it; see
-# app.include_router(genai_router, prefix="/api/genai") below.
+# app.include_router(genai_router) below.
 _PUBLIC_PATHS = {"/api/v1/health", "/metrics"}
 
 

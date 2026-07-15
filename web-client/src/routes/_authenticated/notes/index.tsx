@@ -132,7 +132,7 @@ function fromApiNote(note: ApiNote): DisplayNote {
 
 function fromApiChecklist(checklist: ApiChecklist): DisplayNote {
   return {
-    id: checklist.id ?? 0,
+    id: (checklist as { id?: number }).id ?? 0,
     title: checklist.title ?? '',
     body: '',
     type: 'checklist',
