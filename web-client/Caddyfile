@@ -1,13 +1,43 @@
 :80 {
-    # API Gateway routing to backend microservices
-    handle /api/v1/* {
-        reverse_proxy /api/v1/users* http://user-service-app:8001
-        reverse_proxy /api/v1/notes* http://note-service-app:8005
-        reverse_proxy /api/v1/checklists* http://checklist-service-app:8003
-        reverse_proxy /api/v1/events* http://calendar-service-app:8004
-        reverse_proxy /api/v1/chat* http://genai-service-app:8006
-        reverse_proxy /api/v1/conversations* http://genai-service-app:8006
-        reverse_proxy /api/v1/health* http://genai-service-app:8006
+    # ── Prod routes ──
+    handle /api/v1/chat {
+        reverse_proxy http://genai-service:8006
+    }
+    handle /api/v1/chat/* {
+        reverse_proxy http://genai-service:8006
+    }
+    handle /api/v1/checklists {
+        reverse_proxy http://checklist-service:8003
+    }
+    handle /api/v1/checklists/* {
+        reverse_proxy http://checklist-service:8003
+    }
+    handle /api/v1/conversations {
+        reverse_proxy http://genai-service:8006
+    }
+    handle /api/v1/conversations/* {
+        reverse_proxy http://genai-service:8006
+    }
+    handle /api/v1/events {
+        reverse_proxy http://calendar-service:8004
+    }
+    handle /api/v1/events/* {
+        reverse_proxy http://calendar-service:8004
+    }
+    handle /api/v1/health {
+        reverse_proxy http://genai-service:8006
+    }
+    handle /api/v1/health/* {
+        reverse_proxy http://genai-service:8006
+    }
+    handle /api/v1/notes {
+        reverse_proxy http://note-service:8005
+    }
+    handle /api/v1/notes/* {
+        reverse_proxy http://note-service:8005
+    }
+    handle /api/v1/users/* {
+        reverse_proxy http://user-service:8001
     }
 
     # Serve swagger documentation directly
@@ -16,19 +46,25 @@
         file_server
     }
 
-    # Monitoring: expose Grafana under /grafana (Grafana serves from this
-    # sub-path itself via GF_SERVER_SERVE_FROM_SUB_PATH, so don't strip the prefix).
-    # Match both the bare path and everything under it so /grafana (no trailing
-    # slash) hits Grafana and gets redirected, rather than falling through to the SPA.
+    # ── Monitoring routes (cross-namespace to monitoring) ──
+    # Grafana: configured with GF_SERVER_SERVE_FROM_SUB_PATH=true
+    # Forward the /grafana prefix as-is; do NOT strip it
     @grafana path /grafana /grafana/*
     handle @grafana {
-        reverse_proxy http://grafana:3000
+        reverse_proxy http://grafana.team-devopss26-monitoring.svc.cluster.local:3000
     }
 
-    # Serve static frontend files for all other routes
+    # Prometheus: configured with --web.external-url=/prometheus/ and --web.route-prefix=/
+    # Strip the prefix; Prometheus serves at / internally and generates /prometheus URLs
+    @prometheus path /prometheus /prometheus/*
+    handle @prometheus {
+        uri strip_prefix /prometheus
+        reverse_proxy http://prometheus.team-devopss26-monitoring.svc.cluster.local:9090
+    }
+
     handle {
         root * /usr/share/caddy
-        file_server
         try_files {path} /index.html
+        file_server
     }
 }

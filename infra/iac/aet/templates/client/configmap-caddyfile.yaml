@@ -48,11 +48,16 @@ data:
         }
 
         # ── Monitoring routes (cross-namespace to monitoring) ──
-        handle /grafana/* {
-            uri strip_prefix /grafana
+        # Grafana: serve_from_sub_path=true, forward path as-is
+        @grafana path /grafana /grafana/*
+        handle @grafana {
             reverse_proxy http://grafana.team-devopss26-monitoring.svc.cluster.local:3000
         }
-        handle /prometheus/* {
+
+        # Prometheus: --web.external-url=/prometheus/ + --web.route-prefix=/,
+        # serves at / internally, so strip prefix
+        @prometheus path /prometheus /prometheus/*
+        handle @prometheus {
             uri strip_prefix /prometheus
             reverse_proxy http://prometheus.team-devopss26-monitoring.svc.cluster.local:9090
         }
