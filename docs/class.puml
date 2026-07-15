@@ -1,40 +1,38 @@
 @startuml
+!pragma layout smetana
 ' All class definitions required by our architecture
+
+title Analysis Object Model (Domain Entities)
 class User {
 	- id: Long
-	- email: String
-	- oauthProvider: String
-	- oauthSubject: String
+	- username: String
+	- passwordHash: String
 }
 
 class Note {
 	- id: Long
+	- userId: Long
 	- title: String
 	- content: String
-	- createdAt: DateTime
-	- lastUpdatedAt: DateTime
-	--
-	+ updateContent(title: String, content: String): void
+	- createdAt: OffsetDateTime
+	- lastUpdatedAt: OffsetDateTime
 }
 
 class CalendarEvent {
 	- id: Long
+	- userId: Long
 	- title: String
 	- description: String
-	- startTime: DateTime
-	- endTime: DateTime
+	- startTime: OffsetDateTime
+	- endTime: OffsetDateTime
 	- location: String
-	--
-	+ updateContent(title: String, description: String, startTime: DateTime, endTime: DateTime, location: String): void
 }
 
 class Checklist {
 	- id: Long
+	- userId: Long
 	- title: String
-	- createdAt: DateTime
-	--
-	+ addItem(text: String): ChecklistItem
-	+ removeItem(itemId: Long): void
+	- createdAt: OffsetDateTime
 }
 
 class ChecklistItem {
@@ -45,20 +43,19 @@ class ChecklistItem {
 }
 
 class ChatConversation {
-	- id: Long
+	- id: BigInteger
+	- user_id: BigInteger
 	- title: String
-	- createdAt: DateTime
-	--
-	+ addChatMessage(role: ChatRole, content: String): ChatMessage
+	- created_at: DateTime
 }
 
 class ChatMessage {
-	- id: Long
-	- content: String
-	- timestamp: Long
+	- id: BigInteger
+	- content: Text
+	- timestamp: BigInteger
 }
 
-enum ChatRole {
+enum ChatMessageRole {
 	USER
 	AGENT
 }
@@ -78,5 +75,5 @@ User "1" --> "*" Checklist
 Checklist "1" --> "*" ChecklistItem
 User "1" --> "*" ChatConversation
 ChatConversation "1" --> "*" ChatMessage
-ChatMessage --> ChatRole
+ChatMessage --> ChatMessageRole
 @enduml

@@ -1,4 +1,5 @@
 @startuml
+!pragma layout smetana
 skinparam shadowing false
 skinparam nodesep 40
 skinparam ranksep 60
@@ -33,14 +34,12 @@ rectangle "Web Client" #F8F9FA {
 
   rectangle "UI Layer" as UI {
     component "React 19 + shadcn/ui" as REACT
-    component "AppShell + Pages" as PAGES
-    component "react-oidc-client" as OIDC_LIB
+    component "AppShell + Pages\n(_authenticated routes)" as PAGES
+    component "Login / Register\n(_unauthenticated routes)" as AUTH_PAGES
   }
 
   rectangle "State Management" as STATE {
     component "authStore (Zustand)" as AUTHSTORE
-    component "chatStore (Zustand)" as CHATSTORE
-    component "TanStack Query" as TQ
   }
 
   rectangle "API Layer" as API {
@@ -55,45 +54,42 @@ rectangle "Web Client" #F8F9FA {
   }
 }
 
-rectangle "External" #FFF3E0 {
-  component "OIDC Provider" as OIDC #FFCDD2
-  rectangle "Backend" {
-    component "Spring Boot" as BACKEND #C5E1A5
-    database "PostgreSQL" as DB
-    component "GenAI\n(FastAPI / Gemini)" as GENAI #E1BEE7
+rectangle "External Infrastructure" #FFF3E0 {
+  rectangle "Caddy Reverse Proxy" as PROXY_NODE {
+    component "API Gateway" as PROXY
   }
-
+  rectangle "Backend Services" {
+    component "User Service" as BACKEND_USER #C5E1A5
+    component "Note/Cal/Checklist Services" as BACKEND_CORE #C5E1A5
+    component "GenAI Service" as GENAI #E1BEE7
+  }
 }
 
 VITE     -down-> REACT : bundles
 TW       -down-> REACT
 ROUTER   -down-> PAGES : routes
-
-OIDC_LIB -down-> OIDC : OIDC flow
-OIDC_LIB -down-> AUTHSTORE
+ROUTER   -down-> AUTH_PAGES : routes
 
 PAGES    -left-> REACT
 PAGES    -down-> AUTHSTORE
-PAGES    -down-> CHATSTORE
-PAGES    -down-> TQ
 
-TQ       -down-> SVCS : queries
+AUTH_PAGES -down-> AUTHSTORE
+
 SVCS     -down-> AXIOS
 AXIOS    -right-> AUTHSTORE : JWT
-AXIOS    -down-> BACKEND : REST
-BACKEND  -down-> DB
-BACKEND  -down-> GENAI : chat proxy
+AXIOS    -down-> PROXY : REST
 
-SVCS     -down-> TYPES
+PROXY    -down-> BACKEND_USER : /api/v1/users*
+PROXY    -down-> BACKEND_CORE : /api/v1/notes*, /api/v1/events*, etc.
+PROXY    -down-> GENAI : /api/v1/chat*, /api/v1/conversations*
 
 VITEST   -down-> MSW
 MSW      -down-> AXIOS : intercepts
 
 legend bottom
-  Auth is handled client-side via react-oidc-client.
-  AuthProvider wraps the app and manages the OIDC flow.
-  authStore wraps useAuth() for cross-layer JWT access.
-  Chat requests are proxied through Spring Boot to GenAI.
+  Auth is handled client-side via custom Login/Register routes.
+  authStore (Zustand) manages the local JWT token and User ID.
+  API requests are routed via Caddy Reverse Proxy to the backend services.
   MSW intercepts Axios calls during tests.
 endlegend
 
