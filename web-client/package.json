@@ -8,7 +8,9 @@
   "scripts": {
     "codegen": "orval",
     "postcodegen": "prettier --write 'src/services/**/*.ts' 'src/types/**/*.ts'",
+    "predev": "node scripts/copy-swagger-files.cjs",
     "dev": "npm run codegen && vite dev --port 3000",
+    "prebuild": "node scripts/copy-swagger-files.cjs",
     "build": "npm run codegen && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -71,6 +73,7 @@
     "msw": "^2.14.6",
     "orval": "^8.20.0",
     "prettier": "^3.8.3",
+    "swagger-ui-dist": "^5.32.8",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.59.3",
     "vite": "^8.0.0",

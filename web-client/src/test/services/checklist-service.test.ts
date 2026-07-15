@@ -23,7 +23,7 @@ describe('checklist service', () => {
   });
 
   it('createChecklist sends POST and returns created checklist', async () => {
-    const result = await createChecklist({ title: 'New Checklist' });
+    const result = await createChecklist({ userId: 1, title: 'New Checklist' });
     expect(result).toHaveProperty('id');
     expect(result.title).toBe('New Checklist');
   });

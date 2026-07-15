@@ -1,10 +1,20 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { server } from '../setup';
 import { renderWithClient } from '../test-utils';
 import { CalendarPage } from '#/routes/_authenticated/calendar';
+
+// useSearch requires a RouterProvider context; mock it for isolated component tests
+vi.mock('@tanstack/react-router', async () => {
+  const actual = await vi.importActual('@tanstack/react-router');
+  return {
+    ...actual,
+    useSearch: () => ({ action: undefined, date: undefined }),
+    useRouter: () => ({ navigate: vi.fn() }),
+  };
+});
 
 /** Format a Date as YYYY-MM-DD in local timezone. */
 function localDateStr(date: Date): string {

@@ -9,7 +9,6 @@ import {
   updateChecklistItem,
   deleteChecklistItem,
 } from '#/services/checklist/checklists/checklists';
-import { useAuthStore } from '#/stores/authStore';
 
 export const checklistKeys = {
   all: ['checklists'] as const,
@@ -17,11 +16,6 @@ export const checklistKeys = {
   list: (filters: string) => [...checklistKeys.lists(), filters] as const,
 };
 
-function getUserId(): number {
-  const userId = useAuthStore.getState().userId;
-  if (userId == null) throw new Error('User not authenticated');
-  return userId;
-}
 
 export const checklistQueries = {
   all: () =>
@@ -40,8 +34,7 @@ export function useCreateChecklist() {
 
   return useMutation({
     mutationFn: (data: { title: string }) => {
-      const userId = getUserId();
-      return createChecklist({ userId, title: data.title });
+      return createChecklist({ title: data.title });
     },
 
     onSuccess: () => {

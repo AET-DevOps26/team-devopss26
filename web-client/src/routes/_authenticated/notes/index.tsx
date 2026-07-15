@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { createFileRoute, useSearch } from '@tanstack/react-router';
+import { createFileRoute, useSearch, useRouter } from '@tanstack/react-router';
 import { useSuspenseQuery, useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card.tsx';
 import { Button } from '#/components/ui/button.tsx';
@@ -44,7 +44,7 @@ import {
   useDeleteChecklistItem,
 } from '#/lib/queries/checklists.ts';
 import type { IdentifiedTimestampedNote as ApiNote } from '#/types/notes';
-import type { Checklist as ApiChecklist } from '#/types/checklist';
+import type { IdentifiedChecklist as ApiChecklist } from '#/types/checklist';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -75,6 +75,18 @@ interface NotesSearch {
   type?: 'note' | 'checklist';
   detailId?: string;
   detailType?: 'note' | 'checklist';
+}
+
+interface NotesSearch {
+  action?: 'create';
+  type?: 'note' | 'checklist';
+  detailId?: string;
+  detailType?: 'note' | 'checklist';
+}
+
+function NotesPageWithKey() {
+  const search: NotesSearch = useSearch({ from: '/_authenticated/notes/' });
+  return <NotesPage key={`${search.action ?? ''}-${search.detailId ?? ''}-${search.detailType ?? ''}`} />;
 }
 
 export const Route = createFileRoute('/_authenticated/notes/')({
@@ -570,6 +582,10 @@ export function NotesPage() {
     if (!note) return;
     setView('list');
     setSelectedNoteKey(null);
+    void router.navigate({
+      to: '/notes',
+      search: {},
+    });
     const promise = note.type === 'note'
       ? deleteNote.mutateAsync(note.id)
       : deleteChecklist.mutateAsync(note.id);
@@ -579,7 +595,11 @@ export function NotesPage() {
   const handleBack = useCallback(() => {
     setView('list');
     setSelectedNoteKey(null);
-  }, []);
+    void router.navigate({
+      to: '/notes',
+      search: {},
+    });
+  }, [router]);
 
   const handleSave = async (note: DisplayNote) => {
     const isNew = !note.id;
@@ -597,6 +617,10 @@ export function NotesPage() {
         }
         setView('list');
         setSelectedNoteKey(null);
+        void router.navigate({
+          to: '/notes',
+          search: {},
+        });
       } else {
         if (isNew) {
           const created = await createChecklist.mutateAsync(
@@ -611,6 +635,10 @@ export function NotesPage() {
             );
           }
           setView('list');
+          void router.navigate({
+            to: '/notes',
+            search: {},
+          });
         } else {
           // Editing existing checklist
           const originalNote = displayList.find((n) => n.type === note.type && n.id === note.id);
@@ -646,6 +674,10 @@ export function NotesPage() {
 
           setView('list');
           setSelectedNoteKey(null);
+          void router.navigate({
+            to: '/notes',
+            search: {},
+          });
         }
       }
     } catch {

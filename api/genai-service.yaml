@@ -152,16 +152,20 @@ components:
           format: int64
           minimum: -9223372036854775808
           maximum: 9223372036854775807
+          example: 201
         role:
           type: string
           enum: [USER, AGENT]
+          example: USER
         content:
           type: string
+          example: "Hello, can you help me schedule a meeting?"
         timestamp:
           type: integer
           format: int64
           minimum: -9223372036854775808
           maximum: 9223372036854775807
+          example: 1720894000
 
     Conversation:
       type: object
@@ -171,17 +175,21 @@ components:
           format: int64
           minimum: -9223372036854775808
           maximum: 9223372036854775807
+          example: 1
         user_id:
           type: integer
           format: int64
           minimum: -9223372036854775808
           maximum: 9223372036854775807
+          example: 10
         title:
           type: string
           nullable: true
+          example: "Meeting Scheduling Assistance"
         created_at:
           type: string
           format: date-time
+          example: "2026-07-13T22:00:00Z"
         messages:
           type: array
           items:
@@ -193,24 +201,29 @@ components:
       properties:
         message:
           type: string
+          example: "Hello, can you help me schedule a meeting?"
         conversation_id:
           type: integer
           format: int64
           minimum: -9223372036854775808
           maximum: 9223372036854775807
           nullable: true
+          example: 1
         model:
           type: string
           enum: [gemini, gemini-lite, groq-llama, mistral, cohere]
           default: gemini-lite
+          example: gemini
 
     ChatResponse:
       type: object
       properties:
         response:
           type: string
+          example: "Yes, I can help you schedule a meeting. What day and time work for you?"
         conversation_id:
           type: integer
           format: int64
           minimum: -9223372036854775808
           maximum: 9223372036854775807
+          example: 1

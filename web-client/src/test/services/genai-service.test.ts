@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../setup';
-import { health, createConversation, getConversation, deleteConversation, chat } from '../../services/genai/gen-a-i/gen-a-i';
+import { health, createConversation, getConversation, deleteConversation, chat } from '#/services/genai/gen-a-i/gen-a-i.ts';
 
 describe('genai service', () => {
   it('health sends GET to /api/v1/health', async () => {

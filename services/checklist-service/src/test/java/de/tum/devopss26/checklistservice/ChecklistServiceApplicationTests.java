@@ -2,7 +2,7 @@ package de.tum.devopss26.checklistservice;
 
 import org.junit.jupiter.api.Test;
 
-class ChecklistServiceApplicationTests extends AbstractIntegrationTest {
+class ChecklistServiceApplicationTests {
 
 	@Test
 	void contextLoads() {

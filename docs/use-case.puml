@@ -1,12 +1,26 @@
 @startuml
+!pragma layout smetana
 'https://plantuml.com/use-case-diagram
 
-left to right direction
+title Use Case Diagram (Functional Requirements)
 
-package "AI-integrated Life Management App" {
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam shadowing false
+
+actor User
+
+package "AI-integrated Life Management App" as system {
+	package "User Account" as UserAccount {
+		(Register User)
+		(Log In)
+	}
 
 	package Chatbot as Chatbot {
-		(Query the chatbot)
+		(Query the Chatbot)
+		(Create Chat Conversation)
+		(View Chat History)
+		(Delete Chat Conversation)
 	}
 
 	package Notes as Notes {
@@ -30,9 +44,9 @@ package "AI-integrated Life Management App" {
 		(Delete Checklist)
 		(Manage Items in Checklist)
 	}
-
 }
 
+User --> UserAccount
 User --> Notes
 User --> Calendar
 User --> Checklists

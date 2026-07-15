@@ -1,4 +1,5 @@
 @startuml
+!pragma layout smetana
 skinparam shadowing false
 skinparam nodesep 40
 skinparam ranksep 50
@@ -18,10 +19,14 @@ top to bottom direction
 
 component "main.tsx\n(RouterProvider)" as ENTRY
 
-rectangle "Layout" as LAYOUT {
-  component "AppShell\n(__root.tsx)" as SHELL
+rectangle "Route Layouts" as LAYOUTS {
+  component "_authenticated.tsx\n(Auth Guard)" as AUTH_LAYOUT
+  component "_unauthenticated.tsx" as UNAUTH_LAYOUT
+}
+
+rectangle "App Shell" as SHELL_GROUP {
+  component "AppShell\n(components/layout/)" as SHELL
   component "Sidebar" as SIDEBAR
-  component "Topbar" as TOPBAR
 }
 
 rectangle "Pages" as PAGES {
@@ -29,22 +34,27 @@ rectangle "Pages" as PAGES {
   component "Notes\n(list + editor)" as NOTES
   component "Calendar" as CAL
   component "Chat" as CHAT
+  component "Login" as LOGIN
+  component "Register" as REGISTER
 }
 
 rectangle "Shared Components" as SHARED {
   component "ErrorBoundary" as ERR
   component "EmptyState" as EMPTY
   component "Skeleton" as SKELETON
-  component "Toast (sonner)" as TOAST
-  component "MarkdownEditor" as MDEDIT
-  component "MarkdownRenderer" as MDRENDER
-  component "CalendarView\n(react-big-calendar)" as CALVIEW
+  component "LoadingSpinner" as SPINNER
+  component "Toast\n(sonner)" as TOAST
 }
 
-ENTRY -down-> SHELL : renders
+ENTRY -down-> AUTH_LAYOUT : renders
+ENTRY -down-> UNAUTH_LAYOUT : renders
+
+AUTH_LAYOUT -down-> SHELL : renders
+
+UNAUTH_LAYOUT -down-> LOGIN : renders
+UNAUTH_LAYOUT -down-> REGISTER : renders
 
 SHELL  -down-> SIDEBAR
-SHELL  -down-> TOPBAR
 SHELL  -down-> DASH
 SHELL  -down-> NOTES
 SHELL  -down-> CAL
@@ -53,20 +63,19 @@ SHELL  -down-> CHAT
 DASH   ..> EMPTY
 DASH   ..> SKELETON
 NOTES  ..> EMPTY
-NOTES  ..> MDEDIT
-NOTES  ..> MDRENDER
-CAL    ..> CALVIEW
-CHAT   ..> MDRENDER
+CAL    ..> SKELETON
+CHAT   ..> SKELETON
 
 SHELL  ..> ERR
 SHELL  ..> TOAST
 SHELL  ..> SKELETON
+SHELL  ..> SPINNER
 
 legend bottom
   Solid arrows (↓) = rendered in the layout tree.
   Dashed arrows (..>) = contextual / per-page usage.
-  Skeleton replaces spinner for all loading states.
-  No login/register pages — auth handled by OIDC redirect.
+  _authenticated guards routes — requires JWT, redirects to /login if missing.
+  _unauthenticated redirects authenticated users away from login/register.
 endlegend
 
 @enduml
