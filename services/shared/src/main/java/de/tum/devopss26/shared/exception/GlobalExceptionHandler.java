@@ -28,8 +28,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
 
-    @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<Void> handleBadRequestException(BadRequestException ex) {
+    @ExceptionHandler({
+            BadRequestException.class,
+            org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.bind.MethodArgumentNotValidException.class
+    })
+    public ResponseEntity<Void> handleBadRequestException(Exception ex) {
         log.atError().setCause(ex).log("Bad request");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }

@@ -6,6 +6,7 @@ import de.tum.devopss26.checklistservice.service.ChecklistService;
 import de.tum.devopss26.shared.security.SecurityAutoConfiguration;
 import de.tum.devopss26.shared.security.TokenValidationInterceptor;
 import org.junit.jupiter.api.BeforeEach;
+import de.tum.devopss26.shared.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.openapitools.model.AddChecklistItemResponse;
 import org.openapitools.model.Checklist;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ChecklistController.class)
-@Import(SecurityAutoConfiguration.class)
+@Import({GlobalExceptionHandler.class, SecurityAutoConfiguration.class})
 class ChecklistControllerTest {
 
     private MockMvc mockMvc;

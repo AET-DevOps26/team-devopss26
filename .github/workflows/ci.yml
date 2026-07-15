@@ -151,6 +151,9 @@ jobs:
       - name: Install Dependencies
         run: npm --prefix web-client ci
 
+      - name: Generate Frontend Code (Orval)
+        run: npm --prefix web-client run codegen
+
       - name: Run TypeScript Typecheck
         run: npm --prefix web-client run typecheck
 
