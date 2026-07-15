@@ -85,15 +85,19 @@ components:
       properties:
         username:
           type: string
+          example: "john_doe"
         password:
           type: string
+          example: "supersecretpassword"
     LoginResponse:
       type: object
       properties:
         token:
           type: string
+          example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huX2RvZSIsImV4cCI6MTcyMDg5NjAwMH0..."
     PublicKeyResponse:
       type: object
       properties:
         publicKey:
           type: string
+          example: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0..."

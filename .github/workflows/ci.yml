@@ -111,7 +111,6 @@ jobs:
           - checklist-service
           - calendar-service
           - note-service
-          - shared
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -127,7 +126,7 @@ jobs:
         run: |
           mvn clean install -f services/shared/pom.xml
           cd services/${{ matrix.service }}
-          mvn clean test
+          mvn clean verify
 
       - name: Static Analysis with Spotbugs
         run: |
@@ -151,6 +150,9 @@ jobs:
 
       - name: Install Dependencies
         run: npm --prefix web-client ci
+
+      - name: Generate Frontend Code (Orval)
+        run: npm --prefix web-client run codegen
 
       - name: Run TypeScript Typecheck
         run: npm --prefix web-client run typecheck

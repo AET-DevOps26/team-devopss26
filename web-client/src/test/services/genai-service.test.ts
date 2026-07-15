@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '../setup';
-import { health, createConversation, getConversation, deleteConversation, chat } from '../../services/genai/gen-a-i/gen-a-i';
+import { health, createConversation, getConversation, deleteConversation, chat } from '#/services/genai/gen-a-i/gen-a-i.ts';
 
 describe('genai service', () => {
   it('health sends GET to /api/v1/health', async () => {
@@ -10,7 +10,7 @@ describe('genai service', () => {
   });
 
   it('createConversation sends POST to /api/v1/conversations', async () => {
-    const result = await createConversation({ user_id: 1 });
+    const result = await createConversation();
     expect(result).toHaveProperty('id');
     expect(result).toHaveProperty('title');
   });
@@ -26,7 +26,7 @@ describe('genai service', () => {
   });
 
   it('chat sends POST to /api/v1/chat', async () => {
-    const result = await chat({ message: 'Hello', user_id: 1 });
+    const result = await chat({ message: 'Hello' });
     expect(result).toHaveProperty('response');
     expect(result).toHaveProperty('conversation_id');
   });
@@ -35,6 +35,6 @@ describe('genai service', () => {
     server.use(
       http.post('*/api/v1/chat', () => HttpResponse.json(null, { status: 400 })),
     );
-    await expect(chat({ message: '', user_id: 1 })).rejects.toThrow();
+    await expect(chat({ message: '' })).rejects.toThrow();
   });
 });

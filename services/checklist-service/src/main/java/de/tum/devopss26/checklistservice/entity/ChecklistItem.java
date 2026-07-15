@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "checklist_items")
-public class ChecklistItemEntity {
+public class ChecklistItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,9 +16,9 @@ public class ChecklistItemEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "checklist_id", nullable = false)
-    private ChecklistEntity checklist;
+    private Checklist checklist;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String text;
 
     @Column(nullable = false)

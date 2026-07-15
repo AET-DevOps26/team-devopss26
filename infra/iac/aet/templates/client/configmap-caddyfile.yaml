@@ -57,6 +57,12 @@ data:
             reverse_proxy http://prometheus.team-devopss26-monitoring.svc.cluster.local:9090
         }
 
+        # Serve swagger documentation directly
+        handle /swagger* {
+            root * /usr/share/caddy
+            file_server
+        }
+
         handle {
             root * /usr/share/caddy
             try_files {path} /index.html

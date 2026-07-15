@@ -263,9 +263,11 @@ components:
           type: string
           pattern: '.*\S.*'
           maxLength: 255
+          example: "Work Tasks"
         createdAt:
           type: string
           format: date-time
+          example: "2026-07-13T22:00:00Z"
         items:
           type: array
           items:
@@ -281,6 +283,7 @@ components:
             userId:
               type: integer
               format: int64
+              example: 10
 
     ChecklistItem:
       type: object
@@ -288,10 +291,14 @@ components:
       properties:
         text:
           type: string
+          maxLength: 1000
+          example: "Review pull request"
         completed:
           type: boolean
+          example: false
         position:
           type: integer
+          example: 0
     IdentifiedChecklistItem:
       type: object
       allOf:

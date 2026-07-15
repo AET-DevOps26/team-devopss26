@@ -12,6 +12,7 @@ dist-ssr
 __unconfig*
 todos.json
 .tmp/
+public/swagger/
 
 # orval — generated from OpenAPI specs; run `pnpm codegen` to regenerate
 src/services/users/**

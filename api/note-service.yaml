@@ -151,8 +151,10 @@ components:
           type: string
           pattern: '.*\S.*'
           maxLength: 255
+          example: "Grocery List"
         content:
           type: string
+          example: "Milk, Bread, Eggs, Apples"
     ListNotesResponse:
       type: object
       properties:
