@@ -10,6 +10,12 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
+/**
+ * React error boundary catching render/lifecycle/constructor errors.
+ * Does **not** catch event handlers or async code — wrap those in try/catch.
+ * `retry()` resets boundary (full remount of child tree).
+ * `componentDidCatch` logs to console.error — extend to Sentry/DataDog as needed.
+ */
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);

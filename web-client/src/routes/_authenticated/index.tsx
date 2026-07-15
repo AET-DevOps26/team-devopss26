@@ -17,26 +17,42 @@ import {
   RefreshCwIcon,
 } from 'lucide-react';
 
+/**
+ * Landing page after authentication. All data is currently mocked — toggle buttons
+ * cycle through loading/empty/error/populated states for UI review.
+ */
 export const Route = createFileRoute('/_authenticated/')({ component: Home });
 
 // ── Mock data ──────────────────────────────────────────────────
 
+/**
+ * Mock recent notes. Replace with real `useQuery` when wiring to live data.
+ */
 const mockNotes = [
   { id: '1', title: 'Project setup notes', snippet: 'Steps to initialize the monorepo with pnpm workspaces...', updatedAt: '2h ago', type: 'note' as const },
   { id: '2', title: 'Sprint review todos', snippet: 'Items to discuss: API rate limiting, caching strategy, error handling...', updatedAt: '5h ago', type: 'checklist' as const },
   { id: '3', title: 'Design system reference', snippet: 'Color tokens: oklch green palette, spacing scale, typography...', updatedAt: '1d ago', type: 'note' as const },
 ];
 
+/**
+ * Mock upcoming events. Replace with real `useQuery` when wiring to live data.
+ */
 const mockEvents = [
   { id: '1', title: 'Team standup', time: '10:00 AM', type: 'meeting' as const },
   { id: '2', title: 'Design review', time: '2:00 PM', type: 'review' as const },
   { id: '3', title: 'Deploy window', time: '4:30 PM', type: 'deploy' as const },
 ];
 
+/**
+ * Four-state union for dashboard widget visual states (populated/empty/loading/error).
+ */
 type WidgetState = 'populated' | 'empty' | 'loading' | 'error';
 
 // ── Sub-components ─────────────────────────────────────────────
 
+/**
+ * Time-aware greeting ("Good morning/afternoon/evening") with current date.
+ */
 function GreetingSection() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -52,6 +68,9 @@ function GreetingSection() {
   );
 }
 
+/**
+ * High-level stat counts. Currently uses hardcoded mock values.
+ */
 function StatCards() {
   const stats = [
     { icon: StickyNoteIcon, value: '12', label: 'Total Notes', color: 'text-primary' },
@@ -78,6 +97,9 @@ function StatCards() {
   );
 }
 
+/**
+ * Skeleton placeholder for stat cards row.
+ */
 function StatCardsSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
@@ -95,6 +117,9 @@ function StatCardsSkeleton() {
   );
 }
 
+/**
+ * Quick action shortcut buttons. Static placeholders — no `onClick` handlers yet.
+ */
 function QuickActions() {
   const actions = [
     { icon: SquarePenIcon, label: 'New Note', variant: 'default' as const },
@@ -115,6 +140,10 @@ function QuickActions() {
   );
 }
 
+/**
+ * Upcoming events widget. Four states: loading/empty/error/populated.
+ * Uses mock data. When wired to real queries, state derives from query status.
+ */
 function EventsWidget({ state }: { state: WidgetState }) {
   if (state === 'loading') {
     return (
@@ -198,6 +227,9 @@ function EventsWidget({ state }: { state: WidgetState }) {
   );
 }
 
+/**
+ * Recent notes widget. Same four-state pattern as EventsWidget.
+ */
 function NotesWidget({ state }: { state: WidgetState }) {
   if (state === 'loading') {
     return (
@@ -281,12 +313,16 @@ function NotesWidget({ state }: { state: WidgetState }) {
   );
 }
 
-// ── State toggle demo ──────────────────────────────────────────
+// ── State toggle demo (identical to WidgetState, separate type to allow independent evolution) ──
 
 type DemoState = 'populated' | 'empty' | 'loading' | 'error';
 
 // ── Page component ─────────────────────────────────────────────
 
+/**
+ * Composes greeting, stat cards, quick actions, and two stateful widgets.
+ * State toggle demo at the bottom cycles widget states — remove before production.
+ */
 function Home() {
   const [statState] = useState<DemoState>('populated');
   const [eventsState, setEventsState] = useState<WidgetState>('populated');

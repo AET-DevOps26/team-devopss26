@@ -16,6 +16,11 @@ import java.util.Optional;
 import static de.tum.devopss26.calendarservice.exception.IllegalCalendarEventAccessException.IllegalAccessPair;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Every operation that targets a specific event uses {@link #getEventEntity} to
+ * simultaneously assert existence and ownership, keeping access control consistent
+ * across all service methods.
+ */
 @Service
 @RequiredArgsConstructor
 class CalendarEventServiceImpl implements CalendarEventService {
@@ -31,6 +36,9 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toCreateResponse(event);
     }
 
+    /**
+     * No ownership check is needed here because the query filters by userId at the database level.
+     */
     @Transactional(readOnly = true)
     @Override
     public ListCalendarEventResponse getEvents(long userId) {
@@ -43,6 +51,13 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toListResponse(events);
     }
 
+    /**
+     * Existence and ownership are checked together so callers never need to handle
+     * these concerns separately.
+     *
+     * @throws CalendarEventNotFoundException      if no event exists with the given ID
+     * @throws IllegalCalendarEventAccessException if the event belongs to a different user
+     */
     private @NonNull CalendarEvent getEventEntity(long userId, long eventId) {
         Optional<CalendarEvent> opt = repository.findById(eventId);
         if (opt.isEmpty()) {
@@ -65,6 +80,17 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toGetResponse(event);
     }
 
+    /**
+     * Only non-null fields in {@code diff} are applied to the persisted entity; null
+     * fields are left unchanged. This allows clients to send only the fields they
+     * want to modify without first fetching the full current state.
+     *
+     * <p><strong>Why partial update?</strong> A full replacement would force every
+     * client to reconstruct the entire event object, including fields they may not
+     * have readily available. By treating null as "leave as-is", callers can issue
+     * minimal patches (e.g., a single field change) and the service remains idempotent
+     * for unchanged fields.
+     */
     @Transactional
     @Override
     public UpdateCalendarEventResponse updateEvent(long userId, long eventId,

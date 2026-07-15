@@ -2,6 +2,10 @@ import * as React from "react"
 
 import { cn } from "src/lib/utils"
 
+/**
+ * Native `<textarea>` with `field-sizing-content` for auto-resizing.
+ * No Radix primitive — plain HTML with Tailwind styling.
+ */
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
     <textarea

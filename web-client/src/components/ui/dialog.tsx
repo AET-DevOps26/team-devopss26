@@ -5,22 +5,40 @@ import { cn } from "src/lib/utils"
 import { Button } from "src/components/ui/button"
 import { XIcon } from "lucide-react"
 
+/**
+ * Root controller — manages open/close state. Uncontrolled by default;
+ * pass `open` and `onOpenChange` for controlled usage.
+ */
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
+/**
+ * The element that opens the dialog when activated. Renders as the child element
+ * passed to it, intercepting click events.
+ */
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
+/**
+ * Teleports content into a dedicated DOM node to avoid z-index conflicts.
+ */
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
+/**
+ * Can be placed anywhere within DialogContent. Typically used inside DialogFooter.
+ */
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
+/**
+ * Semi-transparent backdrop. Uses `backdrop-blur` when supported.
+ * Animated via `data-open`/`data-closed` attrs.
+ */
 function DialogOverlay({
   className,
   ...props
@@ -37,6 +55,13 @@ function DialogOverlay({
   )
 }
 
+/**
+ * Main dialog panel with overlay and optional X close button.
+ *
+ * @param showCloseButton - Renders built-in X close button (default: true).
+ *   Set to false when using DialogFooter's close button or a fully custom
+ *   close mechanism.
+ */
 function DialogContent({
   className,
   children,
@@ -78,6 +103,9 @@ function DialogContent({
   )
 }
 
+/**
+ * Groups DialogTitle and DialogDescription with consistent vertical spacing.
+ */
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -88,6 +116,13 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Action bar at the bottom of the dialog. Responsive layout: vertical on small
+ * screens, horizontal row on `sm:` breakpoints.
+ *
+ * @param showCloseButton - Renders a text-labeled outline close button
+ *   suitable for cancel actions (default: false).
+ */
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -115,6 +150,9 @@ function DialogFooter({
   )
 }
 
+/**
+ * Accessible dialog heading. Automatically connected via `aria-labelledby`.
+ */
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
@@ -128,6 +166,9 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   )
 }
 
+/**
+ * Supporting text linked via `aria-describedby`. Supports inline anchor links.
+ */
 function DialogDescription({
   className,
   ...props

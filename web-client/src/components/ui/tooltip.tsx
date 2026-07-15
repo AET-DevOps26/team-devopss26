@@ -2,6 +2,10 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "src/lib/utils"
 
+/**
+ * Wraps the tooltip tree to share configuration (delay, etc.).
+ * Renders at the root level above any Tooltip components.
+ */
 function TooltipProvider({
   delay = 0,
   ...props
@@ -15,14 +19,23 @@ function TooltipProvider({
   )
 }
 
+/**
+ * Manages open/close state for the tooltip. Wraps trigger + TooltipContent.
+ */
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
+/**
+ * Wraps the element that shows the tooltip on hover/focus.
+ */
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
 }
 
+/**
+ * Visible tooltip popup with arrow indicator. Configurable side, alignment, and offset.
+ */
 function TooltipContent({
   className,
   side = "top",

@@ -22,10 +22,15 @@ import {
   SidebarTrigger,
 } from 'src/components/ui/sidebar';
 
+/**
+ * Internal links (`to`) use TanStack Router's `<Link />`. External links
+ * (`href` + `external: true`) render as `<a>` with target="_blank".
+ */
 type NavItem = 
   | { to: string; label: string; icon: ComponentType<{ className?: string }> }
   | { href: string; label: string; icon: ComponentType<{ className?: string }>; external: true };
 
+/** Primary navigation items — rendered under the "Navigation" group header. */
 const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/notes', label: 'Notes', icon: FileText },
@@ -34,12 +39,21 @@ const navItems: NavItem[] = [
   { to: '/demo', label: 'Demo', icon: Palette },
 ];
 
+/** Secondary navigation items — rendered under the "Developer" group, always external links. */
 const developerItems: NavItem[] = [
   { href: '/swagger/', label: 'API Docs', icon: BookOpen, external: true },
 ];
 
+/**
+ * Collapsible sidebar navigation rail. Two groups: Navigation (internal routes,
+ * active-detection via useMatchRoute) and Developer (external links, never active).
+ * Uses `collapsible="icon"` — shrinks to icon rail on desktop, sheet on mobile.
+ */
 export function AppSidebar() {
   const matchRoute = useMatchRoute();
+  /**
+   * Active-link detection: exact match for `/`, fuzzy (prefix) match for others.
+   */
   const isLinkActive = (to: string) =>
     to === '/'
       ? !!matchRoute({ to: '/' })

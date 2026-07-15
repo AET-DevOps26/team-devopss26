@@ -23,6 +23,14 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 
+/**
+ * <b>Caching strategy:</b> The RSA public key is fetched lazily from the user-service and cached
+ * in-memory. If signature verification fails ({@link io.jsonwebtoken.security.SignatureException})
+ * and at least 30&nbsp;s have elapsed since the last fetch, the cache is cleared and the key is
+ * refetched — this self-heals transparently after key rotation or user-service restarts.
+ * <p>On success, {@code userId} (the token subject) and {@code jwtClaims} are injected as request
+ * attributes so downstream handlers can access them without re-parsing the token.
+ */
 @Component
 public class TokenValidationInterceptor implements HandlerInterceptor {
 
@@ -33,6 +41,10 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 	private Instant lastFetchTime = Instant.MIN;
 	private static final Duration MIN_REFETCH_INTERVAL = Duration.ofSeconds(30);
 
+	/**
+	 * The built-in {@link RestClient} uses a 2-second connect/read timeout so a stalled
+	 * user-service does not block request threads.
+	 */
 	public TokenValidationInterceptor(@Value("${user-service.url:http://localhost:8001}") String userServiceUrl) {
 		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
 		requestFactory.setConnectTimeout(Duration.ofSeconds(2));
@@ -43,6 +55,10 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 				.build();
 	}
 
+	/**
+	 * A failed fetch leaves the cache empty so the next request will retry automatically.
+	 * Thread-safe via {@code synchronized}.
+	 */
 	private synchronized PublicKey getOrFetchPublicKey() {
 		if (publicKey != null) {
 			return publicKey;
@@ -70,6 +86,10 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 		return publicKey;
 	}
 
+	/**
+	 * Prevents a fast-loop of repeated fetches on every request when the user-service is
+	 * persistently returning a different key or is unreachable.
+	 */
 	private synchronized boolean tryClearCachedPublicKeyForRefetch() {
 		if (Duration.between(lastFetchTime, Instant.now()).compareTo(MIN_REFETCH_INTERVAL) > 0) {
 			this.publicKey = null;
@@ -78,6 +98,11 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 		return false;
 	}
 
+	/**
+	 * @throws io.jsonwebtoken.security.SignatureException   if the signature does not match the key
+	 * @throws io.jsonwebtoken.ExpiredJwtException           if the token is expired
+	 * @throws io.jsonwebtoken.MalformedJwtException         if the token is structurally invalid
+	 */
 	private Claims validateToken(String token, PublicKey key) {
 		return Jwts.parser()
 				.verifyWith(key)
@@ -86,6 +111,9 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 				.getPayload();
 	}
 
+	/**
+	 * The flow is documented in the class-level javadoc.
+	 */
 	@Override
 	public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
 		if (!(handler instanceof HandlerMethod handlerMethod)) {

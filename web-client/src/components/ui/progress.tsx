@@ -4,6 +4,11 @@ import { Progress as ProgressPrimitive } from "@base-ui/react/progress"
 
 import { cn } from "src/lib/utils"
 
+/**
+ * Task completion bar. Automatically composes ProgressTrack and ProgressIndicator.
+ *
+ * @param value - 0–100. Pass `null` for indeterminate.
+ */
 function Progress({
   className,
   children,
@@ -25,6 +30,9 @@ function Progress({
   )
 }
 
+/**
+ * Background track (groove) of the progress bar.
+ */
 function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
@@ -38,6 +46,10 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
   )
 }
 
+/**
+ * Filled portion of the progress bar. Width driven by parent's `value` via
+ * CSS `transition-all`.
+ */
 function ProgressIndicator({
   className,
   ...props
@@ -51,6 +63,10 @@ function ProgressIndicator({
   )
 }
 
+/**
+ * Accessible label for the progress bar. Automatically associated with the
+ * progress role.
+ */
 function ProgressLabel({ className, ...props }: ProgressPrimitive.Label.Props) {
   return (
     <ProgressPrimitive.Label
@@ -61,6 +77,9 @@ function ProgressLabel({ className, ...props }: ProgressPrimitive.Label.Props) {
   )
 }
 
+/**
+ * Numeric progress value. Uses `tabular-nums` for stable digit widths.
+ */
 function ProgressValue({ className, ...props }: ProgressPrimitive.Value.Props) {
   return (
     <ProgressPrimitive.Value

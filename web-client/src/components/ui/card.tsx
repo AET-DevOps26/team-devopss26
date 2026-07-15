@@ -2,6 +2,11 @@ import * as React from "react"
 
 import { cn } from "src/lib/utils"
 
+/**
+ * Card — root container using CSS custom property `--card-spacing` (driven by
+ * the `size` prop) for consistent child spacing. When the first child is an
+ * `<img>`, top corners override the card's padding.
+ */
 function Card({
   className,
   size = "default",
@@ -20,6 +25,10 @@ function Card({
   )
 }
 
+/**
+ * CardHeader — uses CSS container queries (`@container/card-header`) and a
+ * CSS grid that auto-adjusts columns when CardAction is present.
+ */
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -33,6 +42,10 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * CardTitle — uses `font-heading`. Font size reduces to `text-sm` when
+ * the parent Card has `size="sm"`.
+ */
 function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -46,6 +59,9 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Automatically detected by CardHeader's grid layout when present.
+ */
 function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -56,6 +72,10 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Action button positioned in the card header's top-right corner
+ * via CSS grid (`col-start-2 row-span-2`).
+ */
 function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -69,6 +89,9 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Uses the parent Card's `--card-spacing` for consistent padding.
+ */
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -79,6 +102,10 @@ function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Automatically triggers the parent Card's `pb-0` (the footer provides its own
+ * padding).
+ */
 function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

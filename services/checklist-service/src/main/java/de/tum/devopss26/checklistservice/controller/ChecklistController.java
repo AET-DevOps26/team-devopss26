@@ -11,6 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Every endpoint is guarded by {@link RequireTokenValidation}. The authenticated user's ID is
+ * extracted from the token via {@link JWTHelper} and passed to the service layer — the client
+ * never supplies the userId directly (preventing privilege escalation).
+ * <p>Checklist-item sub-resources follow the pattern {@code /checklists/{id}/items/{itemId}}.</p>
+ */
 @RestController
 @RequiredArgsConstructor
 public class ChecklistController implements ChecklistsApi {
@@ -26,6 +32,9 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.ok(checklistService.getChecklists(userId));
     }
 
+    /**
+     * The checklist must belong to the authenticated user.
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<GetChecklistResponse> getChecklistById(Long id) {
@@ -43,6 +52,9 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.status(HttpStatus.CREATED).body(checklistService.createChecklist(userId, toCreate));
     }
 
+    /**
+     * Ownership is enforced server-side.
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<UpdateChecklistResponse> updateChecklist(Long id, UpdateChecklistRequest updateChecklistRequest) {
@@ -52,6 +64,9 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.ok(checklistService.updateChecklist(userId, id, toUpdate));
     }
 
+    /**
+     * Ownership is enforced server-side.
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<Void> deleteChecklist(Long id) {
@@ -61,6 +76,9 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * The position defaults to the end of the list if not specified.
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<AddChecklistItemResponse> addChecklistItem(Long id, AddChecklistItemRequest addChecklistItemRequest) {
@@ -73,6 +91,9 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.status(HttpStatus.CREATED).body(checklistService.addChecklistItem(userId, id, toAdd));
     }
 
+    /**
+     * Validates that the item belongs to the specified checklist.
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<UpdateChecklistItemResponse> updateChecklistItem(Long id, Long itemId, ChecklistItem updateChecklistItemRequest) {

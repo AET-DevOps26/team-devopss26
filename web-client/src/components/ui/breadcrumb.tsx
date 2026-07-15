@@ -5,6 +5,9 @@ import { useRender } from "@base-ui/react/use-render"
 import { cn } from "src/lib/utils"
 import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
 
+/**
+ * Should contain BreadcrumbList > BreadcrumbItem children.
+ */
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
@@ -16,6 +19,9 @@ function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
   )
 }
 
+/**
+ * Semantic `<ol>` with flexbox wrapping and gap spacing.
+ */
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
   return (
     <ol
@@ -29,6 +35,9 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
   )
 }
 
+/**
+ * `<li>` containing either a BreadcrumbLink or BreadcrumbPage.
+ */
 function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
   return (
     <li
@@ -39,6 +48,10 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
   )
 }
 
+/**
+ * Polymorphic link via Base UI's `useRender`. Override root with `render` prop
+ * (e.g., for router Link).
+ */
 function BreadcrumbLink({
   className,
   render,
@@ -59,6 +72,9 @@ function BreadcrumbLink({
   })
 }
 
+/**
+ * Current (non-clickable) page indicator.
+ */
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
@@ -72,6 +88,9 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
   )
 }
 
+/**
+ * Visual divider. Accepts custom content via `children`; defaults to ChevronRightIcon.
+ */
 function BreadcrumbSeparator({
   children,
   className,
@@ -92,6 +111,9 @@ function BreadcrumbSeparator({
   )
 }
 
+/**
+ * Truncated breadcrumb indicator. Renders MoreHorizontalIcon with sr-only "More" label.
+ */
 function BreadcrumbEllipsis({
   className,
   ...props

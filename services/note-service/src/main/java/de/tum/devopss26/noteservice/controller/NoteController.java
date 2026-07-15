@@ -11,6 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Every endpoint requires a valid token (enforced via {@link RequireTokenValidation})
+ * and extracts the authenticated user's ID from the JWT to scope operations.
+ */
 @RestController
 @RequiredArgsConstructor
 public class NoteController implements NotesApi {
@@ -27,6 +31,9 @@ public class NoteController implements NotesApi {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Scoped to the authenticated user.
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<GetNoteResponse> getNoteById(Long id) {
@@ -45,6 +52,9 @@ public class NoteController implements NotesApi {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /**
+     * Only the provided fields ({@code title}, {@code content}) are applied; omitted fields remain unchanged.
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<UpdateNoteResponse> updateNote(Long id, Note note) {

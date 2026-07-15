@@ -4,6 +4,12 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * A single item within a {@link Checklist}. Carries a text description, a completion flag, and
+ * an ordinal position used for display ordering ({@code ORDER BY completed ASC, position ASC}).
+ * The owning-side foreign key ({@code checklist_id}) establishes the many-to-one relationship;
+ * lifecycle is managed by the parent's cascade configuration.
+ */
 @Entity
 @Getter
 @Setter

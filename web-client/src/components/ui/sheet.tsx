@@ -7,22 +7,38 @@ import { cn } from "src/lib/utils"
 import { Button } from "src/components/ui/button"
 import { XIcon } from "lucide-react"
 
+/**
+ * Slide-over panel. Supports four positions (top/bottom/left/right).
+ * Compose with SheetTrigger, SheetContent, SheetHeader, etc.
+ */
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
 }
 
+/**
+ * The element that opens the sheet when clicked.
+ */
 function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
 }
 
+/**
+ * Dismisses the sheet. Automatically included in SheetContent unless disabled.
+ */
 function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
+/**
+ * Used internally by SheetContent; usually not needed directly.
+ */
 function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
 }
 
+/**
+ * Semi-transparent backdrop. Clicking dismisses the sheet. Supports backdrop blur.
+ */
 function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   return (
     <SheetPrimitive.Backdrop
@@ -36,6 +52,10 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   )
 }
 
+/**
+ * Main slide-over panel with translate-based entrance animations per `side`.
+ * Optionally shows a close button in the top-right corner.
+ */
 function SheetContent({
   className,
   children,
@@ -80,6 +100,9 @@ function SheetContent({
   )
 }
 
+/**
+ * Layout wrapper for SheetTitle and SheetDescription with consistent spacing.
+ */
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -90,6 +113,9 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Layout wrapper at the bottom of the sheet. Pushes content via `mt-auto`.
+ */
 function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -100,6 +126,9 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Accessible title for the sheet dialog.
+ */
 function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
   return (
     <SheetPrimitive.Title
@@ -113,6 +142,9 @@ function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
   )
 }
 
+/**
+ * Accessible description for the sheet dialog.
+ */
 function SheetDescription({
   className,
   ...props

@@ -4,6 +4,10 @@ import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
 
 import { cn } from "src/lib/utils"
 
+/**
+ * Toggle with two sizes (`sm` / `default`). Supports focus-visible ring,
+ * disabled state, and aria-invalid for form integration.
+ */
 function Switch({
   className,
   size = "default",

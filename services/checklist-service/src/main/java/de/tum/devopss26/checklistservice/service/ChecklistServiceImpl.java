@@ -16,6 +16,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 
+/**
+ * All mutating operations are wrapped in a single transaction ({@link Transactional}) to ensure
+ * consistency between checklist and item state.
+ * <p><b>Ownership model:</b> every checklist is scoped to a {@code userId}. The private helper
+ * {@link #getOwnedChecklistEntity} loads the entity and throws
+ * {@link de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException} if the
+ * caller does not own it. This guard is the single point of ownership enforcement for all
+ * operations.
+ * <p><b>Item lifecycle:</b> items use a manual persistence pattern rather than depending on
+ * the parent's cascade — each item is explicitly saved/deleted via its own repository. This
+ * avoids loading the entire item collection just to add or remove a single entry. The parent
+ * checklist's {@code CascadeType.ALL} / {@code orphanRemoval} is configured but only exercised
+ * when the parent itself is deleted.
+ * <p><b>Diff-based updates:</b> item updates are field-by-field replacements (no structural diff).
+ * The position is only updated when the request explicitly provides a non-null value; otherwise
+ * the existing order is preserved. Ownership of an item is verified by cross-checking its
+ * {@code checklist_id} against the parent checklist ID.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -38,6 +56,9 @@ public class ChecklistServiceImpl implements ChecklistService {
         return mapper.toGetChecklistResponse(toDto(entity));
     }
 
+    /**
+     * Assigns {@code createdAt} as the current timestamp. The items list starts empty.
+     */
     @Override
     public CreateChecklistResponse createChecklist(Long userId, org.openapitools.model.Checklist checklist) {
         Checklist entity = new Checklist();
@@ -54,12 +75,20 @@ public class ChecklistServiceImpl implements ChecklistService {
         return mapper.toUpdateChecklistResponse(toDto(checklistRepository.save(entity)));
     }
 
+    /**
+     * Cascade-deletes all items via JPA.
+     */
     @Override
     public void deleteChecklist(Long userId, Long id) {
         Checklist entity = getOwnedChecklistEntity(userId, id);
         checklistRepository.delete(entity);
     }
 
+    /**
+     * The item is persisted via its own repository (not through the parent collection) to keep
+     * the operation lightweight. If the client omits {@code position}, it defaults to one past
+     * the current item count.
+     */
     @Override
     public AddChecklistItemResponse addChecklistItem(Long userId, Long checklistId, org.openapitools.model.ChecklistItem dto) {
         Checklist checklist = getOwnedChecklistEntity(userId, checklistId);
@@ -71,6 +100,11 @@ public class ChecklistServiceImpl implements ChecklistService {
         return mapper.toAddChecklistItemResponse(toDto(checklistItemRepository.save(item)));
     }
 
+    /**
+     * Performs an explicit cross-check that the item actually belongs to the parent checklist
+     * (defence against malformed or stale client references). The position is only overwritten
+     * when the request provides a non-null value.
+     */
     @Override
     public UpdateChecklistItemResponse updateChecklistItem(Long userId, Long checklistId, Long itemId, org.openapitools.model.ChecklistItem dto) {
         getOwnedChecklistEntity(userId, checklistId);
@@ -98,6 +132,9 @@ public class ChecklistServiceImpl implements ChecklistService {
         checklistItemRepository.delete(item);
     }
 
+    /**
+     * Single ownership guard used by all checklist-level operations.
+     */
     private Checklist getOwnedChecklistEntity(Long userId, Long id) {
         Checklist entity = checklistRepository.findById(id)
                 .orElseThrow(() -> new ChecklistNotFoundException(id));
@@ -119,6 +156,10 @@ public class ChecklistServiceImpl implements ChecklistService {
         return dto;
     }
 
+    /**
+     * Note: {@code completed} is a primitive {@code boolean}, so the DTO always carries a
+     * value even when the entity has its default.
+     */
     private IdentifiedChecklistItem toDto(ChecklistItem entity) {
         IdentifiedChecklistItem dto = new IdentifiedChecklistItem();
         dto.setId(entity.getId());

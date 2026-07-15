@@ -12,6 +12,10 @@ import org.openapitools.model.UpdateChecklistResponse;
 
 import java.util.List;
 
+/**
+ * The {@code toGetChecklistsResponse} convenience method wraps a list into the paginated
+ * response envelope manually since the wrapper is a simple container.
+ */
 @Mapper(componentModel = "spring")
 public interface ChecklistMapper {
 

@@ -12,9 +12,14 @@ interface EmptyStateProps {
   icon?: ReactNode;
   title: string;
   description?: string;
+  /** Action slot for a call-to-action button (e.g. "Create note"). */
   children?: ReactNode;
 }
 
+/**
+ * Centered empty-state placeholder. Show **instead of** the data list when
+ * empty. Prefer `<Skeleton>` when layout shape matters for loading feedback.
+ */
 function EmptyState({ icon, title, description, children }: EmptyStateProps) {
   return (
     <Empty>

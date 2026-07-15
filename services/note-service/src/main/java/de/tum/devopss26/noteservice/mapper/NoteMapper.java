@@ -8,6 +8,10 @@ import org.openapitools.model.*;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Conversion is name-based by default; the {@code toNote} mapping explicitly
+ * copies {@code userId} from the method parameter into the entity.
+ */
 @Mapper(componentModel = "spring")
 public interface NoteMapper {
 
@@ -24,6 +28,9 @@ public interface NoteMapper {
 
     GetNoteResponse toGetResponse(Note note);
 
+    /**
+     * Returns an empty list when the input is {@code null}.
+     */
     default ListNotesResponse toListResponse(List<IdentifiedTimestampedNote> notes) {
         return new ListNotesResponse().notes(Objects.requireNonNullElseGet(notes, List::of));
     }

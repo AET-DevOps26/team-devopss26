@@ -11,6 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Every endpoint is guarded by {@link RequireTokenValidation}, which ensures a valid
+ * JWT token is present in the request. The authenticated user's ID is extracted
+ * from the request attributes (populated by {@code TokenValidationInterceptor})
+ * via {@link JWTHelper#extractFrom}.
+ */
 @RestController
 @RequiredArgsConstructor
 public class CalendarEventController implements CalendarEventsApi {
@@ -36,6 +42,9 @@ public class CalendarEventController implements CalendarEventsApi {
 		return ResponseEntity.ok(response);
 	}
 
+	/**
+	 * The event must belong to the authenticated user.
+	 */
 	@RequireTokenValidation
 	@Override
 	public ResponseEntity<GetCalendarEventResponse> getEventById(Long id) {
@@ -45,6 +54,9 @@ public class CalendarEventController implements CalendarEventsApi {
 		return ResponseEntity.ok(response);
 	}
 
+	/**
+	 * Only non-null fields in the diff are applied. The event must belong to the authenticated user.
+	 */
 	@RequireTokenValidation
 	@Override
 	public ResponseEntity<UpdateCalendarEventResponse> updateEvent(Long id, CalendarEvent diff) {
@@ -54,6 +66,9 @@ public class CalendarEventController implements CalendarEventsApi {
 		return ResponseEntity.ok(response);
 	}
 
+	/**
+	 * The event must belong to the authenticated user.
+	 */
 	@RequireTokenValidation
 	@Override
 	public ResponseEntity<Void> deleteEvent(Long id) {

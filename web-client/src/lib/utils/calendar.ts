@@ -1,5 +1,8 @@
 import type {CreateCalendarEventRequest, IdentifiedCalendarEvent,} from '#/types/calendar';
 
+/** Calendar event form shape. Separates date/time into discrete fields for form binding,
+ * intentionally different from the API's combined ISO 8601 format.
+ */
 export interface CalendarFormEvent {
   id?: number;
   title: string;
@@ -9,6 +12,15 @@ export interface CalendarFormEvent {
   description?: string;
 }
 
+/** Convert form data to API ISO 8601 format (`YYYY-MM-DDTHH:mm:00Z`).
+ *
+ * Timezone note: `Z` suffix marks these as UTC. Round-tripping preserves clock
+ * values for UTC users but may shift for others — known simplification that
+ * avoids a full timezone library.
+ *
+ * @param form - Form data with separated date/time fields
+ * @returns API-ready event request with ISO 8601 UTC timestamps
+ */
 export function toApiEvent(form: CalendarFormEvent): CreateCalendarEventRequest {
   return {
     title: form.title,
@@ -19,6 +31,13 @@ export function toApiEvent(form: CalendarFormEvent): CreateCalendarEventRequest 
   };
 }
 
+/** Convert API event (ISO 8601) back to form-friendly date/time parts.
+ * Both extraction and reverse use `.toISOString()` (UTC), so values are
+ * timezone-locked to UTC. Falls back to empty strings for missing fields.
+ *
+ * @param event - Calendar event from the API (ISO 8601 timestamps)
+ * @returns Form-friendly representation with separated date/time
+ */
 export function fromApiEvent(event: IdentifiedCalendarEvent): CalendarFormEvent {
   const startDate = new Date(event.startTime ?? '');
   const endDate = new Date(event.endTime ?? '');

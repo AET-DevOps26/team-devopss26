@@ -10,6 +10,11 @@ import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Each note has a mandatory title (max 255 chars) and content stored as TEXT.
+ * The owning user is identified by {@code userId}. Timestamps ({@code createdAt},
+ * {@code lastUpdatedAt}) are set on creation and updated on mutation.
+ */
 @Getter
 @Setter
 @Entity

@@ -32,6 +32,11 @@ import { Skeleton } from '#/components/ui/skeleton.tsx';
 import { getEvents, createEvent, updateEvent, deleteEvent } from '#/services/calendar/calendar-events/calendar-events.ts';
 import type { IdentifiedCalendarEvent, CreateCalendarEventRequest } from '#/types/calendar';
 
+/**
+ * Data loading: The `loader` eagerly prefetches all calendar events via
+ * `queryClient.ensureQueryData`. Uses 30-second staleTime to avoid redundant
+ * refetches on rapid navigation.
+ */
 export const Route = createFileRoute('/_authenticated/calendar/')({
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(calendarQueries.all()),
@@ -40,11 +45,22 @@ export const Route = createFileRoute('/_authenticated/calendar/')({
   component: CalendarPage,
 });
 
+/**
+ * Query key factory for calendar data.
+ *
+ * - `calendarKeys.all` — root key for broad invalidation.
+ * - `calendarKeys.events()` — scoped to events list; mutations invalidate this
+ *   key so the grid refetches after create/update/delete.
+ */
 const calendarKeys = {
   all: ['calendar'] as const,
   events: () => [...calendarKeys.all, 'events'] as const,
 };
 
+/**
+ * **staleTime: 30_000** — avoids refetching when navigating back within 30s, while
+ * keeping the grid reasonably up-to-date without manual refresh.
+ */
 const calendarQueries = {
   all: () =>
     queryOptions({
@@ -57,6 +73,7 @@ const calendarQueries = {
     }),
 };
 
+/** YYYY-MM-DD in local timezone — the API stores the date portion in local time. */
 function localDateStr(date: Date): string {
   return `${String(date.getFullYear())}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
@@ -70,24 +87,44 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+/**
+ * Number of days in a month. Uses JS date overflow trick.
+ */
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
 }
 
+/** Weekday index (0=Sun) of the first day. */
 function getFirstDayOfMonth(year: number, month: number) {
   return new Date(year, month, 1).getDay(); // 0 = Sun
 }
 
+/**
+ * Extract the date portion (YYYY-MM-DD) from an ISO 8601 datetime string.
+ * Returns empty string for undefined/null values so callers can skip rendering.
+ *
+ * Used as the canonical date key for grouping and comparing events across the calendar grid.
+ */
 function getDateStr(isoString: string | undefined): string {
   if (!isoString) return '';
   return isoString.slice(0, 10);
 }
 
+/**
+ * Extract the time portion (HH:MM) from an ISO 8601 datetime string.
+ * Avoids timezone parsing overhead by simple string slicing — the API always
+ * returns UTC timestamps, and the time portion is timezone-invariant.
+ */
 function getTimeStr(isoString: string | undefined): string {
   if (!isoString) return '';
   return isoString.slice(11, 16);
 }
 
+/**
+ * Format an ISO 8601 datetime to a localized time string (HH:MM) for display.
+ * Uses `de-DE` locale (24-hour format) and explicitly reads UTC hours so the
+ * displayed time matches what was stored, regardless of the viewer's timezone.
+ */
 function formatTime(isoString: string | undefined): string {
   if (!isoString) return '';
   return new Intl.DateTimeFormat('de-DE', {
@@ -95,36 +132,60 @@ function formatTime(isoString: string | undefined): string {
   }).format(new Date(isoString));
 }
 
+/**
+ * Format an ISO 8601 datetime to a localized date string (e.g. "15.7.2026").
+ * Uses `de-DE` locale and forces UTC to avoid timezone drift from the stored value.
+ */
 function formatDate(isoString: string | undefined): string {
   if (!isoString) return '';
   return new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC' }).format(new Date(isoString));
 }
 
+/**
+ * Convert an HH:MM string to total minutes since midnight. Used for time-range
+ * validation (start must be before end) and for computing the auto-adjusted
+ * end time in the event form.
+ */
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);
   return h * 60 + m;
 }
 
+/**
+ * Add exactly one hour to an HH:MM string, wrapping at 24 hours.
+ * Used when the user sets a start time past the current end time, triggering an
+ * automatic end-time adjustment so the duration stays at least 1 hour.
+ *
+ * Example: `"14:30"` → `"15:30"`, `"23:00"` → `"00:00"`
+ */
 function addHour(hhmm: string): string {
   const [h, m] = hhmm.split(':').map(Number);
   const total = h * 60 + m + 60;
   return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-/** Convert YYYY-MM-DD to DD.MM.YYYY for localized display. */
+/** YYYY-MM-DD → DD.MM.YYYY for localized display. */
 function toDisplayDate(isoDate: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
   if (!match) return isoDate;
   return `${match[3]}.${match[2]}.${match[1]}`;
 }
 
-/** Convert DD.MM.YYYY back to YYYY-MM-DD for internal state / API. */
+/** DD.MM.YYYY → YYYY-MM-DD for internal state / API. */
 function fromDisplayDate(dmy: string): string {
   const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(dmy);
   if (!match) return '';
   return `${match[3]}-${match[2]}-${match[1]}`;
 }
 
+/**
+ * Local form state for event create/edit inside the Sheet.
+ *
+ * - `id` — set for edits, undefined for new events.
+ * - `date` — YYYY-MM-DD format (parsed from the user-facing DD.MM.YYYY display).
+ * - `startTime` / `endTime` — HH:MM strings, kept in 24h format internally.
+ *   The form auto-normalizes user input (e.g. `"9:5"` → `"09:05"`) on blur.
+ */
 interface CalendarFormEvent {
   id?: number;
   title: string;
@@ -134,6 +195,11 @@ interface CalendarFormEvent {
   description?: string;
 }
 
+/**
+ * Convert local form state into the API request shape.
+ * Combines the separate `date` + `startTime` / `endTime` fields back into
+ * full ISO 8601 UTC timestamps expected by the backend.
+ */
 function toApiEvent(form: CalendarFormEvent): CreateCalendarEventRequest {
   return {
     title: form.title,
@@ -143,6 +209,11 @@ function toApiEvent(form: CalendarFormEvent): CreateCalendarEventRequest {
   };
 }
 
+/**
+ * Convert an API event into local form state.
+ * Splits the ISO 8601 timestamp into separate date/time fields for the form controls,
+ * and provides empty-string defaults so React controlled inputs never receive `null`.
+ */
 function fromApiEvent(event: IdentifiedCalendarEvent): CalendarFormEvent {
   return {
     id: event.id,
@@ -154,6 +225,15 @@ function fromApiEvent(event: IdentifiedCalendarEvent): CalendarFormEvent {
   };
 }
 
+/**
+ * Error-state fallback for the calendar route.
+ *
+ * Displays the error message from the failed query and a "Try Again" button
+ * that resets both the TanStack Query error boundary (`useQueryErrorResetBoundary`)
+ * and the route-level error boundary (`reset()` from the `errorComponent` props).
+ * This two-reset pattern is required because `errorComponent` wraps the route
+ * element, so retrying needs to clear both layers.
+ */
 function CalendarError({ error, reset }: { error: Error; reset: () => void }) {
   const { reset: resetQuery } = useQueryErrorResetBoundary();
 
@@ -174,6 +254,28 @@ function CalendarError({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+/**
+ * Slide-over sheet for creating or editing a calendar event.
+ *
+ * Manages local form state (title, date, time range, description) and delegates
+ * persistence to three mutations (create, update, delete). The form is
+ * **key-remounted** by `CalendarPage` via `key={editingEvent?.id ?? 'create'}`,
+ * so the form state resets naturally when switching between events — no manual
+ * reset effect needed.
+ *
+ * **Validation rules:**
+ * - Title must be non-empty (after trim).
+ * - Date must parse to a valid YYYY-MM-DD string.
+ * - End time must be strictly after start time (compared in minutes).
+ * - All buttons are disabled while any mutation is pending.
+ *
+ * **Time input normalization:** On blur, bare hour values like `"9"` or `"9:5"`
+ * are padded to `"09:00"` / `"09:05"`. If the adjusted start time equals or
+ * exceeds the end time, the end time auto-increments by 1 hour.
+ *
+ * **Cache invalidation:** Every successful mutation invalidates `calendarKeys.events()`,
+ * causing the calendar grid to refetch and re-render.
+ */
 function EventSheet({
   event,
   isOpen,
@@ -195,6 +297,10 @@ function EventSheet({
   const parsedDate = fromDisplayDate(dateDisplay);
   const isTimeValid = startTime.length === 5 && endTime.length === 5 && toMinutes(startTime) < toMinutes(endTime);
 
+  /**
+   * Create mutation — POSTs a new event to the API.
+   * On success: toast confirmation + invalidate event list cache.
+   */
   const createMutation = useMutation({
     mutationFn: (form: CalendarFormEvent) => createEvent(toApiEvent(form)),
     onError: () => toast.error('Failed to create event'),
@@ -204,6 +310,11 @@ function EventSheet({
     },
   });
 
+  /**
+   * Update mutation — PUTs changes to an existing event by ID.
+   * Shares the same cache invalidation as create. The `id` is the numeric
+   * event identifier from the API (required to exist in the backend).
+   */
   const updateMutation = useMutation({
     mutationFn: ({ id, form }: { id: number; form: CalendarFormEvent }) =>
       updateEvent(id, toApiEvent(form)),
@@ -214,6 +325,11 @@ function EventSheet({
     },
   });
 
+  /**
+   * Delete mutation — DELETEs an event by its numeric ID.
+   * Shows a confirmation toast on success. The delete button is only rendered
+   * in edit mode (when the event has an `id`).
+   */
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteEvent(id),
     onError: () => toast.error('Failed to delete event'),
@@ -225,7 +341,13 @@ function EventSheet({
 
   const isPending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
-  // Reset form when sheet opens with new event
+  /**
+   * Intercept sheet open/close to re-initialize form fields with the current
+   * event's data (or defaults for a new event). This is needed because the
+   * `key` prop on `EventSheet` ensures the component remounts when the event
+   * changes, but the sheet can also be closed and reopened without changing
+   * the key (e.g. dismissing without saving).
+   */
   const handleOpenChange = (open: boolean) => {
     if (open) {
       setTitle(event?.title ?? '');
@@ -239,6 +361,11 @@ function EventSheet({
 
   /* Form sync is handled by key-based remount of EventSheet in CalendarPage */
 
+  /**
+   * Validate form, build the payload, and dispatch either a create or update
+   * mutation based on whether the event has a numeric `id`. Closes the sheet
+   * optimistically — the user gets feedback via toast.
+   */
   const handleSave = () => {
     if (!title.trim() || !parsedDate || !isTimeValid || isPending) return;
 
@@ -259,6 +386,10 @@ function EventSheet({
     onOpenChange(false);
   };
 
+  /**
+   * Delete the current event. Only available in edit mode (event has an `id`).
+   * Closes the sheet immediately; the toast confirms once the API responds.
+   */
   const handleDelete = () => {
     if (event?.id && event.id > 0 && !isPending) {
       deleteMutation.mutate(event.id);
@@ -382,6 +513,14 @@ function EventSheet({
   );
 }
 
+/**
+ * Loading skeleton for the calendar route (rendered as `pendingComponent`).
+ * Mirrors the layout of the real calendar grid — month nav, weekday headers,
+ * and 35 cell placeholders — so the user sees a stable layout while the
+ * events query loads. Each cell shows a circular skeleton placeholder for the
+ * day number. Uses `aria-busy="true"` to signal the loading state to assistive
+ * technology.
+ */
 function CalendarSkeleton() {
   return (
     <div className="p-4 sm:p-6 lg:p-8" aria-busy="true" aria-label="Loading calendar">
@@ -414,6 +553,31 @@ function CalendarSkeleton() {
   );
 }
 
+/**
+ * Main calendar page component.
+ *
+ * Renders a monthly grid with navigation, an event list for the selected day,
+ * and a slide-over sheet for create/edit operations.
+ *
+ * **State management:**
+ * - `currentDate` — the month/year shown in the grid (day is always 1).
+ * - `selectedDate` — the YYYY-MM-DD string of the currently highlighted day.
+ * - `sheetOpen` / `editingEvent` — controls the event form sheet. The sheet is
+ *   key-remounted when the editing event changes (or switches to create mode),
+ *   so local form state resets automatically.
+ *
+ * **Data flow:**
+ * - Events are fetched via `useSuspenseQuery` — guaranteed to have data at
+ *   render time (the route's `loader` prefetches via `ensureQueryData`).
+ * - `gridDays` is a memoized array of `(number | null)[]` where `null` cells
+ *   are leading blanks aligning the first day to the correct weekday column.
+ * - `eventsByDate` maps date strings to event lists for O(1) cell lookups.
+ * - `selectedDayEvents` filters the full list for the selected date.
+ *
+ * **Empty states:**
+ * - No events at all → "No events yet" with a create button.
+ * - Events exist but none on the selected day → "Nothing scheduled" message.
+ */
 export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(today);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -424,7 +588,13 @@ export function CalendarPage() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // Build grid: leading blanks + day numbers
+  /**
+   * Build the flat calendar grid array.
+   * `null` entries represent leading blank cells (days before the 1st of the month),
+   * and number entries are the day-of-month. The grid always has exactly
+   * `firstDay + daysInMonth` cells, which is guaranteed to fill at least 5 rows
+   * (and at most 6) in the CSS grid.
+   */
   const gridDays = useMemo(() => {
     const firstDay = getFirstDayOfMonth(year, month);
     const daysInMonth = getDaysInMonth(year, month);
@@ -434,7 +604,11 @@ export function CalendarPage() {
     return cells;
   }, [year, month]);
 
-  // Events mapped by date string (derived from startTime ISO string)
+  /**
+   * Index events by their date string (YYYY-MM-DD extracted from `startTime`)
+   * for O(1) lookup when rendering each day cell's event dots. Events without a
+   * parseable date are silently skipped.
+   */
   const eventsByDate = useMemo(() => {
     const map = new Map<string, IdentifiedCalendarEvent[]>();
     for (const ev of events) {
@@ -450,21 +624,38 @@ export function CalendarPage() {
   // Currently selected day
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
-  // Events for the selected day
+  /**
+   * Filter events matching the currently selected date for the detail list below the grid.
+   * This is a separate filtered array (not the Map lookup) so it naturally updates when
+   * either the selection or the data changes.
+   */
   const selectedDayEvents = useMemo(() => {
     return events.filter((ev) => getDateStr(ev.startTime) === selectedDate);
   }, [events, selectedDate]);
 
+  /**
+   * Navigate the calendar grid forward or backward by one month.
+   * Clamps the day to 1 so we always land on the first of the new month,
+   * avoiding edge cases like January 31 → February 31 (which JS Date overflows to March 3).
+   */
   const navigateMonth = (delta: number) => {
     setCurrentDate(new Date(year, month + delta, 1));
   };
 
+  /**
+   * Reset the calendar to the current month and select today's date.
+   * Also resets the selected date so the event list below the grid shows today's events.
+   */
   const goToToday = () => {
     const now = new Date();
     setCurrentDate(now);
     setSelectedDate(localDateStr(now));
   };
 
+  /**
+   * Open the event creation sheet pre-populated with the currently selected date
+   * and a default 1-hour time block (09:00–10:00).
+   */
   const openCreateSheet = () => {
     setEditingEvent({
       title: '',
@@ -475,16 +666,29 @@ export function CalendarPage() {
     setSheetOpen(true);
   };
 
+  /**
+   * Open the event edit sheet for an existing event.
+   * Converts the API event to form state so the user can modify fields.
+   */
   const openEditSheet = (event: IdentifiedCalendarEvent) => {
     setEditingEvent(fromApiEvent(event));
     setSheetOpen(true);
   };
 
+  /**
+   * Check whether a given day number in the current month is today.
+   * Used to apply the "today" visual highlight (primary background + ring) in the grid.
+   */
   const isToday = (day: number) => {
     const d = new Date(year, month, day);
     return localDateStr(d) === todayStr;
   };
 
+  /**
+   * Select a day in the grid by its day-of-month number.
+   * The `selectedDate` string is used to filter events below the grid and to
+   * apply a selection highlight ring in the grid cell.
+   */
   const handleDayClick = (day: number) => {
     const dateStr = localDateStr(new Date(year, month, day));
     setSelectedDate(dateStr);

@@ -7,10 +7,17 @@ import { Skeleton } from '#/components/ui/skeleton.tsx';
 import { Avatar, AvatarImage, AvatarFallback } from '#/components/ui/avatar.tsx';
 import { BotIcon, SendIcon, RefreshCwIcon, UserIcon, SparklesIcon } from 'lucide-react';
 
+/**
+ * Mock/prototype AI chat. Agent responds with canned response after 1.5s delay.
+ * Replace the `setTimeout` block in `sendMessage` with a real API call for production.
+ */
 export const Route = createFileRoute('/_authenticated/chat/')({ component: ChatPage });
 
 // ── Types ──────────────────────────────────────────────────────
 
+/**
+ * Chat message states: `'sent'` / `'error'` (shows retry) / `'typing'` (skeleton lines).
+ */
 interface Message {
   id: string;
   role: 'user' | 'agent';
@@ -20,6 +27,9 @@ interface Message {
 
 // ── Mock data ──────────────────────────────────────────────────
 
+/**
+ * Suggestion chips shown in the welcome state. Could be dynamic from backend.
+ */
 const suggestionChips = [
   'What tasks are due today?',
   'Summarize my recent notes',
@@ -27,10 +37,16 @@ const suggestionChips = [
   'Explain the project architecture',
 ];
 
+/**
+ * Canned agent response. Replace with real API call for production.
+ */
 const mockAgentResponse = "I can help you with that! Here's what I found:\n\nYou have **3 upcoming events** today, including a team standup at 10 AM and a design review at 2 PM. Your sprint checklist is 2/4 tasks complete. Would you like me to:\n\n- Create a new note for this?\n- Add a task to your checklist?\n- Schedule a follow-up meeting?";
 
 // ── Sub-components ─────────────────────────────────────────────
 
+/**
+ * Welcome screen with branding, description, and suggestion chips.
+ */
 function WelcomeState({ onChipClick }: { onChipClick: (text: string) => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
@@ -59,6 +75,10 @@ function WelcomeState({ onChipClick }: { onChipClick: (text: string) => void }) 
   );
 }
 
+/**
+ * Chat bubble with three states: typing (skeleton), sent (normal styling),
+ * and error (destructive colors + retry button).
+ */
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user';
 
@@ -119,6 +139,10 @@ function MessageBubble({ message }: { message: Message }) {
 
 // ── Main page component ────────────────────────────────────────
 
+/**
+ * Chat conversation interface. Auto-scrolls to latest message. Enter sends;
+ * Shift+Enter inserts newline.
+ */
 function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -126,13 +150,19 @@ function ChatPage() {
   const [showWelcome, setShowWelcome] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom
+/**
+ * Auto-scroll to latest message when messages or loading state changes.
+ */
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
+/**
+ * Send a message and simulate agent response after 1.5s delay.
+ * TODO: Replace `setTimeout` with real API call.
+ */
   const sendMessage = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -154,10 +184,14 @@ function ChatPage() {
     }, 1500);
   };
 
+  /** Forward suggestion chip click to sendMessage. */
   const handleChipClick = (text: string) => {
     sendMessage(text);
   };
 
+/**
+ * Enter sends, Shift+Enter inserts newline.
+ */
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();

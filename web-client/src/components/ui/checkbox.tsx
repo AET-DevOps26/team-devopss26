@@ -3,6 +3,10 @@ import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
 import { cn } from "src/lib/utils"
 import { CheckIcon } from "lucide-react"
 
+/**
+ * Boolean input with accessible checked/unchecked/indeterminate states via Base UI.
+ * Supports `aria-invalid` for form validation styling.
+ */
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   return (
     <CheckboxPrimitive.Root

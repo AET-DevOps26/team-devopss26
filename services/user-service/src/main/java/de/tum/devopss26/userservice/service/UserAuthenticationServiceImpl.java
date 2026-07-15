@@ -15,6 +15,24 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * <b>Registration flow:</b> The plain-text password in {@link RegisterUserRequest} is hashed
+ * by {@link UserMapper#toEntity} via MapStruct's {@code qualifiedByName} mechanism, which
+ * invokes {@code BCryptPasswordEncoder} with strength 12. We check for duplicate usernames
+ * <i>before</i> password hashing to avoid unnecessary BCrypt work on obviously invalid requests.
+ *
+ * <p><b>Login flow:</b> Rather than accepting raw credentials, this method reads the already-authenticated
+ * principal from {@link SecurityContextHolder}. This works because Spring Security's {@code httpBasic()}
+ * filter chain (see {@code loginSecurityFilterChain}) populates the security context before the
+ * controller is reached — so by the time this service runs, the {@code Authentication} object is
+ * guaranteed to exist and contain the verified username. This design avoids handling raw passwords
+ * in application code.
+ *
+ * <p><b>Token check flow:</b> The raw {@code Authorization} header is parsed for the {@code Bearer}
+ * prefix. Stripping the prefix here rather than in the controller keeps the controller a thin
+ * HTTP layer. We catch all exceptions broadly to ensure that any parsing or validation failure
+ * results in a clean {@code false} rather than propagating to the client as a 500 error.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

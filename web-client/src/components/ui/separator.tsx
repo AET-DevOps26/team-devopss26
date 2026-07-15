@@ -2,6 +2,9 @@ import { Separator as SeparatorPrimitive } from "@base-ui/react/separator"
 
 import { cn } from "src/lib/utils"
 
+/**
+ * Visual divider. Uses `data-horizontal` / `data-vertical` selectors for orientation.
+ */
 function Separator({
   className,
   orientation = "horizontal",

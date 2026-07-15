@@ -17,6 +17,11 @@ import java.util.Optional;
 import static de.tum.devopss26.noteservice.exception.IllegalNoteAccessException.IllegalAccessPair;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Every mutating or read operation checks that the requesting user owns the target note
+ * via {@link #getNoteEntity(long, long)}. {@link Transactional @Transactional} is applied
+ * to guarantee atomic writes and consistent read isolation across JPA operations.
+ */
 @Service
 @RequiredArgsConstructor
 public class NoteServiceImpl implements NoteService {
@@ -24,6 +29,9 @@ public class NoteServiceImpl implements NoteService {
     private final NoteRepository repository;
     private final NoteMapper mapper;
 
+    /**
+     * Assigns the current timestamp to both {@code createdAt} and {@code lastUpdatedAt}.
+     */
     @Transactional
     @Override
     public CreateNoteResponse createNote(CreateNoteRequest request, long userId) {
@@ -47,6 +55,11 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toListResponse(notes);
     }
 
+    /**
+     * Throws {@link NoteNotFoundException} if the note does not exist,
+     * or {@link IllegalNoteAccessException} if the note's owner does not
+     * match the requesting user — preventing cross-user data access.
+     */
     private @NonNull Note getNoteEntity(long userId, long noteId) {
         Optional<Note> opt = repository.findById(noteId);
         if (opt.isEmpty()) {
@@ -69,6 +82,10 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toGetResponse(note);
     }
 
+    /**
+     * Non-null fields in {@code diff} overwrite existing values; null fields are left untouched.
+     * Updates {@code lastUpdatedAt} to the current time. Ownership is verified before the update.
+     */
     @Transactional
     @Override
     public UpdateNoteResponse updateNote(long userId, long id, org.openapitools.model.Note diff) {

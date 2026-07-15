@@ -7,6 +7,7 @@ interface CounterState {
   reset: () => void;
 }
 
+/** Zustand store: simple integer counter. No persistence — state resets on refresh. */
 export const useCounterStore = create<CounterState>()((set) => ({
   count: 0,
   increment: () => {

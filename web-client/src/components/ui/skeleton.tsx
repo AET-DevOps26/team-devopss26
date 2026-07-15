@@ -1,5 +1,9 @@
 import { cn } from "src/lib/utils"
 
+/**
+ * Loading placeholder. Use for layout with predictable shape; prefer over
+ * Spinner when content shape is known.
+ */
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

@@ -3,6 +3,9 @@ import { Input as InputPrimitive } from "@base-ui/react/input"
 
 import { cn } from "src/lib/utils"
 
+/**
+ * Text entry field. Supports all standard HTML input types via `type` prop.
+ */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <InputPrimitive
