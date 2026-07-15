@@ -74,8 +74,17 @@ services/*/generated/
 **/generated/.openapi-generator/
 **/generated/.openapi-generator-ignore
 
-# Ignore generated TypeScript models in web-client
-web-client/src/*-service.ts
+# Ignore generated TypeScript models/services in web-client (Orval)
+web-client/src/services/calendar/
+web-client/src/services/checklist/
+web-client/src/services/genai/
+web-client/src/services/notes/
+web-client/src/services/users/
+web-client/src/types/calendar/
+web-client/src/types/checklist/
+web-client/src/types/genai/
+web-client/src/types/notes/
+web-client/src/types/users/
 web-client/src/openapi.ts
 web-client/src/api.ts
 
