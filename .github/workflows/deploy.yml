@@ -199,14 +199,42 @@ jobs:
           kubectl auth can-i get namespaces 2>&1 || true
           kubectl auth can-i get pods -n team-devopss26-prod 2>&1 || true
 
+      - name: Create or update secrets from GitHub Secrets
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NAMESPACE: team-devopss26-prod
+        run: |
+          # Postgres secret
+          kubectl create secret generic postgres-secret \
+            -n "$NAMESPACE" \
+            --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # Service secrets (shared postgres password + service-specific key)
+          for svc in user-service checklist-service calendar-service note-service; do
+            svc_upper=$(echo "$svc" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
+            kubectl create secret generic "${svc}-secret" \
+              -n "$NAMESPACE" \
+              --from-literal=SERVICES_POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+              --from-literal="${svc_upper}_POSTGRES_PASSWORD=$POSTGRES_PASSWORD" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          done
+
+          # GenAI service secret (postgres password + Gemini API key)
+          kubectl create secret generic genai-service-secret \
+            -n "$NAMESPACE" \
+            --from-literal=SERVICES_POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+            --from-literal=GENAI_SERVICE_POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+            --from-literal=GEMINI_API_KEY="$GEMINI_API_KEY" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          echo "All secrets synced from GitHub Secrets."
+
       - name: Deploy with Helm
         env:
           INGRESS_HOST: ${{ vars.INGRESS_HOST }}
         run: |
-          cat > /tmp/genai-values.yaml << EOF
-          genaiService:
-            geminiApiKey: ${{ secrets.GEMINI_API_KEY }}
-          EOF
           helm upgrade --install devopss26 ./infra/iac/aet \
             --namespace team-devopss26-prod \
             --create-namespace \
@@ -214,9 +242,7 @@ jobs:
             --set global.imageTag=${{ github.sha }} \
             --set ingress.host="$INGRESS_HOST" \
             -f infra/iac/aet/values-prod.yaml \
-            -f /tmp/genai-values.yaml \
             --timeout 5m
-          rm -f /tmp/genai-values.yaml
 
       - name: Wait for rollout
         run: |

@@ -54,11 +54,12 @@ genaiService:
     limits: { memory: "512Mi", cpu: "200m" }
 
 # ── Postgres ──
-# WARNING: Override these credentials via --set or external secrets for any non-local deployment.
-#          The defaults below are weak placeholders and MUST NOT be used in production.
+# NOTE: postgres.password is required for production — must be passed via --set or pre-created
+#       as a Kubernetes Secret named 'postgres-secret' with key POSTGRES_PASSWORD.
+#       For local dev (docker-compose), use the .env file in infra/.
 postgres:
   user: admin
-  password: admin
+  password: ""    # REQUIRED for production — set via --set, not hardcoded
   persistence:
     size: 2Gi
   resources:
