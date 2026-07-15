@@ -1,13 +1,18 @@
-import { createRootRoute, Outlet, Link } from '@tanstack/react-router';
+import { createRootRouteWithContext, Outlet, Link } from '@tanstack/react-router';
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
 import { TanStackDevtools } from '@tanstack/react-devtools';
 import { HomeIcon } from 'lucide-react';
+import type { QueryClient } from '@tanstack/react-query';
 
 import 'src/styles.css';
 import { buttonVariants } from 'src/components/ui/button';
 import { cn } from 'src/lib/utils';
 
-export const Route = createRootRoute({
+interface RouterContext {
+  queryClient: QueryClient;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
   notFoundComponent: NotFoundPage,
 });

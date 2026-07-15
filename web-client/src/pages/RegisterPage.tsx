@@ -39,7 +39,7 @@ export function RegisterPage() {
     return Object.keys(next).length === 0;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!validate()) return;
 
@@ -51,7 +51,7 @@ export function RegisterPage() {
       await registerUser(payload);
       setErrors({ success: 'Account created successfully! You can now sign in.' });
       setTimeout(() => {
-        router.navigate({ to: '/login' });
+        void router.navigate({ to: '/login' });
       }, 1500);
     } catch (error) {
       if (error instanceof Error && 'response' in error) {
@@ -79,7 +79,7 @@ export function RegisterPage() {
         <CardDescription>Enter your details to get started</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
           {errors.form && (
             <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {errors.form}
@@ -101,7 +101,7 @@ export function RegisterPage() {
               type="text"
               placeholder="Choose a username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => { setUsername(e.target.value); }}
               disabled={loading}
               aria-invalid={!!errors.username}
             />
@@ -119,7 +119,7 @@ export function RegisterPage() {
               type="password"
               placeholder="Choose a password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); }}
               disabled={loading}
               aria-invalid={!!errors.password}
             />
@@ -137,7 +137,7 @@ export function RegisterPage() {
               type="password"
               placeholder="Confirm your password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => { setConfirmPassword(e.target.value); }}
               disabled={loading}
               aria-invalid={!!errors.confirmPassword}
             />

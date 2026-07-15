@@ -10,14 +10,16 @@ import {
   addChecklistItem,
   updateChecklistItem,
   deleteChecklistItem,
-} from '../../services/checklist/checklists/checklists';
+} from '#/services/checklist/checklists/checklists.ts';
 
 describe('checklist service', () => {
   it('getChecklists sends GET with userId query param', async () => {
     const result = await getChecklists({ userId: 1 });
     expect(result.checklists).toBeDefined();
     expect(Array.isArray(result.checklists)).toBe(true);
-    expect(result.checklists![0]).toHaveProperty('title');
+    if (result.checklists) {
+      expect(result.checklists[0]).toHaveProperty('title');
+    }
   });
 
   it('createChecklist sends POST and returns created checklist', async () => {

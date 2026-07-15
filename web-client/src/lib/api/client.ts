@@ -1,6 +1,5 @@
 import axios, { type AxiosRequestConfig, type AxiosInstance, type AxiosResponse } from 'axios';
 import { useAuthStore } from 'src/stores/authStore';
-import { getRouter } from 'src/router';
 
 export const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -11,7 +10,7 @@ export const api: AxiosInstance = axios.create({
 // Request interceptor: attach Bearer token from auth store
 api.interceptors.request.use((config) => {
   const { token } = useAuthStore.getState();
-  if (token && config.headers) {
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -26,8 +25,7 @@ api.interceptors.response.use(
       const isAuthRoute = requestUrl.includes('/users/auth/');
       if (!isAuthRoute) {
         useAuthStore.getState().clearAuth();
-        const router = getRouter();
-        router.navigate({ to: '/login' });
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error instanceof Error ? error : new Error(String(error)));

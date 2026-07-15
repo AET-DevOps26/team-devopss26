@@ -58,7 +58,7 @@ jobs:
               {service: "checklist-service", context: "./",             dockerfile: "./services/checklist-service/Dockerfile"},
               {service: "calendar-service", context: "./",              dockerfile: "./services/calendar-service/Dockerfile"},
               {service: "note-service",    context: "./",               dockerfile: "./services/note-service/Dockerfile"},
-              {service: "genai-service",   context: "./services/genai-service", dockerfile: "./services/genai-service/Dockerfile"},
+              {service: "genai-service",   context: "./",               dockerfile: "./services/genai-service/Dockerfile"},
               {service: "client",          context: "./",               dockerfile: "./web-client/Dockerfile"}
             ];
             const ALL_NAMES = ALL.map(s => s.service);
@@ -144,14 +144,9 @@ jobs:
   tag-skipped:
     needs: detect
     runs-on: ubuntu-latest
-    if: ${{ needs.detect.outputs['skip-tags'] != '[]' }}
     permissions:
       contents: read
       packages: write
-
-    strategy:
-      matrix:
-        image: ${{ fromJSON(needs.detect.outputs['skip-tags']) }}
 
     steps:
       - name: Log in to Container Registry
@@ -164,16 +159,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Tag ${{ matrix.image }} with SHA
+      - name: Tag skipped images with SHA
+        if: ${{ needs.detect.outputs['skip-tags'] != '[]' }}
+        shell: bash
         run: |
-          docker buildx imagetools create \
-            --tag ${{ matrix.image }}:${{ github.sha }} \
-            ${{ matrix.image }}:latest
+          SKIP_TAGS='${{ needs.detect.outputs['skip-tags'] }}'
+          echo "Skipped images to tag: $SKIP_TAGS"
+          for img in $(echo "$SKIP_TAGS" | jq -r '.[]'); do
+            echo "Tagging $img:${{ github.sha }} ← $img:latest"
+            docker buildx imagetools create \
+              --tag "$img:${{ github.sha }}" \
+              "$img:latest"
+          done
 
   # ── Deploy to AET cluster ───────────────────────────────────
   deploy-to-k8s:
     needs: [detect, build-and-push, tag-skipped]
-    if: ${{ (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped') && (needs.tag-skipped.result == 'success' || needs.tag-skipped.result == 'skipped') }}
+    if: ${{ needs.build-and-push.result == 'success' && needs.tag-skipped.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

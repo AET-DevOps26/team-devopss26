@@ -1,8 +1,7 @@
 @startuml
 !pragma layout smetana
-skinparam nodesep 40
-skinparam ranksep 50
 skinparam shadowing false
+skinparam linetype ortho
 
 ' Custom Color Palette for High-quality Visuals
 skinparam RectangleBackgroundColor #F8F9F9
@@ -23,40 +22,45 @@ cloud "User (Web Browser)" as user
 
 rectangle "Docker Compose Infrastructure" {
 
-    node "Client Container" as clientContainer {
-        [React Frontend] as fe
-        [Caddy Reverse Proxy\n& API Gateway] as proxy
-        fe -[dashed]-> proxy : API Requests
+    rectangle "Client" as client {
+        node "Client Container" as clientContainer {
+            [Caddy Reverse Proxy\n& API Gateway] as proxy
+            [React Frontend] as fe
+            fe -- proxy
+        }
     }
 
-    rectangle "Backend Microservices" as backend {
-        node "User Service" as nodeUser {
-            [Spring Boot App\n(Port 8001)] as appUser
+    rectangle "Server" as backend {
+        node "User Service" as userService {
+            [Spring Boot App\n(Port 8001)] as userApp
         }
-        node "Checklist Service" as nodeCheck {
-            [Spring Boot App\n(Port 8003)] as appCheck
+        node "Checklist Service" as checklistService {
+            [Spring Boot App\n(Port 8003)] as checklistApp
         }
-        node "Calendar Service" as nodeCal {
-            [Spring Boot App\n(Port 8004)] as appCal
+        node "Calendar Service" as calendarService {
+            [Spring Boot App\n(Port 8004)] as calendarApp
         }
-        node "Note Service" as nodeNote {
-            [Spring Boot App\n(Port 8005)] as appNote
+        node "Note Service" as noteService {
+            [Spring Boot App\n(Port 8005)] as noteApp
         }
-        node "GenAI Service" as nodeGenAI {
-            [FastAPI (Python) App\n(Port 8006)] as appGenAI
+    }
+
+    rectangle "GenAI" as genai {
+        node "GenAI Service" as genaiService {
+            [FastAPI App\n(Port 8006)] as genaiApp
         }
     }
 
     rectangle "Databases & Storage" as storage {
-        node "Database Server (Postgres)" as pgServer {
-            database "user_service_db" as dbUser
-            database "checklist_service_db" as dbCheck
-            database "calendar_service_db" as dbCal
-            database "note_service_db" as dbNote
-            database "genai_service_db" as dbGenAI
-        }
         node "Weaviate Vector DB" as nodeWeaviate {
-            database "Vector Store" as dbWeaviate
+            database "Vector Store" as weaviateDatabase
+        }
+        node "Database Server (Postgres)" as pgServer {
+            database "user_service_db" as userDatabase
+            database "checklist_service_db" as checklistDatabase
+            database "calendar_service_db" as calendarDatabase
+            database "note_service_db" as noteDatabase
+            database "genai_service_db" as genaiDatabase
         }
     }
 
@@ -65,36 +69,46 @@ rectangle "Docker Compose Infrastructure" {
             [Metrics Collector] as appPrometheus
         }
         node "Grafana" as nodeGrafana {
-            [Visualization Engine] as appGrafana
+            [Visualization Engine] as grafanaApp
+        }
+    }
+
+    rectangle "OpenAPI" as openapi {
+        node "Swagger" as nodeSwagger {
+            [Swagger UI] as swaggerApp
         }
     }
 }
 
+pgServer -[hidden]r-> nodeWeaviate
+
 ' User traffic
-user -down-> fe : Serves Static Files
-user -down-> proxy : HTTPS API calls
+fe -left-> user : Serves static files
+user -right-> proxy : HTTPS calls
 
 ' Proxy routing
-proxy -down-> appUser : /api/v1/users*
-proxy -down-> appCheck : /api/v1/checklists*
-proxy -down-> appCal : /api/v1/events*
-proxy -down-> appNote : /api/v1/notes*
-proxy -down-> appGenAI : /api/v1/chat* /api/v1/conversations*
+proxy -down-> userApp : /api/v1/users*
+proxy -down-> checklistApp : /api/v1/checklists*
+proxy -down-> calendarApp : /api/v1/events*
+proxy -down-> noteApp : /api/v1/notes*
+proxy -down-> genaiApp : /api/v1/chat* \n /api/v1/conversations*
+proxy -up-> grafanaApp : /grafana
+proxy -right-> swaggerApp : /swagger
 
 ' Inter-service communication
-appGenAI -[#blue,bold]-> appNote : Fetch Note Context
-appGenAI -[#blue,bold]-> appCal : Fetch Event Context
-appGenAI -[#blue,bold]-> appCheck : Fetch Checklist Context
+genaiApp -[#blue,bold]up-> noteApp : <color:blue>Fetch note context</color>
+genaiApp -[#blue,bold]up-> calendarApp : <color:blue>Fetch event context</color>
+genaiApp -[#blue,bold]up-> checklistApp : <color:blue>Fetch checklist context</color>
 
 ' Database connections
-appUser -down-> dbUser
-appCheck -down-> dbCheck
-appCal -down-> dbCal
-appNote -down-> dbNote
-appGenAI -down-> dbGenAI
-appGenAI -down-> dbWeaviate : Store / Query Vectors (Port 8080)
+userApp -down-> userDatabase
+checklistApp -down-> checklistDatabase
+calendarApp -down-> calendarDatabase
+noteApp -down-> noteDatabase
+genaiApp -down-> genaiDatabase
+genaiApp --[#purple,bold]down-> weaviateDatabase : <color:purple>Store / Query vectors (Port 8080)</color>
 
-appGrafana -down-> appPrometheus : Queries Metrics
+grafanaApp -right-> appPrometheus : Queries metrics
 
 note bottom of nodePrometheus
   Prometheus scrapes metrics from all backend 

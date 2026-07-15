@@ -12,7 +12,7 @@ function App() {
   const validateToken = useAuthStore((s) => s.validateToken);
 
   useEffect(() => {
-    validateToken();
+    void validateToken();
   }, [validateToken]);
 
   return (

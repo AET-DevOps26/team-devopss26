@@ -10,8 +10,9 @@ import {
 } from '#/services/notes/notes/notes.ts';
 
 describe('notes service', () => {
-  it('getNotes sends GET and returns list of notes', async () => {
+  it('getNotes sends GET and returns envelope with notes list', async () => {
     const result = await getNotes();
+    expect(result).toHaveProperty('notes');
     expect(Array.isArray(result.notes)).toBe(true);
     expect(result.notes.length).toBeGreaterThan(0);
     expect(result.notes[0]).toHaveProperty('title');

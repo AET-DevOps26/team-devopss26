@@ -60,7 +60,7 @@ function HeaderContent() {
 
   function handleLogout() {
     clearAuth();
-    router.navigate({ to: '/login' });
+    void router.navigate({ to: '/login' });
   }
 
   return (
