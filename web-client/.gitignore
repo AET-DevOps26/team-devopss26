@@ -12,3 +12,15 @@ dist-ssr
 __unconfig*
 todos.json
 .tmp/
+
+# orval — generated from OpenAPI specs; run `pnpm codegen` to regenerate
+src/services/users/**
+src/services/notes/**
+src/services/checklist/**
+src/services/calendar/**
+src/services/genai/**
+src/types/users/**
+src/types/notes/**
+src/types/checklist/**
+src/types/calendar/**
+src/types/genai/**

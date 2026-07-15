@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { createFileRoute, useSearch } from '@tanstack/react-router';
+import { createFileRoute, useSearch, useRouter } from '@tanstack/react-router';
 import {
   useSuspenseQuery,
   useMutation,
@@ -425,6 +425,7 @@ function CalendarSkeleton() {
 
 export function CalendarPage() {
   const routeSearch: CalendarSearch = useSearch({ from: '/_authenticated/calendar/' });
+  const router = useRouter();
   const [currentDate, setCurrentDate] = useState(() => {
     if (routeSearch.date) {
       const d = new Date(routeSearch.date);
@@ -475,8 +476,13 @@ export function CalendarPage() {
 
   const goToToday = () => {
     const now = new Date();
+    const dateStr = localDateStr(now);
     setCurrentDate(now);
-    setSelectedDate(localDateStr(now));
+    setSelectedDate(dateStr);
+    void router.navigate({
+      to: '/calendar',
+      search: { date: dateStr },
+    });
   };
 
   const openCreateSheet = () => {
@@ -487,6 +493,10 @@ export function CalendarPage() {
       endTime: '10:00',
     });
     setSheetOpen(true);
+    void router.navigate({
+      to: '/calendar',
+      search: { date: selectedDate, action: 'create' },
+    });
   };
 
   const openEditSheet = (event: IdentifiedCalendarEvent) => {
@@ -502,6 +512,10 @@ export function CalendarPage() {
   const handleDayClick = (day: number) => {
     const dateStr = localDateStr(new Date(year, month, day));
     setSelectedDate(dateStr);
+    void router.navigate({
+      to: '/calendar',
+      search: { date: dateStr },
+    });
   };
 
   return (
@@ -654,7 +668,15 @@ export function CalendarPage() {
         key={editingEvent?.id ?? 'create'}
         event={editingEvent}
         isOpen={sheetOpen}
-        onOpenChange={setSheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) {
+            void router.navigate({
+              to: '/calendar',
+              search: { date: selectedDate, action: undefined },
+            });
+          }
+        }}
       />
     </div>
   );

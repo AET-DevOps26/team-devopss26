@@ -12,6 +12,7 @@ vi.mock('@tanstack/react-router', async () => {
   return {
     ...actual,
     useSearch: () => ({ action: undefined, date: undefined }),
+    useRouter: () => ({ navigate: vi.fn() }),
   };
 });
 

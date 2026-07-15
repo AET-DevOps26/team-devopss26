@@ -8,7 +8,7 @@ import { calendarKeys } from '#/lib/queries/calendar.ts';
 import type { Note } from '#/types/notes';
 import type { Checklist } from '#/types/checklist';
 import type { IdentifiedCalendarEvent } from '#/types/calendar';
-import { Home } from '#/routes/_authenticated';
+import { Home } from '#/routes/_authenticated/index';
 
 // useSearch and useRouter require a RouterProvider context; mock them for isolated tests
 vi.mock('@tanstack/react-router', async () => {
