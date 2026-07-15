@@ -1,0 +1,109 @@
+@startuml
+!pragma layout smetana
+skinparam shadowing false
+skinparam nodesep 50
+skinparam ranksep 60
+skinparam defaultTextAlignment left
+
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F1C40F
+}
+
+skinparam package {
+  BorderColor #95A5A6
+  FontStyle bold
+  FontSize 14
+}
+
+title <size:18>Database ER Diagram — Microservices Data Model
+
+' ═══════════════════════════════════════════════════════════════════════════
+' INFRASTRUCTURE NOTE: All 5 databases run on a SINGLE PostgreSQL instance
+' (container: "services-db") via POSTGRES_MULTIPLE_DATABASES.
+' Cross-database user_id references are LOGICAL ONLY — no DB-level FKs.
+' Weaviate (port 8080) is a separate vector DB for RAG; not shown here.
+' ═══════════════════════════════════════════════════════════════════════════
+
+package "user_service_db" #E8F6F3 {
+  entity "users" as user {
+    + id: BIGINT [PK]
+    --
+    username: VARCHAR(255) [NOT NULL, UNIQUE]
+    password_hash: VARCHAR(255) [NOT NULL]
+  }
+}
+
+package "note_service_db" #E8F8F5 {
+  entity "note" as note {
+    + id: BIGINT [PK]
+    --
+    user_id: BIGINT [NOT NULL]
+    title: VARCHAR(255) [NOT NULL]
+    content: TEXT [NOT NULL]
+    created_at: TIMESTAMPTZ [NOT NULL]
+    last_updated_at: TIMESTAMPTZ [NOT NULL]
+  }
+}
+
+package "calendar_service_db" #FEF5E7 {
+  entity "calendar_event" as event {
+    + id: BIGINT [PK]
+    --
+    user_id: BIGINT [NOT NULL]
+    title: VARCHAR(255) [NOT NULL]
+    description: TEXT
+    start_time: TIMESTAMPTZ [NOT NULL]
+    end_time: TIMESTAMPTZ [NOT NULL]
+    location: VARCHAR(255)
+  }
+}
+
+package "checklist_service_db" #F4ECF7 {
+  entity "checklists" as checklist {
+    + id: BIGINT [PK]
+    --
+    user_id: BIGINT [NOT NULL]
+    title: VARCHAR(255) [NOT NULL]
+    created_at: TIMESTAMP [NOT NULL]
+  }
+
+  entity "checklist_items" as item {
+    + id: BIGINT [PK]
+    --
+    checklist_id: BIGINT [NOT NULL, FK]
+    text: VARCHAR(255) [NOT NULL]
+    completed: BOOLEAN [NOT NULL]
+    position: INTEGER [NOT NULL]
+  }
+}
+
+package "genai_service_db" #EBF5FB {
+  entity "chat_conversation" as conversation {
+    + id: BIGINT [PK]
+    --
+    user_id: BIGINT [NOT NULL]
+    title: VARCHAR(255)
+    created_at: BIGINT [NOT NULL, DEFAULT]
+  }
+
+  entity "chat_message" as message {
+    + id: BIGINT [PK]
+    --
+    conversation_id: BIGINT [NOT NULL, FK]
+    role: VARCHAR(10) [NOT NULL, CHECK: 'USER'|'AGENT']
+    content: TEXT [NOT NULL]
+    timestamp: BIGINT [NOT NULL]
+  }
+}
+
+' ── Relationships ─────────────────────────────────────────────────────────
+
+user ||--o{ note : "user_id"
+user ||--o{ event : "user_id"
+user ||--o{ checklist : "user_id"
+user ||--o{ conversation : "user_id"
+checklist ||--o{ item : "checklist_id"
+conversation ||--o{ message : "conversation_id"
+
+@enduml
