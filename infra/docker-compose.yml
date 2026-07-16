@@ -45,7 +45,7 @@ services:
 
   user-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/user-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/user-service:latest
     container_name: user-service-app
     build:
       context: ..
@@ -65,7 +65,7 @@ services:
   #####################################################################################################
   checklist-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/checklist-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/checklist-service:latest
     container_name: checklist-service-app
     build:
       context: ..
@@ -85,7 +85,7 @@ services:
   #####################################################################################################
   calendar-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/calendar-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/calendar-service:latest
     container_name: calendar-service-app
     build:
       context: ..
@@ -105,7 +105,7 @@ services:
   #####################################################################################################
   note-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/note-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/note-service:latest
     container_name: note-service-app
     build:
       context: ..
@@ -162,7 +162,7 @@ services:
 
   genai-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/genai-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/genai-service:latest
     container_name: genai-service-app
     build:
       context: ..
