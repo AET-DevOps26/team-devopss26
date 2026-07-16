@@ -7,6 +7,8 @@ import {
   MessageSquare,
   Palette,
   BookOpen,
+  ChartNoAxesCombined,
+  HeartPulse,
 } from 'lucide-react';
 
 import {
@@ -35,7 +37,9 @@ const navItems: NavItem[] = [
 ];
 
 const developerItems: NavItem[] = [
-  { href: '/swagger/', label: 'API Docs', icon: BookOpen, external: true },
+  { href: '/swagger', label: 'Swagger UI', icon: BookOpen, external: true },
+  { href: '/grafana', label: 'Grafana', icon: ChartNoAxesCombined, external: true },
+  { href: '/prometheus/query', label: 'Prometheus', icon: HeartPulse, external: true },
 ];
 
 export function AppSidebar() {

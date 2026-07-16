@@ -10,9 +10,24 @@ responsibilities**.
 ## Table of Contents
 
 - [Setup Instructions](#setup-instructions)
+  - [Prerequisites](#prerequisites)
+  - [Local Development (Docker Compose)](#local-development-docker-compose)
+  - [OpenAPI Code Generation](#openapi-code-generation)
+  - [Tests](#tests)
 - [Architecture](#architecture)
+  - [Components](#components)
+  - [High-Level Architecture](#high-level-architecture)
+  - [Design Notes](#design-notes)
 - [API Documentation](#api-documentation)
+  - [Viewing the API](#viewing-the-api)
+  - [Endpoint Overview](#endpoint-overview)
 - [CI/CD and Monitoring](#cicd-and-monitoring)
+  - [Live Deployments](#live-deployments)
+  - [Continuous Integration](#continuous-integration--githubworkflowsciyml)
+  - [Continuous Deployment (AET)](#continuous-deployment--githubworkflowsdeployyml)
+  - [Azure Deployment](#azure-deployment--githubworkflowsdeploy-azureyml)
+  - [Azure VM Start](#azure-vm-start--githubworkflowsstart-vmyml)
+  - [Monitoring](#monitoring)
 - [Student Responsibilities](#student-responsibilities)
 
 ---
@@ -33,7 +48,7 @@ responsibilities**.
 1. **Start everything** — builds and runs the 4 Java services, the GenAI service, the web client, PostgreSQL, Weaviate,
    Prometheus, and Grafana:
    ```bash
-   npm start
+   npm run start
    # ≡ docker compose -f infra/docker-compose.yml up --build
    ```
 
@@ -41,12 +56,12 @@ responsibilities**.
 
    _Web UIs (open in a browser):_
 
-   | URL                           | What                  |
-   |-------------------------------|-----------------------|
-   | `http://localhost`            | Frontend (web client) |
-   | `http://localhost/prometheus` | Prometheus            |
-   | `http://localhost/grafana`    | Grafana               |
-   | `http://localhost/swagger`    | Swagger               |
+   | URL                                 | What                  |
+   |-------------------------------------|-----------------------|
+   | `http://localhost`                  | Frontend (web client) |
+   | `http://localhost/prometheus/query` | Prometheus            |
+   | `http://localhost/grafana`          | Grafana               |
+   | `http://localhost/swagger`          | Swagger               |
 
    _Backend APIs (JSON, not browser UIs — use the frontend, the specs, or curl/Postman):_
 
@@ -103,25 +118,28 @@ infrastructure.
 ### High-Level Architecture
 
 ```text
-┌─────────────┐          ┌───────────────────────────────────────────────────┐
-│   Browser   │────────▶│  Caddy (client) :80                               │
-└─────────────┘          │  ├── /api/v1/users/*     → user-service:8001      │
-                         │  ├── /api/v1/checklists/* → checklist-service:8003│
-                         │  ├── /api/v1/events/*     → calendar-service:8004 │
-                         │  ├── /api/v1/notes/*      → note-service:8005     │
-                         │  └── /api/v1/*            → genai-service:8006    │
-                         └───────────────────────────────────────────────────┘
-                                                   │
-                    ┌──────────────────────────────┴──────────────────────────────┐
-                    │  PostgreSQL                                                 │
-                    │  └── Databases: user_service_db, checklist_service_db,      │
-                    │      calendar_service_db, note_service_db, genai_service_db │
-                    └──────────────────────────────┴──────────────────────────────┘
-                                                   │
-                            ┌──────────────────────┴─────────────────────┐
-                            │  Weaviate (vector DB for genai-service)    │
-                            └────────────────────────────────────────────┘
+┌─────────────┐           ┌───────────────────────────────────────────────────┐
+│   Browser   │────────▶ │  Client :80 (serves React SPA)                    │
+└─────────────┘           │  └── Proxies /api/* to backend services:          │
+                          │  ├── /api/v1/users/*     → user-service:8001      │
+                          │  ├── /api/v1/checklists/* → checklist-service:8003│
+                          │  ├── /api/v1/events/*     → calendar-service:8004 │
+                          │  ├── /api/v1/notes/*      → note-service:8005     │
+                          │  └── /api/v1/*            → genai-service:8006    │
+                          └───────────────────────────────────────────────────┘
+                                                    │
+                     ┌──────────────────────────────┴──────────────────────────────┐
+                     │  PostgreSQL (single container, multiple databases)          │
+                     │  └── user_service_db, checklist_service_db,                 │
+                     │      calendar_service_db, note_service_db, genai_service_db │
+                     └──────────────────────────────┴──────────────────────────────┘
+                                                    │
+                             ┌──────────────────────┴─────────────────────┐
+                             │  Weaviate (vector DB for genai-service)    │
+                             └────────────────────────────────────────────┘
 ```
+
+> **Note:** In the AET Kubernetes deployment, a Caddy-based ingress handles routing instead of the local direct proxy.
 
 ### Design Notes
 
@@ -183,12 +201,13 @@ links to the per-service specs:
 - `GET/POST /api/v1/notes` — list or create notes
 - `GET/PUT/DELETE /api/v1/notes/{id}` — read, update, or delete a note
 
-**GenAI Service** — `/api/v1/...`
+**GenAI Service** — `/api/v1/...` (all endpoints except health require JWT authentication)
 
 - `GET /api/v1/health` — health check
-- `GET/POST /api/v1/conversations` — list or start conversations
-- `GET/DELETE /api/v1/conversations/{conversationId}` — read or delete a conversation
-- `POST /api/v1/chat` — send a message and receive an AI response (backed by Weaviate)
+- `POST /api/v1/conversations` — create a new chat conversation
+- `GET /api/v1/conversations/{conversationId}` — get a conversation with all messages
+- `DELETE /api/v1/conversations/{conversationId}` — delete a conversation
+- `POST /api/v1/chat` — send a message and receive an AI response (backed by Weaviate); supports model selection (`gemini`, `gemini-lite`, `groq-llama`, `mistral`, `cohere`)
 
 For exact request/response schemas, parameters, and error codes, see the OpenAPI specs above — they are the
 authoritative contract.
@@ -197,51 +216,67 @@ authoritative contract.
 
 ## CI/CD and Monitoring
 
+### Live Deployments
+
+| Environment | URL                                           | Description                      |
+|-------------|-----------------------------------------------|----------------------------------|
+| **Azure**   | http://20.91.193.39/                          | Production deployment on Azure   |
+| **AET**     | https://devopss26.student.k8s.aet.cit.tum.de/ | Production deployment on AET k8s |
+
+---
+
 ### Continuous Integration — `.github/workflows/ci.yml`
 
-Runs on **every push**. All jobs except the first depend on a successful OpenAPI lint:
+Runs on **every push** to any branch (except changes to `infra/monitoring/**`, `infra/prometheus/**`, `infra/grafana/**`). All jobs (except `openapi-lint`) depend on a successful lint result:
 
-1. **openapi-lint** — validates all `api/*.yaml` specs with Redocly.
-2. **python-lint** — runs `ruff` over the GenAI service.
-3. **python-test** — generates the FastAPI client, then runs `pytest` against a Postgres container.
-4. **backend-test** — for each Java service (`user`, `checklist`, `calendar`, `note`): Maven build, tests, and SpotBugs
-   static analysis.
-5. **frontend-test** — dependency install, Orval codegen, TypeScript typecheck, tests, and production build.
+| Job               | Dependencies   | What it does                                                                                                                |
+|-------------------|----------------|-----------------------------------------------------------------------------------------------------------------------------|
+| **openapi-lint**  | — (runs first) | Validates all `api/*.yaml` specs with Redocly. Blocks all other jobs on failure. Changes to monitoring configs are ignored. |
+| **python-lint**   | openapi-lint   | Runs `ruff` linter over the GenAI service (`services/genai-service`).                                                       |
+| **python-test**   | openapi-lint   | Generates FastAPI client from spec, spins up a Postgres container, runs `pytest`.                                           |
+| **backend-test**  | openapi-lint   | For each Java service (`user`, `checklist`, `calendar`, `note`): `mvn clean verify` + SpotBugs static analysis.             |
+| **frontend-test** | openapi-lint   | Installs deps, runs Orval codegen, TypeScript typecheck, tests, and production build.                                       |
 
 ### Continuous Deployment — `.github/workflows/deploy.yml`
 
-Triggered automatically when CI succeeds on `main` (or manually via `workflow_dispatch`):
+Triggered automatically when CI succeeds on `main`, or manually via `workflow_dispatch`. Targets the **AET Kubernetes cluster**.
 
-1. **Detect changed services** via path filters — only affected images are rebuilt. Changes to `services/shared` or
-   `api/` cascade to all Java services.
-2. **Build & push** changed images to **GHCR** (`ghcr.io/aet-devops26/team-devopss26/*`), tagged `latest` and by commit
-   SHA. Skipped services are re-tagged with the SHA so Helm pulls a consistent set.
-3. **Deploy to the AET Kubernetes cluster** via Helm (`infra/iac/aet`) into `team-devopss26-prod`, with
-   `--rollback-on-failure`.
-4. **Verify** the rollout — waits for every deployment/statefulset to be ready and confirms all pods run the expected
-   image tag.
+| Job                | Description                                                                                                                                                                                                                                                                                                      |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **detect**         | Uses `dorny/paths-filter` to detect which services changed. Changes to `services/shared` or `api/` cascade to all Java services. Outputs a matrix of services to build and a list of images to skip-tag.                                                                                                         |
+| **build-and-push** | For each changed service: builds the Docker image and pushes to **GHCR** (`ghcr.io/aet-devops26/team-devopss26/<service>`) with two tags: `latest` and the commit SHA.                                                                                                                                           |
+| **tag-skipped**    | Re-tags any skipped (unchanged) images from `latest` → SHA so Helm deploys a consistent set of images.                                                                                                                                                                                                           |
+| **deploy-to-k8s**  | Configures `kubectl` (v4) and `helm` (v4.2.3), pre-creates Kubernetes secrets (postgres-secret, per-service secrets with DB credentials), then runs `helm upgrade --install` with `--wait --timeout 15m --history-max 10`. Includes a `verify deployment` step that checks all pods and deployments are healthy. |
 
-Infrastructure-as-code:
+> **Note:** The Azure deployment is managed separately via Terraform + Ansible (`infra/iac/azure/`). See `infra/iac/azure/README.md` for details.
 
-- `infra/iac/aet/` — Helm chart for the AET (k8s) cluster
-- `infra/iac/azure/` — Terraform + Ansible for Azure (see `infra/iac/azure/README.md`)
+### Azure Deployment — `.github/workflows/deploy-azure.yml`
+
+Manual trigger only (`workflow_dispatch`). Deploys to the Azure VM using Terraform + Ansible:
+
+| Step                          | Description                                                                                                    |
+|-------------------------------|----------------------------------------------------------------------------------------------------------------|
+| **Terraform Init/Plan/Apply** | Initializes and applies the Terraform configuration in `infra/iac/azure/` to provision/update Azure resources. |
+| **Start Azure VM**            | Starts the `devops-vm` VM in the `devops-rg` resource group via `az vm start`.                                 |
+| **Ansible Playbook**          | Connects to the VM via SSH and runs `playbook.yml` to configure and deploy the application.                    |
+
+### Azure VM Start — `.github/workflows/start-vm.yml`
+
+Manual trigger only (`workflow_dispatch`). Starts the Azure VM and waits for it to be SSH-reachable, then starts the Docker Compose stack on the VM. Useful for pre-warming the VM or recovering from a stopped state.
 
 ### Monitoring
 
-Observability comes from Prometheus and Grafana, included in both the local Docker Compose setup and the Kubernetes
-deployment.
-Both are deployed in a seperate namespace, namely `team-devopss26-monitoring`.
+Observability comes from Prometheus and Grafana, included in both the local Docker Compose setup and the AET and Azure deployments.
 
-- **Prometheus** ([`infra/prometheus/prometheus.yml`](infra/prometheus/prometheus.yml)) scrapes every 15s:
+- **Local & Azure:** Both Prometheus and Grafana run as Docker containers in `infra/docker-compose.yml` alongside the application services. Prometheus scrapes every 15s:
     - Java services → `/actuator/prometheus` (ports 8001, 8003, 8004, 8005)
     - GenAI service → `/metrics` (port 8006)
-    - UI: `http://localhost:9090`
-- **Grafana** is provisioned with the Prometheus datasource ([
-  `infra/grafana/provisioning/datasources/prometheus.yml`](infra/grafana/provisioning/datasources/prometheus.yml)); UI:
-  `http://localhost:3000`
+    - UI: `http://localhost:9090` (Prometheus) / `http://localhost:3000` (Grafana)
+- **AET Kubernetes:** Prometheus and Grafana are deployed via separate k8s manifests in `infra/monitoring/` into the `team-devopss26-monitoring` namespace (managed independently from the Helm app deployment).
+- **Grafana dashboards** for GenAI and microservices are provisioned at [`infra/grafana/dashboards/`](infra/grafana/dashboards/).
 
 > **Summary:** CI validates and tests every change → CD builds only what changed and deploys it to the AET cluster via
-> Helm with automatic rollback → Prometheus + Grafana provide live metrics and dashboards.
+> Helm (`--wait --timeout 15m`) → Prometheus + Grafana provide live metrics and dashboards.
 
 ---
 
@@ -251,4 +286,4 @@ Both are deployed in a seperate namespace, namely `team-devopss26-monitoring`.
 |------------------------|---------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Ahmet Coşkun           | GenAI Lead                | - GenAI Service<br/>- Monitoring & Observability<br/>- Project Vision<br/>- Initial OpenAPI Specs<br/>- CI for GenAI                                        |
 | Alexander Michael Wudy | Server Owner              | - Java Microservices<br/>- Azure Deployment<br/>- Refined OpenAPI Specs<br/>- CI for Server + CD for Azure<br/>- Docker, docker-compose & Root package.json |
-| Werner Richter         | Client Owner              | - React Client<br/>- AET Deployment<br/>- CI for Client + CD for AET<br/>- Ingress Configuration (Caddy - local & deployment)<br/>- Mockups and Design      |
+| Werner Richter         | Client Owner              | - React Client<br/>- AET Deployment<br/>- CI for Client + CD for AET<br/>- Ingress Configuration (Caddy)<br/>- Mockups and Design                           |
