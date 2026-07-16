@@ -185,11 +185,20 @@
         directory_mode: '0755'
       notify: Restart Grafana
 
-    - name: Start application with Docker Compose
+    - name: Pull fresh service images from registry
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: /home/devops-admin/app
+      become: yes
+      become_user: devops-admin
+      changed_when: true
+
+    - name: Start application with Docker Compose (no build)
       community.docker.docker_compose_v2:
         project_src: /home/devops-admin/app
         state: present
-        pull: always
+        pull: missing
+        build: never
         remove_orphans: true
       become: yes
       become_user: devops-admin
