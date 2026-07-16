@@ -14,9 +14,11 @@ data:
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/genai/api/v1/chat {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/genai/api/v1/chat/* {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/v1/checklists {
@@ -32,9 +34,11 @@ data:
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/genai/api/v1/conversations {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/genai/api/v1/conversations/* {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/v1/events {
@@ -50,15 +54,19 @@ data:
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/genai/api/v1/health {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/genai/api/v1/health/* {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/genai/metrics {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/genai/metrics/* {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/v1/notes {
