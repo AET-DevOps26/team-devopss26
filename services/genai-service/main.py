@@ -1,14 +1,18 @@
 import asyncio
 import base64
+import logging
 import os
 import sys
 import time
+import traceback
 import uuid
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List
+
+logger = logging.getLogger("genai-service")
 
 import httpx
 import jwt
@@ -359,6 +363,20 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 Instrumentator().instrument(app).expose(app)
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        f"Unhandled exception: {type(exc).__name__}: {exc}\n"
+        f"Path: {request.scope['path']}\n"
+        f"Method: {request.method}\n"
+        f"Traceback: {traceback.format_exc()}"
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
+
+
 @app.middleware("http")
 async def _auth_middleware(request: Request, call_next):
     # request.url.path incorporates root_path (for building external URLs), but
@@ -368,11 +386,13 @@ async def _auth_middleware(request: Request, call_next):
 
     auth_header = request.headers.get("authorization", "")
     if not auth_header.lower().startswith("bearer "):
+        logger.warning(f"Auth failed: Missing bearer token for {request.scope['path']}")
         return JSONResponse(status_code=401, content={"detail": "Missing bearer token"})
 
     try:
         user_id = await _authenticate(auth_header[len("bearer "):])
     except HTTPException as exc:
+        logger.warning(f"Auth failed: {exc.detail} for {request.scope['path']}")
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     reset_user_id = _current_user_id.set(user_id)
