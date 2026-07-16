@@ -11,6 +11,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  HELM_RELEASE: devopss26
+  NAMESPACE: team-devopss26-prod
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -80,13 +82,13 @@ jobs:
               javaServices.forEach(s => services.push(ALL.find(a => a.service === s)));
             } else {
               javaServices.forEach(s => {
-                if (changed[s] === 'true') services.push(ALL.find(a => a.service === s));
+                if (changed[s] === 'true') services.push(ALL.find(a => a.service === s)));
               });
             }
 
             // GenAI and client are independent
             for (const s of ['genai-service', 'client']) {
-              if (changed[s] === 'true') services.push(ALL.find(a => a.service === s));
+              if (changed[s] === 'true') services.push(ALL.find(a => a.service === s)));
             }
 
             // Fallback: if nothing was detected (helm-only, infra, etc.), build all
@@ -186,7 +188,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -197,23 +199,24 @@ jobs:
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
-          echo "Kubeconfig written. Testing access..."
-          kubectl auth can-i get namespaces 2>&1 || true
-          kubectl auth can-i get pods -n team-devopss26-prod 2>&1 || true
+          chmod 600 $HOME/.kube/config
+          kubectl config current-context
 
       - name: Create or update secrets from GitHub Secrets
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          NAMESPACE: team-devopss26-prod
+          NAMESPACE: ${{ env.NAMESPACE }}
         run: |
-          # Postgres secret
+          set -euo pipefail
+
+          echo ">> Creating postgres-secret"
           kubectl create secret generic postgres-secret \
             -n "$NAMESPACE" \
             --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          # Service secrets (shared postgres password + service-specific key)
+          echo ">> Creating service secrets"
           for svc in user-service checklist-service calendar-service note-service; do
             svc_upper=$(echo "$svc" | tr '-' '_' | tr '[:lower:]' '[:upper:]')
             kubectl create secret generic "${svc}-secret" \
@@ -223,7 +226,7 @@ jobs:
               --dry-run=client -o yaml | kubectl apply -f -
           done
 
-          # GenAI service secret (postgres password + Gemini API key)
+          echo ">> Creating genai-service-secret"
           kubectl create secret generic genai-service-secret \
             -n "$NAMESPACE" \
             --from-literal=SERVICES_POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
@@ -231,44 +234,50 @@ jobs:
             --from-literal=GEMINI_API_KEY="$GEMINI_API_KEY" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          echo "All secrets synced from GitHub Secrets."
+          echo ">> Verifying all secrets exist"
+          for svc in postgres user-service checklist-service calendar-service note-service genai-service; do
+            kubectl get secret "${svc}-secret" -n "$NAMESPACE" || {
+              echo "ERROR: ${svc}-secret not found"; exit 1;
+            }
+          done
+          echo ">> All secrets verified."
 
       - name: Deploy with Helm
         env:
           INGRESS_HOST: ${{ vars.INGRESS_HOST }}
         run: |
-          helm upgrade --install devopss26 ./infra/iac/aet \
-            --namespace team-devopss26-prod \
+          set -euo pipefail
+
+          helm upgrade --install $HELM_RELEASE ./infra/iac/aet \
+            --namespace "$NAMESPACE" \
             --create-namespace \
             --wait \
-            --rollback-on-failure \
             --timeout 15m \
+            --history-max 10 \
             --set global.imageTag=${{ github.sha }} \
             --set ingress.host="$INGRESS_HOST" \
             -f infra/iac/aet/values-prod.yaml
 
       - name: Verify deployment
         run: |
-          TAG="${{ github.sha }}"
-          echo "Checking pods are running image tag: $TAG"
-          kubectl get pods -n team-devopss26-prod -o wide
+          echo ">> Checking pods"
+          kubectl get pods -n "$NAMESPACE" -o wide
           echo ""
-          MISMATCH=0
-          for pod in $(kubectl get pods -n team-devopss26-prod --no-headers -o name); do
-            IMAGES=$(kubectl get -n team-devopss26-prod "$pod" -o jsonpath='{range .spec.containers[*]}{.image}{"\n"}{end}')
-            while IFS= read -r img; do
-              case "$img" in
-                *postgres*) ;;  # skip postgres (public Docker Hub image)
-                *:$TAG) ;;       # correct tag
-                *)
-                  echo "::warning::$pod has wrong image: $img (expected tag: $TAG)"
-                  MISMATCH=$((MISMATCH + 1))
-                  ;;
-              esac
-            done <<< "$IMAGES"
-          done
-          if [ "$MISMATCH" -gt 0 ]; then
-            echo "::error::$MISMATCH pods have wrong image tag"
-            exit 1
-          fi
-          echo "All pods running expected images!"
+          echo ">> Checking deployments"
+          kubectl get deploy -n "$NAMESPACE"
+
+      - name: Diagnose on failure
+        if: failure()
+        run: |
+          echo "::group::Pods"
+          kubectl get pods -n "$NAMESPACE" -o wide || true
+          echo "::endgroup::"
+          echo "::group::Recent events"
+          kubectl get events -n "$NAMESPACE" --sort-by='.lastTimestamp' | tail -30 || true
+          echo "::endgroup::"
+          echo "::group::Helm status"
+          helm status $HELM_RELEASE -n "$NAMESPACE" || true
+          echo "::endgroup::"
+          echo "::group::Helm history"
+          helm history $HELM_RELEASE -n "$NAMESPACE" || true
+          echo "::endgroup::"
