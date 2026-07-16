@@ -212,6 +212,10 @@ _embedding_model: Optional[GoogleGenerativeAIEmbeddings] = None
 async def lifespan(app: FastAPI):
     global _weaviate_client, _embedding_model
 
+    # Create database tables if they don't exist
+    async with _engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     try:
         _weaviate_client = weaviate.connect_to_custom(
             http_host=os.environ.get("WEAVIATE_HOST", "weaviate"),
