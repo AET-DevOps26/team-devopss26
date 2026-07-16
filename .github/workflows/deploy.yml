@@ -190,6 +190,8 @@ jobs:
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
+        with:
+          version: v3.21.3
 
       - name: Configure kubectl
         run: |
@@ -238,22 +240,12 @@ jobs:
           helm upgrade --install devopss26 ./infra/iac/aet \
             --namespace team-devopss26-prod \
             --create-namespace \
+            --wait \
             --rollback-on-failure \
+            --timeout 15m \
             --set global.imageTag=${{ github.sha }} \
             --set ingress.host="$INGRESS_HOST" \
-            -f infra/iac/aet/values-prod.yaml \
-            --timeout 5m
-
-      - name: Wait for rollout
-        run: |
-          DEPLOYMENTS=$(kubectl get deployment -n team-devopss26-prod --no-headers -o name | sed 's|deployment.apps/||' | sort)
-          for deploy in $DEPLOYMENTS; do
-            echo "Waiting for $deploy..."
-            kubectl rollout status deployment/$deploy -n team-devopss26-prod --timeout=5m
-          done
-          echo "Waiting for postgres..."
-          kubectl rollout status statefulset/postgres -n team-devopss26-prod --timeout=5m
-          echo "All deployments rolled out!"
+            -f infra/iac/aet/values-prod.yaml
 
       - name: Verify deployment
         run: |
