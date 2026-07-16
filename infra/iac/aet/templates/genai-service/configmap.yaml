@@ -9,3 +9,4 @@ data:
   SERVICES_POSTGRES_PORT_INT: "5432"
   SERVICES_POSTGRES_DB: "{{ .Values.genaiService.dbName }}"
   SERVICES_POSTGRES_USER: "{{ .Values.postgres.user }}"
+  USER_SERVICE_URL: "http://user-service:8001"
