@@ -10,3 +10,6 @@ data:
   SERVICES_POSTGRES_DB: "{{ .Values.genaiService.dbName }}"
   SERVICES_POSTGRES_USER: "{{ .Values.postgres.user }}"
   USER_SERVICE_URL: "http://user-service:8001"
+  NOTE_SERVICE_URL: "http://note-service:8005"
+  CALENDAR_SERVICE_URL: "http://calendar-service:8004"
+  CHECKLIST_SERVICE_URL: "http://checklist-service:8003"
