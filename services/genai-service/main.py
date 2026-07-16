@@ -260,14 +260,22 @@ async def _fetch_user_data() -> list[str]:
 
     chunks = []
 
-    if not isinstance(notes_resp, Exception) and notes_resp.status_code == 200:
+    if isinstance(notes_resp, Exception):
+        logger.warning(f"Failed to fetch notes: {notes_resp}")
+    elif notes_resp.status_code != 200:
+        logger.warning(f"Notes service returned {notes_resp.status_code}: {notes_resp.text}")
+    else:
         for note in notes_resp.json().get("notes", []):
             title = note.get("title", "")
             content = note.get("content", "")
             if title or content:
                 chunks.append(f"[Note] {title}: {content}")
 
-    if not isinstance(events_resp, Exception) and events_resp.status_code == 200:
+    if isinstance(events_resp, Exception):
+        logger.warning(f"Failed to fetch calendar events: {events_resp}")
+    elif events_resp.status_code != 200:
+        logger.warning(f"Calendar service returned {events_resp.status_code}: {events_resp.text}")
+    else:
         for event in events_resp.json().get("events", []):
             chunks.append(
                 f"[Calendar Event] {event.get('title', '')} "
@@ -275,7 +283,11 @@ async def _fetch_user_data() -> list[str]:
                 f"at {event.get('location', '')}: {event.get('description', '')}"
             )
 
-    if not isinstance(checklists_resp, Exception) and checklists_resp.status_code == 200:
+    if isinstance(checklists_resp, Exception):
+        logger.warning(f"Failed to fetch checklists: {checklists_resp}")
+    elif checklists_resp.status_code != 200:
+        logger.warning(f"Checklist service returned {checklists_resp.status_code}: {checklists_resp.text}")
+    else:
         for checklist in checklists_resp.json().get("checklists", []):
             title = checklist.get("title", "")
             for item in checklist.get("items", []):
