@@ -225,15 +225,24 @@ async def lifespan(app: FastAPI):
             grpc_port=int(os.environ.get("WEAVIATE_GRPC_PORT", "50051")),
             grpc_secure=False,
         )
-    except Exception:
+    except Exception as exc:
         _weaviate_client = None
+        logger.warning(f"Weaviate connection failed: {exc}")
 
     gemini_api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if gemini_api_key:
-        _embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-001",
-            google_api_key=gemini_api_key,
-        )
+        try:
+            _embedding_model = GoogleGenerativeAIEmbeddings(
+                model="models/gemini-embedding-001",
+                google_api_key=gemini_api_key,
+            )
+            logger.info("Embedding model initialized successfully")
+        except Exception as exc:
+            logger.error(f"Failed to initialize embedding model: {exc}")
+    else:
+        logger.warning("GEMINI_API_KEY not set, embedding model not initialized")
+
+    logger.info(f"lifespan start: _weaviate_client={_weaviate_client is not None}, _embedding_model={_embedding_model is not None}")
 
     yield
 
