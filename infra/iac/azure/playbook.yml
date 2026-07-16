@@ -143,10 +143,13 @@
         mode: '0644'
       notify: Restart Prometheus
 
-    - name: Ensure any existing directory named rules.yml is removed
-      ansible.builtin.file:
-        path: /home/devops-admin/app/prometheus/rules.yml
-        state: absent
+    - name: Force prometheus rules.yml to be a regular file on VM
+      ansible.builtin.shell: |
+        rm -rf /home/devops-admin/app/prometheus/rules.yml
+        touch /home/devops-admin/app/prometheus/rules.yml
+        chown devops-admin:devops-admin /home/devops-admin/app/prometheus/rules.yml
+        chmod 0644 /home/devops-admin/app/prometheus/rules.yml
+      changed_when: True
 
     - name: Copy prometheus rules.yml to VM
       ansible.builtin.copy:
