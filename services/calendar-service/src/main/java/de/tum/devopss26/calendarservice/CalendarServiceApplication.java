@@ -3,6 +3,9 @@ package de.tum.devopss26.calendarservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * Entry point for the calendar-service Spring Boot application.
+ */
 @SpringBootApplication
 public class CalendarServiceApplication {
 

@@ -55,10 +55,6 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 				.build();
 	}
 
-	/**
-	 * A failed fetch leaves the cache empty so the next request will retry automatically.
-	 * Thread-safe via {@code synchronized}.
-	 */
 	private synchronized PublicKey getOrFetchPublicKey() {
 		if (publicKey != null) {
 			return publicKey;
@@ -86,10 +82,6 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 		return publicKey;
 	}
 
-	/**
-	 * Prevents a fast-loop of repeated fetches on every request when the user-service is
-	 * persistently returning a different key or is unreachable.
-	 */
 	private synchronized boolean tryClearCachedPublicKeyForRefetch() {
 		if (Duration.between(lastFetchTime, Instant.now()).compareTo(MIN_REFETCH_INTERVAL) > 0) {
 			this.publicKey = null;
@@ -98,11 +90,6 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 		return false;
 	}
 
-	/**
-	 * @throws io.jsonwebtoken.security.SignatureException   if the signature does not match the key
-	 * @throws io.jsonwebtoken.ExpiredJwtException           if the token is expired
-	 * @throws io.jsonwebtoken.MalformedJwtException         if the token is structurally invalid
-	 */
 	private Claims validateToken(String token, PublicKey key) {
 		return Jwts.parser()
 				.verifyWith(key)
@@ -112,7 +99,14 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 	}
 
 	/**
-	 * The flow is documented in the class-level javadoc.
+	 * Intercepts incoming requests to validate JWT tokens on endpoints annotated with
+	 * {@link RequireTokenValidation}. The validation flow is documented in the class-level
+	 * JavaDoc.
+	 *
+	 * @param request  the incoming HTTP request
+	 * @param response the outgoing HTTP response
+	 * @param handler  the handler object chosen for this request
+	 * @return {@code true} if the request should proceed, {@code false} if a response was sent
 	 */
 	@Override
 	public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {

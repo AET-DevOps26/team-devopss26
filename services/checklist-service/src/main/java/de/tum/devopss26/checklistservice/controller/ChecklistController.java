@@ -24,6 +24,11 @@ public class ChecklistController implements ChecklistsApi {
     private final ChecklistService checklistService;
     private final HttpServletRequest servletRequest;
 
+    /**
+     * Retrieves all checklists for the authenticated user.
+     *
+     * @return {@code 200 OK} with a list of the user's checklists
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<GetChecklistsResponse> getChecklists() {
@@ -33,7 +38,10 @@ public class ChecklistController implements ChecklistsApi {
     }
 
     /**
-     * The checklist must belong to the authenticated user.
+     * Retrieves a checklist by its ID. The checklist must belong to the authenticated user.
+     *
+     * @param id the ID of the checklist to retrieve
+     * @return a response containing the requested checklist
      */
     @RequireTokenValidation
     @Override
@@ -43,6 +51,12 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.ok(checklistService.getChecklistById(userId, id));
     }
 
+    /**
+     * Creates a new checklist for the authenticated user.
+     *
+     * @param createChecklistRequest the request containing the checklist title
+     * @return a response containing the created checklist
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<CreateChecklistResponse> createChecklist(CreateChecklistRequest createChecklistRequest) {
@@ -53,7 +67,11 @@ public class ChecklistController implements ChecklistsApi {
     }
 
     /**
-     * Ownership is enforced server-side.
+     * Updates a checklist's title. Ownership is enforced server-side.
+     *
+     * @param id                      the ID of the checklist to update
+     * @param updateChecklistRequest  the request containing the updated title
+     * @return a response containing the updated checklist
      */
     @RequireTokenValidation
     @Override
@@ -65,7 +83,10 @@ public class ChecklistController implements ChecklistsApi {
     }
 
     /**
-     * Ownership is enforced server-side.
+     * Deletes a checklist. Ownership is enforced server-side.
+     *
+     * @param id the ID of the checklist to delete
+     * @return a response with no content
      */
     @RequireTokenValidation
     @Override
@@ -77,7 +98,11 @@ public class ChecklistController implements ChecklistsApi {
     }
 
     /**
-     * The position defaults to the end of the list if not specified.
+     * Adds a new item to a checklist. The position defaults to the end of the list if not specified.
+     *
+     * @param id                      the ID of the checklist to add the item to
+     * @param addChecklistItemRequest the request containing the item details
+     * @return a response containing the created item
      */
     @RequireTokenValidation
     @Override
@@ -92,7 +117,12 @@ public class ChecklistController implements ChecklistsApi {
     }
 
     /**
-     * Validates that the item belongs to the specified checklist.
+     * Updates a checklist item. Validates that the item belongs to the specified checklist.
+     *
+     * @param id                          the ID of the checklist containing the item
+     * @param itemId                      the ID of the item to update
+     * @param updateChecklistItemRequest  the request containing the updated item details
+     * @return a response containing the updated item
      */
     @RequireTokenValidation
     @Override
@@ -106,6 +136,13 @@ public class ChecklistController implements ChecklistsApi {
         return ResponseEntity.ok(checklistService.updateChecklistItem(userId, id, itemId, toUpdate));
     }
 
+    /**
+     * Deletes a checklist item.
+     *
+     * @param id     the ID of the checklist containing the item
+     * @param itemId the ID of the item to delete
+     * @return a response with no content
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<Void> deleteChecklistItem(Long id, Long itemId) {

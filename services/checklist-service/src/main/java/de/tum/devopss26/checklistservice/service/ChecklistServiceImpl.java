@@ -43,6 +43,12 @@ public class ChecklistServiceImpl implements ChecklistService {
     private final ChecklistItemRepository checklistItemRepository;
     private final ChecklistMapper mapper;
 
+    /**
+     * Retrieves all checklists belonging to the specified user.
+     *
+     * @param userId the ID of the user whose checklists to retrieve
+     * @return a response containing the list of checklists
+     */
     @Override
     public GetChecklistsResponse getChecklists(Long userId) {
         return mapper.toGetChecklistsResponse(checklistRepository.findByUserId(userId).stream()
@@ -50,6 +56,17 @@ public class ChecklistServiceImpl implements ChecklistService {
                 .toList());
     }
 
+    /**
+     * Retrieves a single checklist by its ID, verifying that the user owns it.
+     *
+     * @param userId the ID of the authenticated user
+     * @param id     the ID of the checklist to retrieve
+     * @return a response containing the requested checklist
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException
+     *         if no checklist with the given ID exists
+     * @throws de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException
+     *         if the checklist does not belong to the specified user
+     */
     @Override
     public GetChecklistResponse getChecklistById(Long userId, Long id) {
         Checklist entity = getOwnedChecklistEntity(userId, id);
@@ -57,7 +74,12 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     /**
-     * Assigns {@code createdAt} as the current timestamp. The items list starts empty.
+     * Creates a new checklist for the specified user. Assigns the current timestamp as
+     * {@code createdAt} and starts with an empty items list.
+     *
+     * @param userId    the ID of the authenticated user
+     * @param checklist the checklist data containing the title
+     * @return a response containing the created checklist
      */
     @Override
     public CreateChecklistResponse createChecklist(Long userId, org.openapitools.model.Checklist checklist) {
@@ -68,6 +90,18 @@ public class ChecklistServiceImpl implements ChecklistService {
         return mapper.toCreateChecklistResponse(toDto(checklistRepository.save(entity)));
     }
 
+    /**
+     * Updates the title of an existing checklist. Ownership is enforced before applying changes.
+     *
+     * @param userId    the ID of the authenticated user
+     * @param id        the ID of the checklist to update
+     * @param checklist the checklist data containing the updated title
+     * @return a response containing the updated checklist
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException
+     *         if no checklist with the given ID exists
+     * @throws de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException
+     *         if the checklist does not belong to the specified user
+     */
     @Override
     public UpdateChecklistResponse updateChecklist(Long userId, Long id, org.openapitools.model.Checklist checklist) {
         Checklist entity = getOwnedChecklistEntity(userId, id);
@@ -76,7 +110,15 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     /**
-     * Cascade-deletes all items via JPA.
+     * Deletes a checklist and cascade-deletes all its items via JPA. Ownership is enforced
+     * before deletion.
+     *
+     * @param userId the ID of the authenticated user
+     * @param id     the ID of the checklist to delete
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException
+     *         if no checklist with the given ID exists
+     * @throws de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException
+     *         if the checklist does not belong to the specified user
      */
     @Override
     public void deleteChecklist(Long userId, Long id) {
@@ -85,9 +127,18 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     /**
-     * The item is persisted via its own repository (not through the parent collection) to keep
-     * the operation lightweight. If the client omits {@code position}, it defaults to one past
-     * the current item count.
+     * Adds a new item to a checklist. The item is persisted via its own repository (not through
+     * the parent collection) to keep the operation lightweight. If the client omits
+     * {@code position}, it defaults to one past the current item count.
+     *
+     * @param userId      the ID of the authenticated user
+     * @param checklistId the ID of the checklist to add the item to
+     * @param dto         the item data containing text, completion status, and optional position
+     * @return a response containing the created item
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException
+     *         if no checklist with the given ID exists
+     * @throws de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException
+     *         if the checklist does not belong to the specified user
      */
     @Override
     public AddChecklistItemResponse addChecklistItem(Long userId, Long checklistId, org.openapitools.model.ChecklistItem dto) {
@@ -101,9 +152,23 @@ public class ChecklistServiceImpl implements ChecklistService {
     }
 
     /**
-     * Performs an explicit cross-check that the item actually belongs to the parent checklist
-     * (defence against malformed or stale client references). The position is only overwritten
-     * when the request provides a non-null value.
+     * Updates an existing checklist item. Performs an explicit cross-check that the item
+     * actually belongs to the parent checklist (defence against malformed or stale client
+     * references). The position is only overwritten when the request provides a non-null value.
+     *
+     * @param userId      the ID of the authenticated user
+     * @param checklistId the ID of the checklist containing the item
+     * @param itemId      the ID of the item to update
+     * @param dto         the item data containing updated text, completion status, and optional position
+     * @return a response containing the updated item
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException
+     *         if no checklist with the given ID exists
+     * @throws de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException
+     *         if the checklist does not belong to the specified user
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundException
+     *         if no item with the given ID exists
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistItemNotInChecklistException
+     *         if the item does not belong to the specified checklist
      */
     @Override
     public UpdateChecklistItemResponse updateChecklistItem(Long userId, Long checklistId, Long itemId, org.openapitools.model.ChecklistItem dto) {
@@ -121,6 +186,22 @@ public class ChecklistServiceImpl implements ChecklistService {
         return mapper.toUpdateChecklistItemResponse(toDto(checklistItemRepository.save(item)));
     }
 
+    /**
+     * Deletes a checklist item. Verifies that the item belongs to the specified checklist
+     * before deletion.
+     *
+     * @param userId      the ID of the authenticated user
+     * @param checklistId the ID of the checklist containing the item
+     * @param itemId      the ID of the item to delete
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistNotFoundException
+     *         if no checklist with the given ID exists
+     * @throws de.tum.devopss26.checklistservice.exception.IllegalChecklistAccessException
+     *         if the checklist does not belong to the specified user
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistItemNotFoundException
+     *         if no item with the given ID exists
+     * @throws de.tum.devopss26.checklistservice.exception.ChecklistItemNotInChecklistException
+     *         if the item does not belong to the specified checklist
+     */
     @Override
     public void deleteChecklistItem(Long userId, Long checklistId, Long itemId) {
         getOwnedChecklistEntity(userId, checklistId);
@@ -132,9 +213,7 @@ public class ChecklistServiceImpl implements ChecklistService {
         checklistItemRepository.delete(item);
     }
 
-    /**
-     * Single ownership guard used by all checklist-level operations.
-     */
+    // Single ownership guard used by all checklist-level operations.
     private Checklist getOwnedChecklistEntity(Long userId, Long id) {
         Checklist entity = checklistRepository.findById(id)
                 .orElseThrow(() -> new ChecklistNotFoundException(id));
@@ -156,10 +235,8 @@ public class ChecklistServiceImpl implements ChecklistService {
         return dto;
     }
 
-    /**
-     * Note: {@code completed} is a primitive {@code boolean}, so the DTO always carries a
-     * value even when the entity has its default.
-     */
+    // Note: {@code completed} is a primitive boolean, so the DTO always carries a
+    // value even when the entity has its default.
     private IdentifiedChecklistItem toDto(ChecklistItem entity) {
         IdentifiedChecklistItem dto = new IdentifiedChecklistItem();
         dto.setId(entity.getId());

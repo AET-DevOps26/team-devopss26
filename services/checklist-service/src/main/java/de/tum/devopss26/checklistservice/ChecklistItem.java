@@ -3,6 +3,9 @@ package de.tum.devopss26.checklistservice;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Data class representing a checklist item DTO used in sample/test data.
+ */
 @Getter
 @Setter
 public class ChecklistItem {

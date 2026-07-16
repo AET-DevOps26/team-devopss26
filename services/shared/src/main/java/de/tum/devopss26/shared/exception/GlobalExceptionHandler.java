@@ -14,21 +14,36 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /** 404 — requested domain entity does not exist. */
+    /**
+     * Handles {@link NotFoundException} and returns a 404 Not Found response.
+     *
+     * @param ex the exception that was thrown
+     * @return an empty response entity with HTTP 404 status
+     */
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Void> handleNotFoundException(NotFoundException ex) {
         log.atError().setCause(ex).log("Resource not found");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
-    /** 409 — duplicate resources or state conflicts. */
+    /**
+     * Handles {@link ConflictException} and returns a 409 Conflict response.
+     *
+     * @param ex the exception that was thrown
+     * @return an empty response entity with HTTP 409 status
+     */
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Void> handleConflictException(ConflictException ex) {
         log.atError().setCause(ex).log("Conflict error");
         return ResponseEntity.status(HttpStatus.CONFLICT).build();
     }
 
-    /** 403 — authenticated user lacks permission. */
+    /**
+     * Handles {@link ForbiddenException} and returns a 403 Forbidden response.
+     *
+     * @param ex the exception that was thrown
+     * @return an empty response entity with HTTP 403 status
+     */
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<Void> handleForbiddenException(ForbiddenException ex) {
         log.atError().setCause(ex).log("Forbidden error");
@@ -36,8 +51,12 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 400 — malformed or invalid client input. Catches bad request body, type mismatches,
-     * missing parameters, and {@code @Valid} validation failures.
+     * Handles bad request scenarios including {@link BadRequestException}, malformed HTTP
+     * messages, type mismatches, missing parameters, and {@code @Valid} validation failures.
+     * Returns a 400 Bad Request response.
+     *
+     * @param ex the exception that was thrown
+     * @return an empty response entity with HTTP 400 status
      */
     @ExceptionHandler({
             BadRequestException.class,
@@ -51,7 +70,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
-    /** 500 — catch-all safety net, never leaks stack traces to the client. */
+    /**
+     * Catch-all handler for any unhandled exception. Returns a 500 Internal Server Error
+     * response without leaking stack trace details to the client.
+     *
+     * @param ex the exception that was thrown
+     * @return an empty response entity with HTTP 500 status
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Void> handleGeneralException(Exception ex) {
         log.atError().setCause(ex).log("An unexpected error occurred");

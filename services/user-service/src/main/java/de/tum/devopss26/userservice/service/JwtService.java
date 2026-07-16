@@ -108,6 +108,7 @@ public final class JwtService {
      *
      * @param userId   the user's primary key, embedded as the JWT {@code sub} claim
      * @param username the user's login name, embedded as a custom {@code name} claim
+     * @return the signed JWT token string
      */
     public String generateToken(long userId, String username) {
         return Jwts.builder()
@@ -119,16 +120,33 @@ public final class JwtService {
                 .compact();
     }
 
+    /**
+     * Extracts the username claim from the given JWT token.
+     *
+     * @param token the JWT token string
+     * @return the username stored in the token's {@code name} claim
+     */
     public String extractUsername(String token) {
         return extractClaim(token, claims -> claims.get("name", String.class));
     }
 
+    /**
+     * Extracts the expiration date from the given JWT token.
+     *
+     * @param token the JWT token string
+     * @return the token's expiration date
+     */
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
     /**
+     * Extracts a specific claim from the JWT token using the given resolver function.
+     *
+     * @param <T>            the type of the claim value
+     * @param token          the JWT token string
      * @param claimsResolver a function that picks a specific claim from the parsed payload
+     * @return the extracted claim value
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
@@ -144,9 +162,13 @@ public final class JwtService {
     }
 
     /**
+     * Validates the given JWT token by verifying its signature, expiration, and structure.
      * We catch both {@link JwtException} (signature failure, malformed token)
      * and {@link IllegalArgumentException} (null/empty token) uniformly to avoid leaking
      * the reason for rejection to callers — this prevents attackers from probing token structure.
+     *
+     * @param token the JWT token string to validate
+     * @return {@code true} if the token is valid and not expired, {@code false} otherwise
      */
     public boolean isTokenValid(String token) {
         try {

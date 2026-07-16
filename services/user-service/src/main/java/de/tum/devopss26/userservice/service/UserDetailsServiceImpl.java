@@ -35,6 +35,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Loads the user by username (case-insensitive lookup).
+     *
+     * @param username the username to look up
+     * @return the {@link UserDetails} for the given username
+     * @throws UsernameNotFoundException if no user with the given username exists
+     */
     @Override
     public @NonNull UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsernameIgnoreCase(username)

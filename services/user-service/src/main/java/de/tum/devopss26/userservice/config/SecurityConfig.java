@@ -46,6 +46,9 @@ public class SecurityConfig {
      * extracts the {@code Authorization: Basic ...} header, validates credentials against
      * {@link de.tum.devopss26.userservice.service.UserDetailsServiceImpl}, and populates the
      * security context.
+     *
+     * @param http the {@link HttpSecurity} to configure
+     * @return the configured {@link SecurityFilterChain} for the login endpoint
      */
     @Bean
     @Order(1)
@@ -66,6 +69,10 @@ public class SecurityConfig {
      * {@link JwtAuthenticationFilter} which is inserted <em>before</em>
      * {@link UsernamePasswordAuthenticationFilter} so that the JWT-derived authentication
      * is available before any downstream security checks.
+     *
+     * @param http           the {@link HttpSecurity} to configure
+     * @param jwtAuthFilter  the {@link JwtAuthenticationFilter} to add before the username-password filter
+     * @return the configured {@link SecurityFilterChain} for the API endpoints
      */
     @Bean
     @Order(2)
@@ -94,6 +101,8 @@ public class SecurityConfig {
      * and is deliberately slow (computationally expensive), making pre-computed rainbow
      * table attacks infeasible even if the hash column is leaked.
      * </p>
+     *
+     * @return the {@link PasswordEncoder} configured with strength 12
      */
     @Bean
     public PasswordEncoder passwordEncoder() {

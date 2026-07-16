@@ -9,6 +9,7 @@ import org.openapitools.model.RegisterUserRequest;
 public interface UserAuthenticationService {
 
     /**
+     * @param request the registration request containing username and password
      * @throws de.tum.devopss26.userservice.exception.UserAlreadyExistsException if a user
      *                                                                            with the same username already exists
      */
@@ -18,6 +19,8 @@ public interface UserAuthenticationService {
      * Reads the already-authenticated principal from the security context rather than accepting
      * raw credentials — this works because Spring Security's {@code httpBasic()} filter populates
      * the context before the controller is reached.
+     *
+     * @return the generated JWT token for the authenticated user
      */
     String loginUser();
 
@@ -26,6 +29,7 @@ public interface UserAuthenticationService {
      * without throwing exceptions.
      *
      * @param authHeader the raw {@code Authorization} header value (expected format: {@code Bearer <jwt>})
+     * @return {@code true} if the token is valid, {@code false} otherwise
      */
     boolean checkToken(String authHeader);
 

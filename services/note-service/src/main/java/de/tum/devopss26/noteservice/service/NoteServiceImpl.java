@@ -31,6 +31,10 @@ public class NoteServiceImpl implements NoteService {
 
     /**
      * Assigns the current timestamp to both {@code createdAt} and {@code lastUpdatedAt}.
+     *
+     * @param request the request containing title and content for the new note
+     * @param userId  the ID of the authenticated user who owns the note
+     * @return the created note with assigned id and timestamps
      */
     @Transactional
     @Override
@@ -43,6 +47,12 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toCreateResponse(note);
     }
 
+    /**
+     * Retrieves all notes that belong to the given user.
+     *
+     * @param userId the ID of the authenticated user
+     * @return a list of all notes owned by the user
+     */
     @Transactional(readOnly = true)
     @Override
     public ListNotesResponse getNotes(long userId) {
@@ -55,11 +65,6 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toListResponse(notes);
     }
 
-    /**
-     * Throws {@link NoteNotFoundException} if the note does not exist,
-     * or {@link IllegalNoteAccessException} if the note's owner does not
-     * match the requesting user — preventing cross-user data access.
-     */
     private @NonNull Note getNoteEntity(long userId, long noteId) {
         Optional<Note> opt = repository.findById(noteId);
         if (opt.isEmpty()) {
@@ -74,6 +79,15 @@ public class NoteServiceImpl implements NoteService {
         return note;
     }
 
+    /**
+     * Retrieves a single note by its ID after verifying ownership.
+     *
+     * @param userId the ID of the authenticated user
+     * @param id     the ID of the note to retrieve
+     * @return the note with the given ID
+     * @throws NoteNotFoundException     if no note with the given ID exists
+     * @throws IllegalNoteAccessException if the note does not belong to the user
+     */
     @Transactional(readOnly = true)
     @Override
     public GetNoteResponse getNote(long userId, long id) {
@@ -85,6 +99,13 @@ public class NoteServiceImpl implements NoteService {
     /**
      * Non-null fields in {@code diff} overwrite existing values; null fields are left untouched.
      * Updates {@code lastUpdatedAt} to the current time. Ownership is verified before the update.
+     *
+     * @param userId the ID of the authenticated user
+     * @param id     the ID of the note to update
+     * @param diff   the note containing only the fields to update (null fields are ignored)
+     * @return the updated note with the new {@code lastUpdatedAt} timestamp
+     * @throws NoteNotFoundException     if no note with the given ID exists
+     * @throws IllegalNoteAccessException if the note does not belong to the user
      */
     @Transactional
     @Override
@@ -108,6 +129,14 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toUpdateResponse(note);
     }
 
+    /**
+     * Deletes a note after verifying ownership.
+     *
+     * @param userId the ID of the authenticated user
+     * @param id     the ID of the note to delete
+     * @throws NoteNotFoundException     if no note with the given ID exists
+     * @throws IllegalNoteAccessException if the note does not belong to the user
+     */
     @Transactional
     @Override
     public void deleteNote(long userId, long id) {

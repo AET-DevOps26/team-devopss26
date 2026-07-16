@@ -22,6 +22,11 @@ public class NoteController implements NotesApi {
     private final HttpServletRequest servletRequest;
     private final NoteService service;
 
+    /**
+     * Retrieves all notes for the authenticated user.
+     *
+     * @return {@code 200 OK} with a list of the user's notes
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<ListNotesResponse> getNotes() {
@@ -43,6 +48,12 @@ public class NoteController implements NotesApi {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Creates a new note for the authenticated user.
+     *
+     * @param request the request containing title and content
+     * @return {@code 201 Created} with the created note
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<CreateNoteResponse> createNote(CreateNoteRequest request) {
@@ -64,6 +75,12 @@ public class NoteController implements NotesApi {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Deletes a note by its ID.
+     *
+     * @param id the ID of the note to delete
+     * @return {@code 204 No Content} on success
+     */
     @RequireTokenValidation
     @Override
     public ResponseEntity<Void> deleteNote(Long id) {

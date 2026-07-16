@@ -39,6 +39,12 @@ public abstract class UserMapper {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Maps a registration request to a {@link User} entity, hashing the password.
+     *
+     * @param request the registration request containing the plain-text password
+     * @return the mapped {@link User} entity with a hashed password
+     */
     @Mapping(source = "password", target = "passwordHash", qualifiedByName = "hashPassword")
     @Mapping(target = "id", ignore = true)
     public abstract User toEntity(RegisterUserRequest request);
@@ -47,6 +53,9 @@ public abstract class UserMapper {
      * The null guard exists because MapStruct may pass null when the source field is null;
      * in practice the registration request should always have a non-null password, but
      * we handle it defensively to avoid {@code NullPointerException} in the encoder.
+     *
+     * @param password the plain-text password (may be null)
+     * @return the BCrypt-hashed password, or {@code null} if the input was null
      */
     @Named("hashPassword")
     protected String hashPassword(String password) {

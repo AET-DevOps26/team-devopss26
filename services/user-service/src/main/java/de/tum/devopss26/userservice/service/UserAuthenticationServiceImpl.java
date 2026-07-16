@@ -42,6 +42,12 @@ class UserAuthenticationServiceImpl implements UserAuthenticationService {
     private final UserMapper mapper;
     private final JwtService jwtService;
 
+    /**
+     * Registers a new user account.
+     *
+     * @param request the registration request containing username and password
+     * @throws UserAlreadyExistsException if a user with the given username already exists
+     */
     @Transactional
     @Override
     public void registerUser(RegisterUserRequest request) {
@@ -53,6 +59,13 @@ class UserAuthenticationServiceImpl implements UserAuthenticationService {
         repository.save(mapped);
     }
 
+    /**
+     * Authenticates the currently logged-in user and generates a JWT token.
+     * Expects the security context to have been populated by Spring Security's Basic auth filter.
+     *
+     * @return the generated JWT token string
+     * @throws UsernameNotFoundException if the authenticated user is not found in the database
+     */
     @Transactional(readOnly = true)
     @Override
     public String loginUser() {
@@ -66,6 +79,12 @@ class UserAuthenticationServiceImpl implements UserAuthenticationService {
         return jwtService.generateToken(opt.get().getId(), opt.get().getUsername());
     }
 
+    /**
+     * Validates a JWT token from the Authorization header.
+     *
+     * @param authHeader the raw {@code Authorization} header value (expected format: {@code Bearer <jwt>})
+     * @return {@code true} if the token is valid, {@code false} otherwise
+     */
     @Override
     public boolean checkToken(String authHeader) {
         try {
