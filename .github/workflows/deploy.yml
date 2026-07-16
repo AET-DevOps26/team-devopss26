@@ -82,13 +82,13 @@ jobs:
               javaServices.forEach(s => services.push(ALL.find(a => a.service === s)));
             } else {
               javaServices.forEach(s => {
-                if (changed[s] === 'true') services.push(ALL.find(a => a.service === s)));
+                if (changed[s] === 'true') services.push(ALL.find(a => a.service === s));
               });
             }
 
             // GenAI and client are independent
             for (const s of ['genai-service', 'client']) {
-              if (changed[s] === 'true') services.push(ALL.find(a => a.service === s)));
+              if (changed[s] === 'true') services.push(ALL.find(a => a.service === s));
             }
 
             // Fallback: if nothing was detected (helm-only, infra, etc.), build all
