@@ -42,18 +42,18 @@ spec:
                 name: genai-service-secret
           startupProbe:
             httpGet:
-              path: /api/genai/api/v1/health
+              path: /api/v1/health
               port: {{ .Values.genaiService.appPort }}
             periodSeconds: 5
             failureThreshold: 30
           livenessProbe:
             httpGet:
-              path: /api/genai/api/v1/health
+              path: /api/v1/health
               port: {{ .Values.genaiService.appPort }}
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /api/genai/api/v1/health
+              path: /api/v1/health
               port: {{ .Values.genaiService.appPort }}
             periodSeconds: 5
           resources:
