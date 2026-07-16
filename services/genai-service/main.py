@@ -500,4 +500,4 @@ class GenAIApiImpl(BaseGenAIApi):
 
 # Defining the class above already registers it as BaseGenAIApi.subclasses[0]
 # (via __init_subclass__); the generated router instantiates it per-request.
-app.include_router(genai_router, prefix="/api/genai")
+app.include_router(genai_router)
