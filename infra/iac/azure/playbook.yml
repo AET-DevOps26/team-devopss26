@@ -185,6 +185,16 @@
         directory_mode: '0755'
       notify: Restart Grafana
 
+    - name: Copy grafana dashboards to VM
+      ansible.builtin.copy:
+        src: ../../grafana/dashboards/
+        dest: /home/devops-admin/app/grafana/dashboards/
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+        directory_mode: '0755'
+      notify: Restart Grafana
+
     - name: Pull fresh service images from registry
       ansible.builtin.command:
         cmd: docker compose pull
