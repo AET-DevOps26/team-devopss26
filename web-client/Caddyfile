@@ -48,8 +48,11 @@
 
     # ── Monitoring routes (cross-namespace to monitoring) ──
     # Grafana: configured with GF_SERVER_SERVE_FROM_SUB_PATH=true
-    # Forward the /grafana prefix as-is; do NOT strip it
-    @grafana path /grafana /grafana/*
+    # Redirect /grafana (no trailing slash) → /grafana/ so Grafana's sub-path works
+    @grafana-root path /grafana
+    redir @grafana-root /grafana/ 308
+    # Forward /grafana/* and /grafana/ to Grafana
+    @grafana path /grafana/ /grafana/*
     handle @grafana {
         reverse_proxy {$GRAFANA_UPSTREAM}
     }
