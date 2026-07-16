@@ -11,6 +11,7 @@ from contextvars import ContextVar
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List
+from urllib.parse import quote_plus
 
 logger = logging.getLogger("genai-service")
 
@@ -52,7 +53,7 @@ from openapi_server.models.health200_response import Health200Response  # noqa: 
 # ── Database ─────────────────────────────────────────────────────────────────
 _db_url = (
     f"postgresql+asyncpg://{os.environ['SERVICES_POSTGRES_USER']}:"
-    f"{os.environ['SERVICES_POSTGRES_PASSWORD']}@"
+    f"{quote_plus(os.environ['SERVICES_POSTGRES_PASSWORD'])}@"
     f"{os.environ['SERVICES_POSTGRES_URL']}:"
     f"{os.environ['SERVICES_POSTGRES_PORT_INT']}/"
     f"genai_service_db"
