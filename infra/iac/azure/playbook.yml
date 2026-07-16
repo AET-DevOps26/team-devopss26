@@ -143,6 +143,12 @@
         mode: '0644'
       notify: Restart Prometheus
 
+    - name: Stop any running compose stack to release file/directory holds
+      ansible.builtin.shell: |
+        cd /home/devops-admin/app
+        docker compose down --remove-orphans 2>&1 || true
+      changed_when: True
+
     - name: Force prometheus rules.yml to be a regular file on VM
       ansible.builtin.shell: |
         rm -rf /home/devops-admin/app/prometheus/rules.yml
