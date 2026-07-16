@@ -143,6 +143,20 @@
         mode: '0644'
       notify: Restart Prometheus
 
+    - name: Ensure any existing directory named rules.yml is removed
+      ansible.builtin.file:
+        path: /home/devops-admin/app/prometheus/rules.yml
+        state: absent
+
+    - name: Copy prometheus rules.yml to VM
+      ansible.builtin.copy:
+        src: ../../prometheus/rules.yml
+        dest: /home/devops-admin/app/prometheus/rules.yml
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+      notify: Restart Prometheus
+
 
     - name: Ensure grafana directory exists on VM
       ansible.builtin.file:

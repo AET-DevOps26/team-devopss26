@@ -1,4 +1,4 @@
-name: scheduled-start.yml
+name: Start Azure VM
 
 on:
   workflow_dispatch: {}
@@ -19,3 +19,38 @@ jobs:
           az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
           az account set --subscription $ARM_SUBSCRIPTION_ID
           az vm start --resource-group devops-rg --name devops-vm
+
+      - name: Wait for VM to be SSH-reachable
+        run: |
+          set -e
+          for i in $(seq 1 30); do
+            IP=$(az vm show -d --resource-group devops-rg --name devops-vm --query publicIps -o tsv 2>/dev/null || true)
+            if [ -n "$IP" ] && nc -z -w 5 "$IP" 22 2>/dev/null; then
+              echo "VM reachable at $IP"
+              echo "AZURE_VM_IP=$IP" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "Waiting for SSH on $IP... attempt $i/30"
+            sleep 10
+          done
+          echo "::error::VM SSH not reachable after 5 minutes"
+          exit 1
+
+      - name: Set up SSH Agent
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          if_key_exists: replace
+          known_hosts: ${{ secrets.AZURE_VM_KNOWN_HOSTS }}
+
+      - name: Start Docker Compose stack
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.AZURE_VM_IP }}
+          username: devops-admin
+          command_timeout: 10m
+          script: |
+            set -e
+            cd /home/devops-admin/app
+            docker compose up -d
+            docker compose ps
