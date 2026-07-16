@@ -17,6 +17,13 @@ public class Checklist {
 
     public Checklist() {}
 
+    /**
+     * Creates a checklist with the given ID and title, initializing
+     * {@code createdAt} to the current time and adding a single sample item.
+     *
+     * @param id    the checklist ID
+     * @param title the checklist title
+     */
     public Checklist(Long id, String title) {
         this.id = id;
         this.title = title;

@@ -10,6 +10,14 @@ import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
+/**
+ * JPA entity representing a note in the system.
+ * <p>
+ * Each note belongs to a user (identified by {@code userId}) and contains
+ * a title, content, and timestamps for creation and last update.
+ * Timestamps are managed by the service layer.
+ * </p>
+ */
 @Getter
 @Setter
 @Entity

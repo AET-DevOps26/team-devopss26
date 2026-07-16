@@ -16,6 +16,11 @@ import java.util.Optional;
 import static de.tum.devopss26.calendarservice.exception.IllegalCalendarEventAccessException.IllegalAccessPair;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Implementation of {@link CalendarEventService} providing the business logic
+ * for creating, reading, updating, and deleting calendar events.
+ * Enforces ownership checks on every access.
+ */
 @Service
 @RequiredArgsConstructor
 class CalendarEventServiceImpl implements CalendarEventService {
@@ -23,6 +28,14 @@ class CalendarEventServiceImpl implements CalendarEventService {
     private final CalendarEventRepository repository;
     private final CalendarEventMapper mapper;
 
+    /**
+     * Creates a new calendar event for the given user by mapping the request,
+     * persisting the entity, and returning the response.
+     *
+     * @param request the create request containing event details
+     * @param userId  the ID of the owning user
+     * @return the create response with the persisted event data
+     */
     @Transactional
     @Override
     public CreateCalendarEventResponse createEvent(CreateCalendarEventRequest request, long userId) {
@@ -31,6 +44,12 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toCreateResponse(event);
     }
 
+    /**
+     * Retrieves all calendar events owned by the given user.
+     *
+     * @param userId the ID of the user
+     * @return the list response containing all events of the user
+     */
     @Transactional(readOnly = true)
     @Override
     public ListCalendarEventResponse getEvents(long userId) {
@@ -43,6 +62,17 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toListResponse(events);
     }
 
+    /**
+     * Retrieves a calendar event entity by its ID and verifies that the
+     * requesting user is the owner. Used internally by {@link #getEvent},
+     * {@link #updateEvent}, and {@link #deleteEvent}.
+     *
+     * @param userId  the ID of the requesting user
+     * @param eventId the ID of the calendar event
+     * @return the calendar event entity
+     * @throws CalendarEventNotFoundException         if the event does not exist
+     * @throws IllegalCalendarEventAccessException    if the user does not own the event
+     */
     private @NonNull CalendarEvent getEventEntity(long userId, long eventId) {
         Optional<CalendarEvent> opt = repository.findById(eventId);
         if (opt.isEmpty()) {
@@ -57,6 +87,15 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return event;
     }
 
+    /**
+     * Retrieves a single calendar event by its ID after verifying ownership.
+     *
+     * @param userId  the ID of the requesting user
+     * @param eventId the ID of the calendar event
+     * @return the get response with the event data
+     * @throws CalendarEventNotFoundException      if the event does not exist
+     * @throws IllegalCalendarEventAccessException if the user does not own the event
+     */
     @Transactional(readOnly = true)
     @Override
     public GetCalendarEventResponse getEvent(long userId, long eventId) {
@@ -65,6 +104,17 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toGetResponse(event);
     }
 
+    /**
+     * Updates an existing calendar event. Only non-null fields in the diff DTO
+     * are applied to the persisted entity. Ownership is verified before updating.
+     *
+     * @param userId  the ID of the requesting user
+     * @param eventId the ID of the calendar event to update
+     * @param diff    the DTO containing the fields to update
+     * @return the update response with the updated event data
+     * @throws CalendarEventNotFoundException      if the event does not exist
+     * @throws IllegalCalendarEventAccessException if the user does not own the event
+     */
     @Transactional
     @Override
     public UpdateCalendarEventResponse updateEvent(long userId, long eventId,
@@ -97,6 +147,14 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toUpdateResponse(event);
     }
 
+    /**
+     * Deletes a calendar event after verifying ownership.
+     *
+     * @param userId  the ID of the requesting user
+     * @param eventId the ID of the calendar event to delete
+     * @throws CalendarEventNotFoundException      if the event does not exist
+     * @throws IllegalCalendarEventAccessException if the user does not own the event
+     */
     @Transactional
     @Override
     public void deleteEvent(long userId, long eventId) {

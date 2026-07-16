@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * JPA entity representing a single item within a checklist.
+ * Each item belongs to exactly one checklist and has a text description,
+ * a completion status, and a display position within the checklist.
+ */
 @Entity
 @Getter
 @Setter

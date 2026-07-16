@@ -24,6 +24,12 @@ class UserAuthenticationServiceImpl implements UserAuthenticationService {
     private final UserMapper mapper;
     private final JwtService jwtService;
 
+    /**
+     * Registers a new user. Checks for duplicate usernames before persisting.
+     *
+     * @param request the registration request containing username and password
+     * @throws UserAlreadyExistsException if a user with the same username already exists
+     */
     @Transactional
     @Override
     public void registerUser(RegisterUserRequest request) {
@@ -35,6 +41,13 @@ class UserAuthenticationServiceImpl implements UserAuthenticationService {
         repository.save(mapped);
     }
 
+    /**
+     * Authenticates the currently logged-in user by extracting their username
+     * from the security context and generating a JWT token.
+     *
+     * @return the generated JWT token string
+     * @throws UsernameNotFoundException if the authenticated user is not found in the database
+     */
     @Transactional(readOnly = true)
     @Override
     public String loginUser() {
@@ -48,6 +61,13 @@ class UserAuthenticationServiceImpl implements UserAuthenticationService {
         return jwtService.generateToken(opt.get().getId(), opt.get().getUsername());
     }
 
+    /**
+     * Validates the JWT token from the Authorization header.
+     * Returns {@code false} for any error or invalid token without throwing exceptions.
+     *
+     * @param authHeader the Authorization header value (expected format: "Bearer &lt;token&gt;")
+     * @return {@code true} if the token is valid, {@code false} otherwise
+     */
     @Override
     public boolean checkToken(String authHeader) {
         try {

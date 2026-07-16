@@ -4,8 +4,20 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Abstract base class for architecture tests using ArchUnit.
+ * <p>
+ * Subclasses must provide the set of {@link JavaClasses} to verify via {@link #getClasses()}.
+ * Each public constant from {@link BaseArchitectureRules} is checked in a dedicated test method.
+ * </p>
+ */
 public abstract class AbstractArchitectureTest {
 
+    /**
+     * Returns the Java classes to analyze.
+     *
+     * @return the classes to be checked by the architecture rules
+     */
     protected abstract JavaClasses getClasses();
 
     @Test

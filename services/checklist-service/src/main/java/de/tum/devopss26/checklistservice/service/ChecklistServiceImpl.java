@@ -16,6 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Implementation of the {@link ChecklistService} interface.
+ * Provides transactional business logic for checklist and item management,
+ * including ownership validation to ensure users can only access their own data.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional

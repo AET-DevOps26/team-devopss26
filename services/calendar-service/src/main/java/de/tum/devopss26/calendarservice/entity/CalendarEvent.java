@@ -16,6 +16,11 @@ import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Entity representing a calendar event persisted in the database.
+ * Each event is owned by a user and contains title, optional description,
+ * start/end time, and an optional location.
+ */
 @Entity
 @Getter
 @Setter

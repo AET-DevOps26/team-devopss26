@@ -14,6 +14,14 @@ public class ChecklistItem {
 
     public ChecklistItem() {}
 
+    /**
+     * Creates a checklist item with the specified properties.
+     *
+     * @param id        the item ID
+     * @param text      the item text description
+     * @param completed whether the item is marked as completed
+     * @param position  the display order position
+     */
     public ChecklistItem(Long id, String text, boolean completed, Integer position) {
         this.id = id;
         this.text = text;

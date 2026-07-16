@@ -17,6 +17,15 @@ import java.util.Optional;
 import static de.tum.devopss26.noteservice.exception.IllegalNoteAccessException.IllegalAccessPair;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Implementation of {@link NoteService} providing note CRUD operations.
+ * <p>
+ * Handles persistence via {@link NoteRepository}, maps between entities and DTOs
+ * using {@link NoteMapper}, and enforces user-based access control on all operations.
+ * All public methods are transactional and verify that the requesting user owns the
+ * targeted note before performing any operation.
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 public class NoteServiceImpl implements NoteService {
@@ -24,6 +33,13 @@ public class NoteServiceImpl implements NoteService {
     private final NoteRepository repository;
     private final NoteMapper mapper;
 
+    /**
+     * Creates a new note with the current timestamp and persists it.
+     *
+     * @param request the request containing the note title and content
+     * @param userId  the ID of the note owner
+     * @return the created note response with generated ID and timestamps
+     */
     @Transactional
     @Override
     public CreateNoteResponse createNote(CreateNoteRequest request, long userId) {
@@ -35,6 +51,12 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toCreateResponse(note);
     }
 
+    /**
+     * Retrieves all notes owned by the specified user.
+     *
+     * @param userId the ID of the user whose notes to retrieve
+     * @return a response containing the list of notes
+     */
     @Transactional(readOnly = true)
     @Override
     public ListNotesResponse getNotes(long userId) {
@@ -61,6 +83,15 @@ public class NoteServiceImpl implements NoteService {
         return note;
     }
 
+    /**
+     * Retrieves a single note by ID after verifying that it belongs to the requesting user.
+     *
+     * @param userId the ID of the requesting user
+     * @param id     the ID of the note to retrieve
+     * @return the requested note
+     * @throws NoteNotFoundException     if no note exists with the given ID
+     * @throws IllegalNoteAccessException if the note does not belong to the user
+     */
     @Transactional(readOnly = true)
     @Override
     public GetNoteResponse getNote(long userId, long id) {
@@ -69,6 +100,20 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toGetResponse(note);
     }
 
+    /**
+     * Updates the title and/or content of an existing note.
+     * <p>
+     * Only the fields provided in the diff (non-null) are updated.
+     * The {@code lastUpdatedAt} timestamp is refreshed on every update.
+     * </p>
+     *
+     * @param userId the ID of the requesting user
+     * @param id     the ID of the note to update
+     * @param diff   the note data containing the fields to update (title, content, or both)
+     * @return the updated note
+     * @throws NoteNotFoundException     if no note exists with the given ID
+     * @throws IllegalNoteAccessException if the note does not belong to the user
+     */
     @Transactional
     @Override
     public UpdateNoteResponse updateNote(long userId, long id, org.openapitools.model.Note diff) {
@@ -91,6 +136,14 @@ public class NoteServiceImpl implements NoteService {
         return mapper.toUpdateResponse(note);
     }
 
+    /**
+     * Deletes a note by ID after verifying ownership.
+     *
+     * @param userId the ID of the requesting user
+     * @param id     the ID of the note to delete
+     * @throws NoteNotFoundException     if no note exists with the given ID
+     * @throws IllegalNoteAccessException if the note does not belong to the user
+     */
     @Transactional
     @Override
     public void deleteNote(long userId, long id) {

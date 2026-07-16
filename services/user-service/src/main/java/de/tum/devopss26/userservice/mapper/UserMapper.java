@@ -9,6 +9,10 @@ import org.openapitools.model.RegisterUserRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * MapStruct mapper for converting {@link RegisterUserRequest} DTOs to {@link User} entities.
+ * Handles password hashing during the mapping process.
+ */
 @RequiredArgsConstructor
 @Mapper(componentModel = "spring")
 public abstract class UserMapper {
@@ -20,6 +24,13 @@ public abstract class UserMapper {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Maps a registration request to a User entity.
+     * The plain-text password is automatically hashed via {@link #hashPassword(String)}.
+     *
+     * @param request the registration request containing username and password
+     * @return the mapped {@link User} entity with hashed password
+     */
     @Mapping(source = "password", target = "passwordHash", qualifiedByName = "hashPassword")
     @Mapping(target = "id", ignore = true)
     public abstract User toEntity(RegisterUserRequest request);

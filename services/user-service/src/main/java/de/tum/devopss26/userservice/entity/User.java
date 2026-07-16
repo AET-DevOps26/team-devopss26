@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * JPA entity representing a registered user in the system.
+ * Each user has a unique username and a BCrypt-hashed password.
+ */
 @Entity
 @Getter
 @Setter
