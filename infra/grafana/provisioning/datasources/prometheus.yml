@@ -6,3 +6,6 @@ datasources:
     url: http://prometheus:9090
     access: proxy
     isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 15s
