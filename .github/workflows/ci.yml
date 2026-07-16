@@ -1,7 +1,11 @@
 name: Continuous Integration
 
 on:
-  push: {}
+  push:
+    paths-ignore:
+      - 'infra/monitoring/**'
+      - 'infra/prometheus/**'
+      - 'infra/grafana/**'
 
 jobs:
   openapi-lint:

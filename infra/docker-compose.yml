@@ -45,7 +45,7 @@ services:
 
   user-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/user-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/user-service:latest
     container_name: user-service-app
     build:
       context: ..
@@ -65,7 +65,7 @@ services:
   #####################################################################################################
   checklist-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/checklist-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/checklist-service:latest
     container_name: checklist-service-app
     build:
       context: ..
@@ -85,7 +85,7 @@ services:
   #####################################################################################################
   calendar-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/calendar-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/calendar-service:latest
     container_name: calendar-service-app
     build:
       context: ..
@@ -105,7 +105,7 @@ services:
   #####################################################################################################
   note-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/note-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/note-service:latest
     container_name: note-service-app
     build:
       context: ..
@@ -162,7 +162,7 @@ services:
 
   genai-service-app:
     <<: *app-template
-    image: ghcr.io/aet-devops26/team-devopss26/genai-service:7435acd8700e13487e824899ffaa5df167e53792
+    image: ghcr.io/aet-devops26/team-devopss26/genai-service:latest
     container_name: genai-service-app
     build:
       context: ..
@@ -190,15 +190,20 @@ services:
   #####################################################################################################
   client:
     container_name: client
+    image: ghcr.io/aet-devops26/team-devopss26/client:latest
     build:
       context: ..
       dockerfile: web-client/Dockerfile
     ports:
       - "${CLIENT_PORT:-80}:80"
+    environment:
+      - GRAFANA_UPSTREAM=http://grafana:3000
+      - PROMETHEUS_UPSTREAM=http://prometheus:9090
     networks:
       - client-net
       - user-service-net
       - internal-net
+      - monitoring-net
 
   #####################################################################################################
   # OBSERVABILITY
@@ -210,18 +215,29 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules.yml:/etc/prometheus/rules.yml:ro
       - prometheus-data:/prometheus
     networks:
       - monitoring-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:9090/-/healthy || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
-    ports:
-      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    environment:
+      - GF_SERVER_ROOT_URL=http://localhost/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
     networks:
       - monitoring-net
 
