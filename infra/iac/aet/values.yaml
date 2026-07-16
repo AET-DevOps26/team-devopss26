@@ -66,6 +66,30 @@ postgres:
     requests: { memory: "256Mi", cpu: "100m" }
     limits: { memory: "512Mi", cpu: "200m" }
 
+# ── Weaviate ──
+weaviate:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: cr.weaviate.io/semitechnologies/weaviate
+    tag: 1.25.6
+  resources:
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits: { memory: "512Mi", cpu: "500m" }
+  persistence:
+    size: 1Gi
+  environment:
+    # Disable auth for internal cluster communication
+    AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+    PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+    ENABLE_MODULES: "text2vec-google"
+    DEFAULT_VECTORIZER_MODULE: "none"
+    # Disable rate limiting
+    RATE_LIMIT_LIMIT: "0"
+    RATE_LIMIT_POINT_LIMIT: "0"
+    RATE_LIMIT_QUERY_LIMIT: "0"
+    RATE_LIMIT_TIME_IN_S: "1"
+
 ingress:
   enabled: true
   host: ""

@@ -13,3 +13,4 @@ data:
   NOTE_SERVICE_URL: "http://note-service:8005"
   CALENDAR_SERVICE_URL: "http://calendar-service:8004"
   CHECKLIST_SERVICE_URL: "http://checklist-service:8003"
+  WEAVIATE_HOST: "weaviate"
