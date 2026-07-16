@@ -13,8 +13,6 @@ from pathlib import Path
 from typing import Optional, List
 from urllib.parse import quote_plus
 
-logger = logging.getLogger("genai-service")
-
 import httpx
 import jwt
 import weaviate
@@ -34,6 +32,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.future import select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, selectinload
 from weaviate.classes.config import Property, DataType, Configure
+
+logger = logging.getLogger("genai-service")
 
 # The generated OpenAPI client (services/genai-service/generated/) is gitignored and
 # regenerated via `npm run openapi:generate`; it isn't an installed package, so make it
@@ -56,7 +56,7 @@ _db_url = (
     f"{quote_plus(os.environ['SERVICES_POSTGRES_PASSWORD'])}@"
     f"{os.environ['SERVICES_POSTGRES_URL']}:"
     f"{os.environ['SERVICES_POSTGRES_PORT_INT']}/"
-    f"genai_service_db"
+    f"{os.environ['SERVICES_POSTGRES_DB']}"
 )
 _engine = create_async_engine(_db_url)
 _sessions = async_sessionmaker(_engine, expire_on_commit=False)
