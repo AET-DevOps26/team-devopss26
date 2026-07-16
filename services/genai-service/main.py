@@ -322,8 +322,12 @@ def _rag_sync(query: str, chunks: list[str], top_k: int) -> str:
 
 
 async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 5) -> str:
-    if not chunks or _weaviate_client is None or _embedding_model is None:
+    if not chunks:
         return ""
+    if _weaviate_client is None or _embedding_model is None:
+        # Fallback: return all chunks as context without vector search
+        logger.debug("Weaviate or embedding model unavailable, using chunks directly")
+        return "\n".join(chunks[:top_k])
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _rag_sync, query, chunks, top_k)
 
