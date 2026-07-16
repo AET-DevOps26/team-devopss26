@@ -13,6 +13,14 @@ data:
         handle /api/v1/chat/* {
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
+        handle /api/genai/api/v1/chat {
+            uri strip_prefix /api/genai
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/genai/api/v1/chat/* {
+            uri strip_prefix /api/genai
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
         handle /api/v1/checklists {
             reverse_proxy http://checklist-service:{{ index .Values.services "checklist-service" "appPort" }}
         }
@@ -23,6 +31,14 @@ data:
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/v1/conversations/* {
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/genai/api/v1/conversations {
+            uri strip_prefix /api/genai
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/genai/api/v1/conversations/* {
+            uri strip_prefix /api/genai
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
         handle /api/v1/events {
@@ -37,6 +53,22 @@ data:
         handle /api/v1/health/* {
             reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
         }
+        handle /api/genai/api/v1/health {
+            uri strip_prefix /api/genai
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/genai/api/v1/health/* {
+            uri strip_prefix /api/genai
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/genai/metrics {
+            uri strip_prefix /api/genai
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
+        handle /api/genai/metrics/* {
+            uri strip_prefix /api/genai
+            reverse_proxy http://genai-service:{{ .Values.genaiService.appPort }}
+        }
         handle /api/v1/notes {
             reverse_proxy http://note-service:{{ index .Values.services "note-service" "appPort" }}
         }
@@ -48,11 +80,16 @@ data:
         }
 
         # ── Monitoring routes (cross-namespace to monitoring) ──
-        handle /grafana/* {
-            uri strip_prefix /grafana
+        # Grafana: serve_from_sub_path=true, forward path as-is
+        @grafana path /grafana /grafana/*
+        handle @grafana {
             reverse_proxy http://grafana.team-devopss26-monitoring.svc.cluster.local:3000
         }
-        handle /prometheus/* {
+
+        # Prometheus: --web.external-url=/prometheus/ + --web.route-prefix=/,
+        # serves at / internally, so strip prefix
+        @prometheus path /prometheus /prometheus/*
+        handle @prometheus {
             uri strip_prefix /prometheus
             reverse_proxy http://prometheus.team-devopss26-monitoring.svc.cluster.local:9090
         }

@@ -16,7 +16,5 @@ schema = schemathesis.openapi.from_path(str(SPEC_PATH))
 @schema.parametrize()
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_matches_openapi_spec(case, app, auth_headers):
-    # Routes are mounted under /api/genai (mirroring the Spring services'
-    # server.servlet.context-path), which the spec itself doesn't encode.
-    response = case.call_asgi(app=app, base_url="http://test/api/genai", headers=auth_headers)
+    response = case.call_asgi(app=app, base_url="http://test", headers=auth_headers)
     case.validate_response(response, excluded_checks=(ignored_auth,))

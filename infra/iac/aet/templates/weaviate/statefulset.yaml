@@ -1,0 +1,84 @@
+{{- if .Values.weaviate.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: weaviate
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: weaviate
+spec:
+  serviceName: weaviate
+  replicas: {{ .Values.weaviate.replicaCount }}
+  selector:
+    matchLabels:
+      app: weaviate
+  template:
+    metadata:
+      labels:
+        app: weaviate
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+      containers:
+        - name: weaviate
+          image: "{{ .Values.weaviate.image.repository }}:{{ .Values.weaviate.image.tag }}"
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 50051
+              name: grpc
+          env:
+            - name: AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED
+              value: "{{ .Values.weaviate.environment.AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED }}"
+            - name: PERSISTENCE_DATA_PATH
+              value: "{{ .Values.weaviate.environment.PERSISTENCE_DATA_PATH }}"
+            - name: ENABLE_MODULES
+              value: "{{ .Values.weaviate.environment.ENABLE_MODULES }}"
+            - name: DEFAULT_VECTORIZER_MODULE
+              value: "{{ .Values.weaviate.environment.DEFAULT_VECTORIZER_MODULE }}"
+            - name: RATE_LIMIT_LIMIT
+              value: "{{ .Values.weaviate.environment.RATE_LIMIT_LIMIT }}"
+            - name: RATE_LIMIT_POINT_LIMIT
+              value: "{{ .Values.weaviate.environment.RATE_LIMIT_POINT_LIMIT }}"
+            - name: RATE_LIMIT_QUERY_LIMIT
+              value: "{{ .Values.weaviate.environment.RATE_LIMIT_QUERY_LIMIT }}"
+            - name: RATE_LIMIT_TIME_IN_S
+              value: "{{ .Values.weaviate.environment.RATE_LIMIT_TIME_IN_S }}"
+            - name: CLUSTER_HOSTNAME
+              value: "node1"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          livenessProbe:
+            httpGet:
+              path: /v1/.well-known/ready
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /v1/.well-known/ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.weaviate.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/weaviate
+      volumes:
+        - name: data
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.weaviate.persistence.size }}
+{{- end }}

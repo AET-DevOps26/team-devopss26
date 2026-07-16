@@ -143,6 +143,29 @@
         mode: '0644'
       notify: Restart Prometheus
 
+    - name: Stop any running compose stack to release file/directory holds
+      ansible.builtin.shell: |
+        cd /home/devops-admin/app
+        docker compose down --remove-orphans 2>&1 || true
+      changed_when: True
+
+    - name: Force prometheus rules.yml to be a regular file on VM
+      ansible.builtin.shell: |
+        rm -rf /home/devops-admin/app/prometheus/rules.yml
+        touch /home/devops-admin/app/prometheus/rules.yml
+        chown devops-admin:devops-admin /home/devops-admin/app/prometheus/rules.yml
+        chmod 0644 /home/devops-admin/app/prometheus/rules.yml
+      changed_when: True
+
+    - name: Copy prometheus rules.yml to VM
+      ansible.builtin.copy:
+        src: ../../prometheus/rules.yml
+        dest: /home/devops-admin/app/prometheus/rules.yml
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+      notify: Restart Prometheus
+
 
     - name: Ensure grafana directory exists on VM
       ansible.builtin.file:
@@ -162,11 +185,30 @@
         directory_mode: '0755'
       notify: Restart Grafana
 
-    - name: Start application with Docker Compose
+    - name: Copy grafana dashboards to VM
+      ansible.builtin.copy:
+        src: ../../grafana/dashboards/
+        dest: /home/devops-admin/app/grafana/dashboards/
+        owner: devops-admin
+        group: devops-admin
+        mode: '0644'
+        directory_mode: '0755'
+      notify: Restart Grafana
+
+    - name: Pull fresh service images from registry
+      ansible.builtin.command:
+        cmd: docker compose pull
+        chdir: /home/devops-admin/app
+      become: yes
+      become_user: devops-admin
+      changed_when: true
+
+    - name: Start application with Docker Compose (no build)
       community.docker.docker_compose_v2:
         project_src: /home/devops-admin/app
         state: present
-        pull: always
+        pull: missing
+        build: never
         remove_orphans: true
       become: yes
       become_user: devops-admin

@@ -1,0 +1,20 @@
+{{- if .Values.weaviate.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: weaviate
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: weaviate
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+    - port: 50051
+      targetPort: 50051
+      name: grpc
+  selector:
+    app: weaviate
+{{- end }}

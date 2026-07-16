@@ -6,6 +6,7 @@ os.environ.setdefault("SERVICES_POSTGRES_USER", "postgres")
 os.environ.setdefault("SERVICES_POSTGRES_PASSWORD", "postgres")
 os.environ.setdefault("SERVICES_POSTGRES_URL", "localhost")
 os.environ.setdefault("SERVICES_POSTGRES_PORT_INT", "5432")
+os.environ.setdefault("SERVICES_POSTGRES_DB", "genai_service_db")
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -81,7 +82,7 @@ async def app(rsa_key, monkeypatch):
 @pytest_asyncio.fixture
 async def client(app):
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test/api/genai") as c:
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         yield c
 
 

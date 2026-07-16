@@ -1,0 +1,47 @@
+name: Deploy Monitoring
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/monitoring/**'
+      - 'infra/prometheus/**'
+      - 'infra/grafana/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-monitoring:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+
+      - name: Apply Prometheus
+        run: |
+          kubectl apply -f infra/monitoring/prometheus.yaml
+          kubectl rollout status deployment/prometheus -n team-devopss26-monitoring --timeout=120s
+
+      - name: Apply Grafana
+        run: |
+          kubectl apply -f infra/monitoring/grafana.yaml
+          kubectl rollout status deployment/grafana -n team-devopss26-monitoring --timeout=120s
+
+      - name: Verify pods
+        run: |
+          echo "=== Monitoring stack ==="
+          kubectl get pods -n team-devopss26-monitoring -o wide
+          echo ""
+          echo "=== Services ==="
+          kubectl get svc -n team-devopss26-monitoring

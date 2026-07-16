@@ -1,14 +1,17 @@
 import asyncio
 import base64
+import logging
 import os
 import sys
 import time
+import traceback
 import uuid
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List
+from urllib.parse import quote_plus
 
 import httpx
 import jwt
@@ -30,6 +33,8 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, selectinload
 from weaviate.classes.config import Property, DataType, Configure
 
+logger = logging.getLogger("genai-service")
+
 # The generated OpenAPI client (services/genai-service/generated/) is gitignored and
 # regenerated via `npm run openapi:generate`; it isn't an installed package, so make it
 # importable as `openapi_server` without requiring a separate pip install step.
@@ -48,10 +53,10 @@ from openapi_server.models.health200_response import Health200Response  # noqa: 
 # ── Database ─────────────────────────────────────────────────────────────────
 _db_url = (
     f"postgresql+asyncpg://{os.environ['SERVICES_POSTGRES_USER']}:"
-    f"{os.environ['SERVICES_POSTGRES_PASSWORD']}@"
+    f"{quote_plus(os.environ['SERVICES_POSTGRES_PASSWORD'])}@"
     f"{os.environ['SERVICES_POSTGRES_URL']}:"
     f"{os.environ['SERVICES_POSTGRES_PORT_INT']}/"
-    f"genai_service_db"
+    f"{os.environ['SERVICES_POSTGRES_DB']}"
 )
 _engine = create_async_engine(_db_url)
 _sessions = async_sessionmaker(_engine, expire_on_commit=False)
@@ -93,9 +98,7 @@ class ChatMessage(Base):
 # RSA public key from user-service, cache it, and refetch on signature failure
 # (e.g. user-service restarted with a new key) at most once per interval.
 _USER_SERVICE_URL = os.environ.get("USER_SERVICE_URL", "http://user-service-app:8001").rstrip("/")
-# user-service mounts its API under this Spring context-path; the shared
-# USER_SERVICE_URL env var only carries scheme+host+port, so we append it here.
-_PUBLIC_KEY_PATH = "/api/user/api/v1/users/auth/public-key"
+_PUBLIC_KEY_PATH = "/api/v1/users/auth/public-key"
 _MIN_REFETCH_INTERVAL_S = 30.0
 
 _public_key = None
@@ -113,8 +116,8 @@ _current_auth_header: ContextVar[Optional[str]] = ContextVar("_current_auth_head
 # The Caddy gateway forwards /api/genai/* to this service without stripping the
 # prefix (mirroring how Spring's server.servlet.context-path works for the other
 # services), so routes must actually be mounted under it; see
-# app.include_router(genai_router, prefix="/api/genai") below.
-_PUBLIC_PATHS = {"/api/genai/api/v1/health", "/metrics"}
+# app.include_router(genai_router) below.
+_PUBLIC_PATHS = {"/api/v1/health", "/api/genai/api/v1/health", "/metrics", "/api/genai/metrics"}
 
 
 async def _fetch_public_key_locked():
@@ -209,6 +212,10 @@ _embedding_model: Optional[GoogleGenerativeAIEmbeddings] = None
 async def lifespan(app: FastAPI):
     global _weaviate_client, _embedding_model
 
+    # Create database tables if they don't exist
+    async with _engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     try:
         _weaviate_client = weaviate.connect_to_custom(
             http_host=os.environ.get("WEAVIATE_HOST", "weaviate"),
@@ -218,15 +225,24 @@ async def lifespan(app: FastAPI):
             grpc_port=int(os.environ.get("WEAVIATE_GRPC_PORT", "50051")),
             grpc_secure=False,
         )
-    except Exception:
+    except Exception as exc:
         _weaviate_client = None
+        logger.warning(f"Weaviate connection failed: {exc}")
 
     gemini_api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if gemini_api_key:
-        _embedding_model = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
-            google_api_key=gemini_api_key,
-        )
+        try:
+            _embedding_model = GoogleGenerativeAIEmbeddings(
+                model="models/gemini-embedding-001",
+                google_api_key=gemini_api_key,
+            )
+            logger.info("Embedding model initialized successfully")
+        except Exception as exc:
+            logger.error(f"Failed to initialize embedding model: {exc}")
+    else:
+        logger.warning("GEMINI_API_KEY not set, embedding model not initialized")
+
+    logger.info(f"lifespan start: _weaviate_client={_weaviate_client is not None}, _embedding_model={_embedding_model is not None}")
 
     yield
 
@@ -234,22 +250,18 @@ async def lifespan(app: FastAPI):
         _weaviate_client.close()
 
 
-async def _fetch_user_data(user_id: int) -> list[str]:
-    # *_SERVICE_URL env vars only carry scheme+host+port; each service serves its API
-    # under its own Spring context path, so it must be appended here (same as
-    # _PUBLIC_KEY_PATH above).
-    note_url = os.environ.get("NOTE_SERVICE_URL", "http://note-service-app:8005") + "/api/note"
-    calendar_url = os.environ.get("CALENDAR_SERVICE_URL", "http://calendar-service-app:8004") + "/api/calendar"
-    checklist_url = os.environ.get("CHECKLIST_SERVICE_URL", "http://checklist-service-app:8003") + "/api/checklist"
+async def _fetch_user_data() -> list[str]:
+    note_url = os.environ.get("NOTE_SERVICE_URL", "http://note-service-app:8005")
+    calendar_url = os.environ.get("CALENDAR_SERVICE_URL", "http://calendar-service-app:8004")
+    checklist_url = os.environ.get("CHECKLIST_SERVICE_URL", "http://checklist-service-app:8003")
 
-    # calendar-service and checklist-service validate the JWT themselves and derive the
-    # user id from it (no userId query param accepted); note-service is still an
-    # unauthenticated openapi stub that takes userId directly.
+    # note-service, calendar-service, and checklist-service all validate the JWT
+    # themselves and derive the user id from it.
     auth_headers = {"Authorization": _require_auth_header()}
 
     async with httpx.AsyncClient(timeout=10.0) as client:
         notes_resp, events_resp, checklists_resp = await asyncio.gather(
-            client.get(f"{note_url}/api/v1/notes", params={"userId": user_id}),
+            client.get(f"{note_url}/api/v1/notes", headers=auth_headers),
             client.get(f"{calendar_url}/api/v1/events", headers=auth_headers),
             client.get(f"{checklist_url}/api/v1/checklists", headers=auth_headers),
             return_exceptions=True,
@@ -257,14 +269,22 @@ async def _fetch_user_data(user_id: int) -> list[str]:
 
     chunks = []
 
-    if not isinstance(notes_resp, Exception) and notes_resp.status_code == 200:
-        for note in notes_resp.json():
+    if isinstance(notes_resp, Exception):
+        logger.warning(f"Failed to fetch notes: {notes_resp}")
+    elif notes_resp.status_code != 200:
+        logger.warning(f"Notes service returned {notes_resp.status_code}: {notes_resp.text}")
+    else:
+        for note in notes_resp.json().get("notes", []):
             title = note.get("title", "")
             content = note.get("content", "")
             if title or content:
                 chunks.append(f"[Note] {title}: {content}")
 
-    if not isinstance(events_resp, Exception) and events_resp.status_code == 200:
+    if isinstance(events_resp, Exception):
+        logger.warning(f"Failed to fetch calendar events: {events_resp}")
+    elif events_resp.status_code != 200:
+        logger.warning(f"Calendar service returned {events_resp.status_code}: {events_resp.text}")
+    else:
         for event in events_resp.json().get("events", []):
             chunks.append(
                 f"[Calendar Event] {event.get('title', '')} "
@@ -272,7 +292,11 @@ async def _fetch_user_data(user_id: int) -> list[str]:
                 f"at {event.get('location', '')}: {event.get('description', '')}"
             )
 
-    if not isinstance(checklists_resp, Exception) and checklists_resp.status_code == 200:
+    if isinstance(checklists_resp, Exception):
+        logger.warning(f"Failed to fetch checklists: {checklists_resp}")
+    elif checklists_resp.status_code != 200:
+        logger.warning(f"Checklist service returned {checklists_resp.status_code}: {checklists_resp.text}")
+    else:
         for checklist in checklists_resp.json().get("checklists", []):
             title = checklist.get("title", "")
             for item in checklist.get("items", []):
@@ -307,8 +331,12 @@ def _rag_sync(query: str, chunks: list[str], top_k: int) -> str:
 
 
 async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 5) -> str:
-    if not chunks or _weaviate_client is None or _embedding_model is None:
+    if not chunks:
         return ""
+    if _weaviate_client is None or _embedding_model is None:
+        # Fallback: return all chunks as context without vector search
+        logger.debug("Weaviate or embedding model unavailable, using chunks directly")
+        return "\n".join(chunks[:top_k])
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _rag_sync, query, chunks, top_k)
 
@@ -340,11 +368,22 @@ def _build_chain(model: str):
         if not key:
             raise ValueError("COHERE_API_KEY environment variable is not set")
         llm = ChatCohere(model="command-r", cohere_api_key=key)
+    elif model == "local":
+        # Local / self-hosted LLM option: talk to an Ollama server running an open model
+        # (e.g. Llama 3.1) so the service can operate fully offline with no hosted API key.
+        # Not deployed in our environment — a local model is too heavy for the target infra —
+        # so `langchain_ollama` is imported lazily and only used if someone explicitly
+        # selects model="local" against a reachable OLLAMA_BASE_URL.
+        from langchain_ollama import ChatOllama
+        llm = ChatOllama(
+            model=os.environ.get("LOCAL_LLM_MODEL", "llama3.1"),
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+        )
     else:
         key = os.environ.get("GEMINI_API_KEY")
         if not key:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
-        llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=key)
+        llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite", google_api_key=key)
     return _prompt | llm | StrOutputParser()
 
 
@@ -352,6 +391,20 @@ def _build_chain(model: str):
 app = FastAPI(title="GenAI Chatbot Service", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 Instrumentator().instrument(app).expose(app)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        f"Unhandled exception: {type(exc).__name__}: {exc}\n"
+        f"Path: {request.scope['path']}\n"
+        f"Method: {request.method}\n"
+        f"Traceback: {traceback.format_exc()}"
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
 
 
 @app.middleware("http")
@@ -363,11 +416,13 @@ async def _auth_middleware(request: Request, call_next):
 
     auth_header = request.headers.get("authorization", "")
     if not auth_header.lower().startswith("bearer "):
+        logger.warning(f"Auth failed: Missing bearer token for {request.scope['path']}")
         return JSONResponse(status_code=401, content={"detail": "Missing bearer token"})
 
     try:
         user_id = await _authenticate(auth_header[len("bearer "):])
     except HTTPException as exc:
+        logger.warning(f"Auth failed: {exc.detail} for {request.scope['path']}")
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     reset_user_id = _current_user_id.set(user_id)
@@ -447,7 +502,9 @@ class GenAIApiImpl(BaseGenAIApi):
 
     async def chat(self, chat_request: ChatRequest) -> ChatResponse:
         user_id = _require_user_id()
-        if not chat_request.message.strip():
+        # Reject blank messages and messages containing NUL (\x00): PostgreSQL text
+        # columns can't store null bytes, so they'd otherwise blow up the INSERT below.
+        if not chat_request.message.strip() or "\x00" in chat_request.message:
             raise HTTPException(status_code=400, detail="message must not be empty")
 
         async with _sessions() as db:
@@ -472,7 +529,7 @@ class GenAIApiImpl(BaseGenAIApi):
 
             context = ""
             try:
-                chunks = await _fetch_user_data(user_id)
+                chunks = await _fetch_user_data()
                 context = await _rag_retrieve(chat_request.message, chunks)
             except Exception:
                 pass
@@ -493,4 +550,4 @@ class GenAIApiImpl(BaseGenAIApi):
 
 # Defining the class above already registers it as BaseGenAIApi.subclasses[0]
 # (via __init_subclass__); the generated router instantiates it per-request.
-app.include_router(genai_router, prefix="/api/genai")
+app.include_router(genai_router)
