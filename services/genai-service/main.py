@@ -112,7 +112,7 @@ _current_auth_header: ContextVar[Optional[str]] = ContextVar("_current_auth_head
 # prefix (mirroring how Spring's server.servlet.context-path works for the other
 # services), so routes must actually be mounted under it; see
 # app.include_router(genai_router) below.
-_PUBLIC_PATHS = {"/api/v1/health", "/metrics"}
+_PUBLIC_PATHS = {"/api/v1/health", "/api/genai/api/v1/health", "/metrics", "/api/genai/metrics"}
 
 
 async def _fetch_public_key_locked():
