@@ -114,12 +114,4 @@ data:
     CREATE DATABASE calendar_service_db;
     CREATE DATABASE note_service_db;
     CREATE DATABASE genaidb;
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: postgres-secret
-  namespace: {{ .Values.global.namespace }}
-type: Opaque
-stringData:
-  POSTGRES_PASSWORD: {{ .Values.postgres.password | quote }}
+{{- /* postgres-secret is pre-created on the cluster — not managed by Helm */ -}}

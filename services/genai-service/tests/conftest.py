@@ -6,6 +6,7 @@ os.environ.setdefault("SERVICES_POSTGRES_USER", "postgres")
 os.environ.setdefault("SERVICES_POSTGRES_PASSWORD", "postgres")
 os.environ.setdefault("SERVICES_POSTGRES_URL", "localhost")
 os.environ.setdefault("SERVICES_POSTGRES_PORT_INT", "5432")
+os.environ.setdefault("SERVICES_POSTGRES_DB", "genai_service_db")
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
