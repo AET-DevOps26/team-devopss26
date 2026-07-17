@@ -10,6 +10,9 @@ import {
   deleteChecklistItem,
 } from '#/services/checklist/checklists/checklists';
 
+/** Cache key factory.
+ * `all` → root key. `lists()` → checklist list. `list(filters)` → scoped view (reserved).
+ */
 export const checklistKeys = {
   all: ['checklists'] as const,
   lists: () => [...checklistKeys.all, 'list'] as const,
@@ -17,6 +20,9 @@ export const checklistKeys = {
 };
 
 
+/** Pre-configured query options for fetching all checklists.
+ * Guard clause defaults non-array response to empty array. 30s staleTime.
+ */
 export const checklistQueries = {
   all: () =>
     queryOptions({
@@ -29,6 +35,11 @@ export const checklistQueries = {
     }),
 };
 
+/** Mutation hook: create a new checklist. No optimistic update.
+ * Invalidates `checklistKeys.lists()` on success.
+ *
+ * @param title - Display name for the new checklist
+ */
 export function useCreateChecklist() {
   const queryClient = useQueryClient();
 
@@ -48,6 +59,12 @@ export function useCreateChecklist() {
   });
 }
 
+/** Mutation hook: rename an existing checklist. No optimistic update.
+ * Invalidates `checklistKeys.lists()` on success.
+ *
+ * @param id - Checklist ID to update
+ * @param title - New display name for the checklist
+ */
 export function useUpdateChecklist() {
   const queryClient = useQueryClient();
 
@@ -66,6 +83,11 @@ export function useUpdateChecklist() {
   });
 }
 
+/** Mutation hook: delete a checklist (server cascades to items). No optimistic removal.
+ * Invalidates `checklistKeys.lists()` on success.
+ *
+ * @param id - Checklist ID to delete
+ */
 export function useDeleteChecklist() {
   const queryClient = useQueryClient();
 
@@ -83,6 +105,12 @@ export function useDeleteChecklist() {
   });
 }
 
+/** Mutation hook: add a new item to a checklist.
+ * Invalidates `checklistKeys.lists()` on success.
+ *
+ * @param checklistId - Parent checklist ID
+ * @param text - Item description text
+ */
 export function useAddChecklistItem() {
   const queryClient = useQueryClient();
 
@@ -101,6 +129,15 @@ export function useAddChecklistItem() {
   });
 }
 
+/** Mutation hook: toggle completion or edit text of a checklist item.
+ * Both params optional — send only the field being updated. No success toast
+ * (avoids spam when toggling many items). Invalidates `checklistKeys.lists()` on success.
+ *
+ * @param checklistId - Parent checklist ID
+ * @param itemId - Item ID to update
+ * @param completed - New completion state (omit if not changing)
+ * @param text - New item text (omit if not changing)
+ */
 export function useUpdateChecklistItem() {
   const queryClient = useQueryClient();
 
@@ -118,6 +155,12 @@ export function useUpdateChecklistItem() {
   });
 }
 
+/** Mutation hook: delete a single item from a checklist. No cascade.
+ * Invalidates `checklistKeys.lists()` on success.
+ *
+ * @param checklistId - Parent checklist ID
+ * @param itemId - Item ID to remove
+ */
 export function useDeleteChecklistItem() {
   const queryClient = useQueryClient();
 

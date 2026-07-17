@@ -16,6 +16,11 @@ import java.util.Optional;
 import static de.tum.devopss26.calendarservice.exception.IllegalCalendarEventAccessException.IllegalAccessPair;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Every operation that targets a specific event uses {@link #getEventEntity} to
+ * simultaneously assert existence and ownership, keeping access control consistent
+ * across all service methods.
+ */
 @Service
 @RequiredArgsConstructor
 class CalendarEventServiceImpl implements CalendarEventService {
@@ -23,6 +28,13 @@ class CalendarEventServiceImpl implements CalendarEventService {
     private final CalendarEventRepository repository;
     private final CalendarEventMapper mapper;
 
+    /**
+     * Creates a new calendar event and persists it.
+     *
+     * @param request the event creation payload
+     * @param userId  the ID of the authenticated user who will own the event
+     * @return the created event response with assigned ID and timestamps
+     */
     @Transactional
     @Override
     public CreateCalendarEventResponse createEvent(CreateCalendarEventRequest request, long userId) {
@@ -31,6 +43,13 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toCreateResponse(event);
     }
 
+    /**
+     * Retrieves all events belonging to the given user.
+     * <p>No ownership check is needed here because the query filters by userId at the database level.</p>
+     *
+     * @param userId the ID of the user whose events to retrieve
+     * @return a list response containing all events owned by the user
+     */
     @Transactional(readOnly = true)
     @Override
     public ListCalendarEventResponse getEvents(long userId) {
@@ -43,6 +62,13 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toListResponse(events);
     }
 
+    /**
+     * Existence and ownership are checked together so callers never need to handle
+     * these concerns separately.
+     *
+     * @throws CalendarEventNotFoundException      if no event exists with the given ID
+     * @throws IllegalCalendarEventAccessException if the event belongs to a different user
+     */
     private @NonNull CalendarEvent getEventEntity(long userId, long eventId) {
         Optional<CalendarEvent> opt = repository.findById(eventId);
         if (opt.isEmpty()) {
@@ -57,6 +83,15 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return event;
     }
 
+    /**
+     * Retrieves a single event by ID after verifying the requesting user owns it.
+     *
+     * @param userId  the ID of the authenticated user
+     * @param eventId the ID of the event to retrieve
+     * @return the event response with full details
+     * @throws CalendarEventNotFoundException      if no event exists with the given ID
+     * @throws IllegalCalendarEventAccessException if the event belongs to a different user
+     */
     @Transactional(readOnly = true)
     @Override
     public GetCalendarEventResponse getEvent(long userId, long eventId) {
@@ -65,6 +100,24 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toGetResponse(event);
     }
 
+    /**
+     * Only non-null fields in {@code diff} are applied to the persisted entity; null
+     * fields are left unchanged. This allows clients to send only the fields they
+     * want to modify without first fetching the full current state.
+     *
+     * <p><strong>Why partial update?</strong> A full replacement would force every
+     * client to reconstruct the entire event object, including fields they may not
+     * have readily available. By treating null as "leave as-is", callers can issue
+     * minimal patches (e.g., a single field change) and the service remains idempotent
+     * for unchanged fields.
+     *
+     * @param userId  the ID of the authenticated user
+     * @param eventId the ID of the event to update
+     * @param diff    the patch containing only the fields to change (null fields are ignored)
+     * @return the updated event response
+     * @throws CalendarEventNotFoundException      if no event exists with the given ID
+     * @throws IllegalCalendarEventAccessException if the event belongs to a different user
+     */
     @Transactional
     @Override
     public UpdateCalendarEventResponse updateEvent(long userId, long eventId,
@@ -97,6 +150,14 @@ class CalendarEventServiceImpl implements CalendarEventService {
         return mapper.toUpdateResponse(event);
     }
 
+    /**
+     * Deletes an event by ID after verifying the requesting user owns it.
+     *
+     * @param userId  the ID of the authenticated user
+     * @param eventId the ID of the event to delete
+     * @throws CalendarEventNotFoundException      if no event exists with the given ID
+     * @throws IllegalCalendarEventAccessException if the event belongs to a different user
+     */
     @Transactional
     @Override
     public void deleteEvent(long userId, long eventId) {

@@ -4,8 +4,14 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "src/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
+/**
+ * Root component. Compose with SelectTrigger, SelectContent, SelectItem, etc.
+ */
 const Select = SelectPrimitive.Root
 
+/**
+ * Wraps a set of SelectItem components under an optional group label.
+ */
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
     <SelectPrimitive.Group
@@ -16,6 +22,9 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   )
 }
 
+/**
+ * Displays the currently selected item's text.
+ */
 function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
   return (
     <SelectPrimitive.Value
@@ -26,6 +35,10 @@ function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
   )
 }
 
+/**
+ * Visible button that opens the select popup. Supports two sizes (`sm` / `default`)
+ * via the `data-size` attribute.
+ */
 function SelectTrigger({
   className,
   size = "default",
@@ -54,6 +67,9 @@ function SelectTrigger({
   )
 }
 
+/**
+ * Dropdown popup portaled to document root. Configurable side, alignment, and offset.
+ */
 function SelectContent({
   className,
   children,
@@ -93,6 +109,9 @@ function SelectContent({
   )
 }
 
+/**
+ * Group label inside SelectGroup.
+ */
 function SelectLabel({
   className,
   ...props
@@ -106,6 +125,9 @@ function SelectLabel({
   )
 }
 
+/**
+ * Individual option within the select popup. Shows checkmark when selected.
+ */
 function SelectItem({
   className,
   children,
@@ -134,6 +156,9 @@ function SelectItem({
   )
 }
 
+/**
+ * Horizontal divider between option groups.
+ */
 function SelectSeparator({
   className,
   ...props
@@ -147,6 +172,9 @@ function SelectSeparator({
   )
 }
 
+/**
+ * Chevron-up indicator at the top of the popup when the option list is scrollable.
+ */
 function SelectScrollUpButton({
   className,
   ...props
@@ -166,6 +194,9 @@ function SelectScrollUpButton({
   )
 }
 
+/**
+ * Chevron-down indicator at the bottom of the popup when the option list is scrollable.
+ */
 function SelectScrollDownButton({
   className,
   ...props

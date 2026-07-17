@@ -12,11 +12,19 @@ interface RouterContext {
   queryClient: QueryClient;
 }
 
+/**
+ * Root application shell. Wraps pages in Outlet with TanStack Devtools.
+ * 404 handling via built‑in `notFoundComponent`. Exposes QueryClient
+ * to child routes via `createRootRouteWithContext`.
+ */
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
   notFoundComponent: NotFoundPage,
 });
 
+/**
+ * Top-level Outlet with TanStack Devtools at bottom-right.
+ */
 function RootComponent() {
   return (
     <>
@@ -36,6 +44,10 @@ function RootComponent() {
   );
 }
 
+/**
+ * Catch-all 404 page. Also handles cases where `beforeLoad` redirect does
+ * not apply and the URL is genuinely unknown.
+ */
 function NotFoundPage() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">

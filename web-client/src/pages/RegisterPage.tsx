@@ -8,6 +8,11 @@ import { Spinner } from 'src/components/ui/spinner';
 import { registerUser } from 'src/services/users/user-authentication/user-authentication';
 import type { RegisterUserRequest } from 'src/types/users';
 
+/**
+ * Registration form with client-side validation. 409 → "Username already taken".
+ * On success, redirect to `/login` after 1.5s delay. All inputs disabled
+ * during loading.
+ */
 export function RegisterPage() {
   const router = useRouter();
 
@@ -23,6 +28,11 @@ export function RegisterPage() {
   }>({});
   const [loading, setLoading] = useState(false);
 
+/**
+ * Client-side validation: username ≥3 chars, password ≥6 chars, confirm must match.
+ *
+ * @returns `true` when all fields pass validation, `false` otherwise.
+ */
   function validate(): boolean {
     const next: { username?: string; password?: string; confirmPassword?: string } = {};
 
@@ -39,6 +49,14 @@ export function RegisterPage() {
     return Object.keys(next).length === 0;
   }
 
+/**
+ * Validates and sends registration request. On success shows banner and
+ * navigates to `/login` after 1500ms. On 409 → "Username already taken".
+ *
+ * **Known limitation:** 1.5s redirect delay does not cancel on unmount.
+ *
+ * @param e - The form submission event (prevents default behaviour).
+ */
   async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!validate()) return;

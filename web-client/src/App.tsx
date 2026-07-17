@@ -8,6 +8,11 @@ import { useAuthStore } from './stores/authStore';
 
 const router = getRouter();
 
+/**
+ * Root component: QueryClientProvider → Toaster → RouterProvider.
+ * On mount, calls `validateToken` to check persisted auth session validity.
+ * Router is lazily created by `getRouter()` and cached.
+ */
 function App() {
   const validateToken = useAuthStore((s) => s.validateToken);
 

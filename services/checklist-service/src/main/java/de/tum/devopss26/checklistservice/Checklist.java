@@ -6,6 +6,9 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Data class representing a checklist DTO used in sample/test data.
+ */
 @Getter
 @Setter
 public class Checklist {

@@ -23,13 +23,23 @@ import {
 } from "src/components/ui/tooltip"
 import { PanelLeftIcon } from "lucide-react"
 
+/** Cookie key used to persist sidebar open/closed state across sessions. */
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
+/** Cookie lifetime in seconds (7 days). */
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+/** Desktop sidebar width in its expanded state. */
 const SIDEBAR_WIDTH = "16rem"
+/** Mobile sidebar sheet width. */
 const SIDEBAR_WIDTH_MOBILE = "18rem"
+/** Collapsed sidebar width (icon-only mode). */
 const SIDEBAR_WIDTH_ICON = "3rem"
+/** Keyboard shortcut key (used with Cmd/Ctrl) to toggle sidebar. */
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
+/**
+ * Shape of the Sidebar context value, provided by SidebarProvider.
+ * Tracks both desktop (open/closed) and mobile (sheet) states.
+ */
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
   open: boolean
@@ -42,6 +52,10 @@ type SidebarContextProps = {
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
 
+/**
+ * Retrieves the current sidebar context. Must be called within SidebarProvider.
+ * Throws if used outside provider.
+ */
 function useSidebar() {
   const context = React.useContext(SidebarContext)
   if (!context) {
@@ -51,6 +65,13 @@ function useSidebar() {
   return context
 }
 
+/**
+ * Root wrapper managing sidebar open/closed state. Persists state in a cookie
+ * for 7 days. Registers global keyboard shortcut (Cmd/Ctrl+B) to toggle.
+ * Exposes CSS custom props `--sidebar-width` and `--sidebar-width-icon`.
+ *
+ * Controlled: pass `open` and `onOpenChange`. Uncontrolled: uses `defaultOpen`.
+ */
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -147,6 +168,31 @@ function SidebarProvider({
   )
 }
 
+/**
+ * Sidebar — the main sidebar panel with three variant and collapsible modes.
+ *
+ * **Variants:**
+ * - `sidebar` — Default sidebar with a border separator.
+ * - `floating` — Floating card with shadow and rounded corners.
+ * - `inset` — Inset panel with padding; content area adjusts via peer selector.
+ *
+ * **Collapsible modes:**
+ * - `offcanvas` — Sidebar slides off-screen when collapsed; revealed via trigger.
+ * - `icon` — Collapses to icon-only width (`--sidebar-width-icon`).
+ * - `none` — Always expanded; cannot be collapsed.
+ *
+ * On mobile, the sidebar renders as a Sheet overlay regardless of variant.
+ * Desktop layout uses a hidden spacer (`sidebar-gap`) that drives the main
+ * content area offset via CSS `transition-[width]`.
+ *
+ * @example
+ * <Sidebar collapsible="icon" variant="floating">
+ *   <SidebarHeader />
+ *   <SidebarContent>
+ *     <SidebarGroup />
+ *   </SidebarContent>
+ * </Sidebar>
+ */
 function Sidebar({
   side = "left",
   variant = "sidebar",
@@ -249,6 +295,10 @@ function Sidebar({
   )
 }
 
+/**
+ * Button that toggles the sidebar open/closed. For mobile, toggles the sheet;
+ * for desktop, toggles the collapsible state.
+ */
 function SidebarTrigger({
   className,
   onClick,
@@ -275,6 +325,10 @@ function SidebarTrigger({
   )
 }
 
+/**
+ * Narrow vertical strip at the sidebar edge for toggling state via click.
+ * Uses hover highlight and cursor changes. Hidden on touch devices below sm.
+ */
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   const { toggleSidebar } = useSidebar()
 
@@ -300,6 +354,10 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   )
 }
 
+/**
+ * Main content area adjacent to the sidebar. Responds to collapsible state
+ * via peer selectors. Applies animated margins when variant is `inset`.
+ */
 function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
   return (
     <main
@@ -313,6 +371,9 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
   )
 }
 
+/**
+ * Search/filter input styled for the sidebar.
+ */
 function SidebarInput({
   className,
   ...props
@@ -327,6 +388,9 @@ function SidebarInput({
   )
 }
 
+/**
+ * Top section of the sidebar, for branding or the sidebar trigger.
+ */
 function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -338,6 +402,9 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Bottom section of the sidebar, for user avatar, settings, or logout.
+ */
 function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -349,6 +416,9 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Horizontal divider within the sidebar content area.
+ */
 function SidebarSeparator({
   className,
   ...props
@@ -363,6 +433,9 @@ function SidebarSeparator({
   )
 }
 
+/**
+ * Scrollable middle area. Hides overflow in icon-only collapsed mode.
+ */
 function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -377,6 +450,9 @@ function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Section wrapper within the sidebar content. Contains label, actions, and menu items.
+ */
 function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -388,6 +464,9 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Section heading. Fades out in icon-only collapsed mode.
+ */
 function SidebarGroupLabel({
   className,
   render,
@@ -412,6 +491,9 @@ function SidebarGroupLabel({
   })
 }
 
+/**
+ * Action button at the top-right of a group. Hidden in icon-only collapsed mode.
+ */
 function SidebarGroupAction({
   className,
   render,
@@ -436,6 +518,9 @@ function SidebarGroupAction({
   })
 }
 
+/**
+ * Container for the main content of a SidebarGroup.
+ */
 function SidebarGroupContent({
   className,
   ...props
@@ -450,6 +535,9 @@ function SidebarGroupContent({
   )
 }
 
+/**
+ * Unordered list of navigation items within a sidebar group.
+ */
 function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
   return (
     <ul
@@ -461,6 +549,9 @@ function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
   )
 }
 
+/**
+ * Single navigation item (list element). Group targeting via `group/menu-item`.
+ */
 function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
   return (
     <li
@@ -472,6 +563,10 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
   )
 }
 
+/**
+ * @variant variant - default (accent hover) or outline (bordered)
+ * @variant size - default (h-8), sm (h-7), lg (h-12, collapses to p-0 in icon mode)
+ */
 const sidebarMenuButtonVariants = cva(
   "peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
   {
@@ -494,6 +589,11 @@ const sidebarMenuButtonVariants = cva(
   }
 )
 
+/**
+ * Navigation link/button. In icon-collapsed mode, shrinks to a square with
+ * an optional tooltip on the right side via the `tooltip` prop.
+ * Polymorphic via `useRender`.
+ */
 function SidebarMenuButton({
   render,
   isActive = false,
@@ -548,6 +648,10 @@ function SidebarMenuButton({
   )
 }
 
+/**
+ * Secondary action button within a menu item. When `showOnHover` is true,
+ * hidden (opacity-0) until the menu item is hovered. Hidden in collapsed mode.
+ */
 function SidebarMenuAction({
   className,
   render,
@@ -578,6 +682,9 @@ function SidebarMenuAction({
   })
 }
 
+/**
+ * Numeric or short-text indicator (e.g., notification count). Hidden in collapsed mode.
+ */
 function SidebarMenuBadge({
   className,
   ...props
@@ -595,6 +702,9 @@ function SidebarMenuBadge({
   )
 }
 
+/**
+ * Loading placeholder with randomized-width text skeleton (50–90% width).
+ */
 function SidebarMenuSkeleton({
   className,
   showIcon = false,
@@ -633,6 +743,9 @@ function SidebarMenuSkeleton({
   )
 }
 
+/**
+ * Nested sub-menu list for hierarchical navigation. Hidden in collapsed mode.
+ */
 function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
   return (
     <ul
@@ -647,6 +760,9 @@ function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
   )
 }
 
+/**
+ * List item wrapper within a SidebarMenuSub list.
+ */
 function SidebarMenuSubItem({
   className,
   ...props
@@ -661,6 +777,10 @@ function SidebarMenuSubItem({
   )
 }
 
+/**
+ * Sub-navigation link. Supports two sizes (`sm`, `md`) and active state.
+ * Hidden in collapsed mode.
+ */
 function SidebarMenuSubButton({
   render,
   size = "md",

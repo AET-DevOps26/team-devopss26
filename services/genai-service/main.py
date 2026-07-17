@@ -1,3 +1,10 @@
+"""GenAI chatbot service with RAG across user notes, calendar events, and checklists.
+
+Provides a FastAPI application with LangChain-powered LLM chains (Gemini, Groq,
+Mistral, Cohere), Weaviate vector search for retrieval-augmented generation, and
+JWT-authenticated CRUD endpoints for chat conversations.
+"""
+
 import asyncio
 import base64
 import logging
@@ -68,6 +75,10 @@ class Base(DeclarativeBase):
 
 # ── ORM models ────────────────────────────────────────────────────────────────
 class ChatConversation(Base):
+    """Each row represents a single chat session owned by a user, with an optional
+    title and a one-to-many relationship to :class:`ChatMessage`. Conversations
+    cascade-delete their messages when removed.
+    """
     __tablename__ = "chat_conversation"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -80,6 +91,10 @@ class ChatConversation(Base):
 
 
 class ChatMessage(Base):
+    """Represents a single turn (``USER`` or ``AGENT``) within a conversation.
+    The ``role`` column is constrained to ``'USER'`` or ``'AGENT'`` by a CHECK
+    constraint. Each message belongs to exactly one :class:`ChatConversation`.
+    """
     __tablename__ = "chat_message"
     __table_args__ = (CheckConstraint("role IN ('USER', 'AGENT')", name="chk_chat_message_role"),)
 
@@ -121,6 +136,11 @@ _PUBLIC_PATHS = {"/api/v1/health", "/api/genai/api/v1/health", "/metrics", "/api
 
 
 async def _fetch_public_key_locked():
+    """Called under ``_public_key_lock``. Stores the deserialised key and a
+    monotonic timestamp so the cache layer can enforce a minimum refetch
+    interval. On any network or parsing failure the cached key is set to
+    ``None``, forcing a retry on the next authentication attempt.
+    """
     global _public_key, _last_fetch_time
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -135,6 +155,10 @@ async def _fetch_public_key_locked():
 
 
 async def _get_or_fetch_public_key():
+    """Uses a double-checked locking pattern guarded by ``_public_key_lock`` so
+    that concurrent requests block only once while the key is being fetched
+    from user-service.
+    """
     if _public_key is not None:
         return _public_key
     async with _public_key_lock:
@@ -144,6 +168,12 @@ async def _get_or_fetch_public_key():
 
 
 async def _try_clear_cached_key_for_refetch() -> bool:
+    """Rate-limits refetch attempts to one per ``_MIN_REFETCH_INTERVAL_S`` seconds,
+    preventing a thundering-herd against user-service during key rotation.
+
+    Returns ``True`` when the key was cleared (the caller should retry
+    authentication), ``False`` when the interval has not yet passed.
+    """
     global _public_key
     async with _public_key_lock:
         if time.monotonic() - _last_fetch_time > _MIN_REFETCH_INTERVAL_S:
@@ -157,6 +187,11 @@ def _decode(token: str, key) -> dict:
 
 
 async def _authenticate(token: str) -> int:
+    """On :class:`jwt.InvalidSignatureError` the cached key is invalidated and one
+    refetch attempt is made — this handles key rotation when user-service
+    restarts with a new key pair. Other token errors (expired, malformed) are
+    raised immediately.
+    """
     active_key = await _get_or_fetch_public_key()
     if active_key is None:
         raise HTTPException(status_code=500, detail="Token validation service unavailable (public key not fetched)")
@@ -190,6 +225,11 @@ async def _authenticate(token: str) -> int:
 
 
 def _require_user_id() -> int:
+    """The value is set by :func:`_auth_middleware` into a :class:`ContextVar` —
+    this pattern is used instead of FastAPI ``Depends()`` because the generated
+    endpoint signatures are fixed by the OpenAPI spec and cannot accept extra
+    parameters.
+    """
     user_id = _current_user_id.get()
     if user_id is None:
         raise HTTPException(status_code=500, detail="User identity not resolved")
@@ -197,6 +237,10 @@ def _require_user_id() -> int:
 
 
 def _require_auth_header() -> str:
+    """Downstream services (note, calendar, checklist) validate the JWT themselves and
+    need the raw bearer token rather than the derived user id. The header is
+    stashed by :func:`_auth_middleware` in a :class:`ContextVar`.
+    """
     auth_header = _current_auth_header.get()
     if auth_header is None:
         raise HTTPException(status_code=500, detail="Auth header not resolved")
@@ -210,6 +254,14 @@ _embedding_model: Optional[GoogleGenerativeAIEmbeddings] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """FastAPI lifespan context manager for database, Weaviate, and embeddings.
+
+    Creates database tables if they don't exist, initialises the Weaviate
+    custom connection (HTTP + gRPC), and the Google Generative AI embedding
+    model on startup. On shutdown the Weaviate client is closed. All
+    operations are best-effort: if Weaviate is unavailable the service
+    degrades gracefully (RAG returns chunks directly).
+    """
     global _weaviate_client, _embedding_model
 
     # Create database tables if they don't exist
@@ -251,6 +303,13 @@ async def lifespan(app: FastAPI):
 
 
 async def _fetch_user_data() -> list[str]:
+    """Fetch user notes, calendar events, and checklists in parallel from their
+    respective microservices. All three services authenticate via JWT (the
+    original bearer token is forwarded). Individual service failures are
+    logged and silently skipped — only successful (HTTP 200) responses
+    contribute chunks. Responses are flattened into a list of formatted text
+    chunks suitable for RAG embedding.
+    """
     note_url = os.environ.get("NOTE_SERVICE_URL", "http://note-service-app:8005")
     calendar_url = os.environ.get("CALENDAR_SERVICE_URL", "http://calendar-service-app:8004")
     checklist_url = os.environ.get("CHECKLIST_SERVICE_URL", "http://checklist-service-app:8003")
@@ -307,6 +366,15 @@ async def _fetch_user_data() -> list[str]:
 
 
 def _rag_sync(query: str, chunks: list[str], top_k: int) -> str:
+    """Synchronous vector similarity search over user data chunks.
+
+    Embeds both the chunks and the query using the global embedding model,
+    creates a temporary Weaviate collection (``Session{uuid}``), inserts
+    chunks with their vectors, runs a ``near_vector`` search for the top-``k``
+    results, and cleans up the collection in a ``finally`` block. This
+    synchronous design lets it be offloaded to a thread pool via
+    :func:`_rag_retrieve`.
+    """
     all_vecs = _embedding_model.embed_documents(chunks + [query])
     chunk_vecs = all_vecs[:-1]
     query_vec = all_vecs[-1]
@@ -331,6 +399,11 @@ def _rag_sync(query: str, chunks: list[str], top_k: int) -> str:
 
 
 async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 5) -> str:
+    """Offloads the blocking embedding and Weaviate calls to avoid stalling the
+    asyncio event loop. When Weaviate or the embedding model is unavailable,
+    falls back to returning raw chunks directly (no vector search). Returns
+    an empty string when no chunks are available at all.
+    """
     if not chunks:
         return ""
     if _weaviate_client is None or _embedding_model is None:
@@ -353,6 +426,19 @@ _prompt = ChatPromptTemplate.from_messages([
 
 
 def _build_chain(model: str):
+    """Build a LangChain ``Runnable`` (prompt | LLM | output parser) for the given model.
+
+    Supported models:
+    - ``groq-llama`` → ChatGroq (llama-3.1-8b-instant)
+    - ``mistral`` → ChatMistralAI (mistral-small-latest)
+    - ``cohere`` → ChatCohere (command-r)
+    - ``local`` → ChatOllama (llama3.1 via OLLAMA_BASE_URL)
+    - anything else  → ChatGoogleGenerativeAI (gemini-3.1-flash-lite) as fallback
+
+    The prompt template injects RAG-retrieved context before the user's message.
+    Raises :class:`ValueError` if the required API key for the chosen model is
+    not set in the environment.
+    """
     if model == "groq-llama":
         key = os.environ.get("GROQ_API_KEY")
         if not key:
@@ -409,6 +495,13 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.middleware("http")
 async def _auth_middleware(request: Request, call_next):
+    """Extracts the ``Authorization`` bearer token, resolves the user id via
+    :func:`_authenticate`, and stashes both the user id and the raw auth header
+    into :class:`ContextVar`\\ s for the duration of the request. This approach
+    works around the constraint that OpenAPI-generated endpoint signatures cannot
+    accept FastAPI ``Depends()`` parameters. On authentication failure a 401 JSON
+    response is returned immediately without calling the downstream handler.
+    """
     # request.url.path incorporates root_path (for building external URLs), but
     # routing matches on the raw ASGI scope path, so compare against that instead.
     if request.scope["path"] in _PUBLIC_PATHS:
@@ -439,6 +532,8 @@ def _now_ms() -> int:
 
 
 def _to_conversation_model(conversation: ChatConversation) -> Conversation:
+    """Requires eagerly loaded messages for serialisation.
+    """
     return Conversation(
         id=conversation.id,
         user_id=conversation.user_id,
@@ -456,10 +551,22 @@ def _to_conversation_model(conversation: ChatConversation) -> Conversation:
 # generated OpenAPI client (services/genai-service/generated/), not from hand-written
 # routes here, so the implementation can't silently drift from api/genai-service.yaml.
 class GenAIApiImpl(BaseGenAIApi):
+    """Registered automatically via ``__init_subclass__`` when the class is defined.
+    Each method corresponds to an endpoint in the ``api/genai-service.yaml`` spec
+    and enforces ownership checks, persists conversation state, and orchestrates
+    the RAG + LLM pipeline.
+    """
     async def health(self) -> Health200Response:
+        """Listed in ``_PUBLIC_PATHS`` and skipped by the auth middleware.
+        """
         return Health200Response(status="ok")
 
     async def create_conversation(self) -> Conversation:
+        """Create a new empty conversation for the authenticated user.
+
+        The conversation has no title initially; the title is set on the first
+        chat message. The returned object includes the (empty) message list.
+        """
         user_id = _require_user_id()
         async with _sessions() as db:
             conversation = ChatConversation(user_id=user_id)
@@ -473,6 +580,9 @@ class GenAIApiImpl(BaseGenAIApi):
             return _to_conversation_model(result.scalar_one())
 
     async def get_conversation(self, conversationId: int) -> Conversation:
+        """Ownership is enforced: raises 403 if the conversation belongs to another
+        user, or 404 if it does not exist.
+        """
         user_id = _require_user_id()
         async with _sessions() as db:
             result = await db.execute(
@@ -488,6 +598,9 @@ class GenAIApiImpl(BaseGenAIApi):
             return _to_conversation_model(conversation)
 
     async def delete_conversation(self, conversationId: int) -> DeleteConversation200Response:
+        """Ownership is enforced identically to :meth:`get_conversation`. Returns a
+        confirmation message on success.
+        """
         user_id = _require_user_id()
         async with _sessions() as db:
             result = await db.execute(select(ChatConversation).where(ChatConversation.id == conversationId))
@@ -501,6 +614,27 @@ class GenAIApiImpl(BaseGenAIApi):
             return DeleteConversation200Response(message="Conversation deleted")
 
     async def chat(self, chat_request: ChatRequest) -> ChatResponse:
+        """Process a chat message within an existing or new conversation.
+
+        If ``conversation_id`` is provided the message is appended to that
+        conversation (ownership is checked); otherwise a new conversation is
+        created with the message text as its title. The pipeline then:
+
+        1. Persists the user message immediately.
+        2. Fetches the user's notes, calendar events, and checklists in parallel.
+        3. Runs RAG vector search over the fetched data.
+        4. Invokes the selected LLM chain with the RAG context and the user message.
+        5. Persists the agent response and commits the transaction.
+
+        RAG failures are silently caught so the LLM can still respond without
+        retrieved context. The response includes both the generated text and
+        the (possibly new) conversation id.
+
+        Raises:
+            HTTPException 400: If the message is empty after stripping or contains NUL bytes.
+            HTTPException 404: If the specified conversation does not exist.
+            HTTPException 403: If the conversation belongs to another user.
+        """
         user_id = _require_user_id()
         # Reject blank messages and messages containing NUL (\x00): PostgreSQL text
         # columns can't store null bytes, so they'd otherwise blow up the INSERT below.

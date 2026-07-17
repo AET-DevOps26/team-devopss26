@@ -183,6 +183,10 @@ function QuickActions() {
 
 // ── Events Widget ──────────────────────────────────────────────
 
+/**
+ * Format an ISO date string (YYYY-MM-DD) for display in the events widget.
+ * Returns a human-readable date like "Jul 17, 2026".
+ */
 function formatDateStr(isoDate: string | undefined): string {
   if (!isoDate) return '';
   const d = new Date(isoDate + 'T00:00:00');
@@ -190,6 +194,10 @@ function formatDateStr(isoDate: string | undefined): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+/**
+ * Upcoming events widget. Shows a list of upcoming events with navigation
+ * to the calendar. Empty state prompts the user to create an event.
+ */
 function EventsWidget({ events }: { events: { id: number; title: string; time: string; dateStr?: string }[] }) {
   const router = useRouter();
   return (
@@ -243,6 +251,10 @@ interface RecentItem {
   createdAt: string;
 }
 
+/**
+ * Recent notes widget. Shows a combined list of recent notes and checklists
+ * with navigation to the notes detail view. Empty state prompts creation.
+ */
 function NotesWidget({ items }: { items: RecentItem[] }) {
   const router = useRouter();
 
@@ -295,6 +307,10 @@ function NotesWidget({ items }: { items: RecentItem[] }) {
 
 // ── Helpers ────────────────────────────────────────────────────
 
+/**
+ * Extract a localized time string from an ISO 8601 datetime.
+ * Returns 12-hour format like "2:30 PM". Returns empty string on invalid input.
+ */
 function getTimeStr(isoString: string | undefined): string {
   if (!isoString) return '';
   try {
@@ -306,6 +322,10 @@ function getTimeStr(isoString: string | undefined): string {
   }
 }
 
+/**
+ * Check whether an ISO 8601 datetime string represents a future or
+ * today's date (compared against midnight of the current day).
+ */
 function isUpcoming(isoString: string | undefined): boolean {
   if (!isoString) return false;
   try {
@@ -320,6 +340,14 @@ function isUpcoming(isoString: string | undefined): boolean {
 
 // ── Page component ─────────────────────────────────────────────
 
+/**
+ * Dashboard home page. Composes greeting, stat cards, quick actions,
+ * upcoming events widget, and recent notes widget — all driven by
+ * server-side data via TanStack Query suspense queries.
+ *
+ * Data is prefetched in the route `loader` so all three queries are
+ * guaranteed to have data at render time.
+ */
 export function Home() {
   const { data: apiNotes } = useSuspenseQuery(notesQueries.all());
   const { data: apiChecklists } = useSuspenseQuery(checklistQueries.all());

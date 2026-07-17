@@ -5,6 +5,11 @@ import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 
 import { cn } from "src/lib/utils"
 
+/**
+ * Avatar passes `data-size` to child components (AvatarImage, AvatarFallback,
+ * AvatarBadge) for responsive sizing. Includes an `after:` pseudo-element
+ * border overlay for consistent edge rendering.
+ */
 function Avatar({
   className,
   size = "default",
@@ -25,6 +30,9 @@ function Avatar({
   )
 }
 
+/**
+ * Falls back to AvatarFallback when the image fails to load or is still pending.
+ */
 function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return (
     <AvatarPrimitive.Image
@@ -38,6 +46,9 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   )
 }
 
+/**
+ * Automatically sized via the parent Avatar's `data-[size]` attribute.
+ */
 function AvatarFallback({
   className,
   ...props
@@ -54,6 +65,10 @@ function AvatarFallback({
   )
 }
 
+/**
+ * Status indicator overlaid on the bottom-right corner of an Avatar.
+ * Scales with the parent Avatar's `data-size` attribute.
+ */
 function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
@@ -70,6 +85,10 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
   )
 }
 
+/**
+ * Uses negative horizontal spacing and `*:data-[slot=avatar]:ring-*` selectors
+ * for a clean stacked appearance.
+ */
 function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -83,6 +102,10 @@ function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * Remaining-count badge at the end of an avatar stack (e.g. "+3").
+ * Adjusts size based on the parent AvatarGroup's `data-size`.
+ */
 function AvatarGroupCount({
   className,
   ...props

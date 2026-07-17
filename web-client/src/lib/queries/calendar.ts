@@ -17,12 +17,18 @@ import type {
 import type { CalendarFormEvent } from '../utils/calendar';
 import { toApiEvent } from '../utils/calendar';
 
+/** Cache key factory.
+ * `all` → root key. `events()` → event list. `event(id)` → single event detail (reserved).
+ */
 export const calendarKeys = {
   all: ['calendar'] as const,
   events: () => [...calendarKeys.all, 'events'] as const,
   event: (id: number) => [...calendarKeys.events(), id] as const,
 };
 
+/** Pre-configured query options for fetching all calendar events.
+ * 30s staleTime avoids refetching on rapid navigation. Default 5m gcTime applies.
+ */
 export const calendarQueries = {
   all: () =>
     queryOptions({
@@ -35,6 +41,14 @@ export const calendarQueries = {
     }),
 };
 
+/** Mutation hook: create a new calendar event.
+ *
+ * Optimistic update with temporary negative ID (`-Date.now()`). Rolls back on error.
+ * Cancels in-flight queries to avoid race conditions.
+ * Invalidates `calendarKeys.events()` on settle.
+ *
+ * @param form - Form data with title, date (YYYY-MM-DD), start/end time (HH:mm), and optional description
+ */
 export function useCreateEvent() {
   const queryClient = useQueryClient();
 
@@ -83,6 +97,13 @@ export function useCreateEvent() {
   });
 }
 
+/** Mutation hook: update an existing calendar event.
+ *
+ * No optimistic update. Invalidates `calendarKeys.events()` on success.
+ *
+ * @param id - The server-assigned ID of the event to update
+ * @param form - Updated form data (title, date, startTime, endTime, description)
+ */
 export function useUpdateEvent() {
   const queryClient = useQueryClient();
 
@@ -103,6 +124,13 @@ export function useUpdateEvent() {
   });
 }
 
+/** Mutation hook: delete a calendar event.
+ *
+ * Optimistic removal — immediately filters from cache, restores on error.
+ * Invalidates `calendarKeys.events()` on settle.
+ *
+ * @param id - The server-assigned ID of the event to delete
+ */
 export function useDeleteEvent() {
   const queryClient = useQueryClient();
 

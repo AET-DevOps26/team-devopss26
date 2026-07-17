@@ -48,14 +48,29 @@ import type { IdentifiedChecklist as ApiChecklist } from '#/types/checklist';
 
 // ── Types ──────────────────────────────────────────────────────
 
+/** Union of the two supported content types — notes (free text) and checklists (task list). */
 type NoteType = 'note' | 'checklist';
 
+/**
+ * A single item within a checklist.
+ * `id` can be a **number** (persisted via API, used for toggling completion) or a
+ * **string** (locally generated via `crypto.randomUUID()` for items not yet saved).
+ * The form uses this distinction: numeric IDs map to API items, string IDs are new
+ * items that will be created via `addChecklistItem`.
+ */
 interface ChecklistItem {
   id: string | number;
   text: string;
   done: boolean;
 }
 
+/**
+ * Unified display model that merges the API shapes for notes and checklists.
+ * Both types share `id`, `title`, and timestamps, but differ in body content
+ * (a note has `body`, a checklist has `checklist` items). This indirection lets
+ * the list/detail views handle both types polymorphically without runtime type checks
+ * on the API response.
+ */
 interface DisplayNote {
   id: number;
   title: string;
@@ -66,6 +81,13 @@ interface DisplayNote {
   updatedAt: string;
 }
 
+/**
+ * The page supports four mutually exclusive views managed by a single state variable:
+ * - `'list'` — the grid/search/filter overview.
+ * - `'detail'` — full view of a single note or checklist.
+ * - `'create'` — the form to create a new note/checklist.
+ * - `'edit'` — the form to edit an existing note/checklist.
+ */
 type ViewMode = 'list' | 'detail' | 'create' | 'edit';
 
 // ── Search params ──────────────────────────────────────────────
@@ -89,6 +111,12 @@ function NotesPageWithKey() {
   return <NotesPage key={`${search.action ?? ''}-${search.detailId ?? ''}-${search.detailType ?? ''}`} />;
 }
 
+/**
+ * Displays a searchable grid of notes and checklists with full CRUD.
+ *
+ * Data loading: The `loader` prefetches both notes and checklists in parallel
+ * via `ensureQueryData`.
+ */
 export const Route = createFileRoute('/_authenticated/notes/')({
   validateSearch: (input: Record<string, unknown>): NotesSearch => ({
     action: input.action === 'create' ? 'create' : undefined,
@@ -109,6 +137,10 @@ export const Route = createFileRoute('/_authenticated/notes/')({
 
 // ── Helpers ─────────────────────────────────────────────────────
 
+/**
+ * ISO 8601 → human-readable date. Defensively handles null/undefined and
+ * invalid dates by returning input as-is.
+ */
 function formatDate(isoString: string | undefined | null): string {
   if (!isoString) return '';
   try {
@@ -124,6 +156,9 @@ function formatDate(isoString: string | undefined | null): string {
   }
 }
 
+/**
+ * API note → unified `DisplayNote` shape. Notes have no checklist items.
+ */
 function fromApiNote(note: ApiNote): DisplayNote {
   return {
     id: note.id,
@@ -136,6 +171,9 @@ function fromApiNote(note: ApiNote): DisplayNote {
   };
 }
 
+/**
+ * API checklist → unified `DisplayNote` shape. Maps `completed` to `done`.
+ */
 function fromApiChecklist(checklist: ApiChecklist): DisplayNote {
   return {
     id: (checklist as { id?: number }).id ?? 0,
@@ -152,6 +190,10 @@ function fromApiChecklist(checklist: ApiChecklist): DisplayNote {
   };
 }
 
+/**
+ * Blank `DisplayNote` for the create-form initial state.
+ * Uses `id: 0` as sentinel for "unsaved".
+ */
 function emptyDisplayNote(): DisplayNote {
   return {
     id: 0,
@@ -166,6 +208,9 @@ function emptyDisplayNote(): DisplayNote {
 
 // ── Skeleton ────────────────────────────────────────────────────
 
+/**
+ * Loading skeleton mirroring the notes grid layout (toolbar + 6 card placeholders).
+ */
 function NotesSkeleton() {
   return (
     <div className="p-4 sm:p-6 lg:p-8" aria-busy="true" aria-label="Loading notes">
@@ -201,6 +246,10 @@ function NotesSkeleton() {
 
 // ── Error component ────────────────────────────────────────────
 
+/**
+ * Error-state fallback. Since the loader fetches two queries in parallel,
+ * a failure in either surfaces here. Retry resets both error boundaries.
+ */
 function NotesError({ error, reset }: { error: Error; reset: () => void }) {
   const { reset: resetQuery } = useQueryErrorResetBoundary();
 
@@ -223,6 +272,10 @@ function NotesError({ error, reset }: { error: Error; reset: () => void }) {
 
 // ── Sub-components ─────────────────────────────────────────────
 
+/**
+ * Search input, type filter dropdown, and create button. Stateless — state
+ * lives in `NotesPage`.
+ */
 function NotesToolbar({
   search,
   onSearchChange,
@@ -270,6 +323,9 @@ function NotesToolbar({
   );
 }
 
+/**
+ * Card preview. Notes show body excerpt; checklists show completion summary.
+ */
 function NoteCard({ note, onClick }: { note: DisplayNote; onClick: () => void }) {
   const doneCount = note.checklist.filter((i) => i.done).length;
   return (
@@ -298,6 +354,10 @@ function NoteCard({ note, onClick }: { note: DisplayNote; onClick: () => void })
   );
 }
 
+/**
+ * Full detail view. Notes show body text; checklists show progress bar + items.
+ * Actions: Back, Edit, Delete (with confirmation dialog).
+ */
 function NoteDetail({
   note,
   onBack,
@@ -376,6 +436,11 @@ function NoteDetail({
   );
 }
 
+/**
+ * Create / Edit form. Type is locked when editing (cannot convert note ↔ checklist).
+ * New checklist items get `crypto.randomUUID()` string IDs; persisted items have
+ * numeric IDs. Enter in "Add item" input triggers `addItem`.
+ */
 function NoteForm({
   note,
   onSave,
@@ -391,16 +456,19 @@ function NoteForm({
   const [items, setItems] = useState<ChecklistItem[]>(note.checklist);
   const [newItemText, setNewItemText] = useState('');
 
+  /** Add a new checklist item with a local UUID string ID. */
   const addItem = () => {
     if (!newItemText.trim()) return;
     setItems([...items, { id: crypto.randomUUID(), text: newItemText.trim(), done: false }]);
     setNewItemText('');
   };
 
+  /** Toggle a checklist item's done state locally. */
   const toggleItem = (id: string | number) => {
     setItems(items.map((i) => (i.id === id ? { ...i, done: !i.done } : i)));
   };
 
+  /** Remove a checklist item by id (works for both local string ids and persisted numeric ids). */
   const removeItem = (id: string | number) => {
     setItems(items.filter((i) => i.id !== id));
   };
@@ -488,6 +556,15 @@ function NoteForm({
 
 // ── Main page component ────────────────────────────────────────
 
+/**
+ * Manages four views (`list` / `detail` / `create` / `edit`).
+ *
+ * Selected note derivation: `selectedNoteKey` stores type+id pair; `selectedNote`
+ * is derived via `useMemo` from the live list to avoid stale snapshots.
+ *
+ * Checklist save: computes diff between original and form items — numeric IDs
+ * absent from form are deleted, string IDs (from `crypto.randomUUID()`) are created.
+ */
 export function NotesPage() {
   const router = useRouter();
   const routeSearch = useSearch({ from: '/_authenticated/notes/' }) as NotesSearch;
@@ -526,7 +603,12 @@ export function NotesPage() {
   const updateChecklistItem = useUpdateChecklistItem();
   const deleteChecklistItem = useDeleteChecklistItem();
 
-  // Merge notes + checklists into unified display list sorted by createdAt
+  /**
+   * Merge notes and checklists into a unified sorted display list.
+   * Both arrays are mapped through `fromApiNote` / `fromApiChecklist` to the
+   * common `DisplayNote` shape, then sorted ascending by `createdAt`.
+   * Items without a createdAt sort to the end.
+   */
   const displayList = useMemo(() => {
     const notes = apiNotes.map(fromApiNote);
     const checklists = apiChecklists.map(fromApiChecklist);
@@ -537,13 +619,25 @@ export function NotesPage() {
     });
   }, [apiNotes, apiChecklists]);
 
-  // Derive selectedNote from displayList by stored key — automatically stays fresh
-  // after query refetches without needing a useEffect to sync
+  /**
+   * Derive the currently selected note from the live display list by key.
+   *
+   * This pattern avoids storing a stale copy of the note in state: when a
+   * mutation triggers a refetch, `displayList` updates, and this memo
+   * re-derives the selected note with the latest server data. No `useEffect`
+   * synchronization needed.
+   */
   const selectedNote = useMemo(() => {
     if (!selectedNoteKey) return null;
     return displayList.find((n) => n.type === selectedNoteKey.type && n.id === selectedNoteKey.id) ?? null;
   }, [selectedNoteKey, displayList]);
 
+  /**
+   * Client-side search and type filter over the display list.
+   * Search matches against both title and body (case-insensitive).
+   * Type filter is an exact match against `'note'` / `'checklist'` or shows all.
+   * Both filters are applied together — a note must pass both to appear.
+   */
   const filtered = useMemo(() => {
     return displayList.filter((n) => {
       const matchesSearch = search === '' ||
@@ -554,16 +648,22 @@ export function NotesPage() {
     });
   }, [displayList, search, typeFilter]);
 
+  /** Open the create form with a blank note. */
   const handleCreate = () => {
     setEditingNote(emptyDisplayNote());
     setView('create');
   };
 
+/**
+ * Select a note by type+id pair and switch to detail view.
+ * Memoized to avoid unnecessary re-render of cards on keystroke.
+ */
   const handleSelect = useCallback((note: DisplayNote) => {
     setSelectedNoteKey({ type: note.type, id: note.id });
     setView('detail');
   }, []);
 
+  /** Switch to edit view with a copy of the selected note. */
   const handleEdit = () => {
     const note = selectedNote;
     if (note) {
@@ -572,6 +672,13 @@ export function NotesPage() {
     }
   };
 
+  /**
+   * Delete the currently selected note or checklist.
+   * Uses `mutateAsync` (returns a promise) but the `.catch()` is intentionally
+   * empty — error toasts are handled by the mutation hooks' `onError` callbacks.
+   * Navigating back to the list view optimistically before the API confirms deletion
+   * keeps the UI feeling responsive.
+   */
   const handleDelete = () => {
     const note = selectedNote;
     if (!note) return;
@@ -587,6 +694,7 @@ export function NotesPage() {
     promise.catch(() => { /* Error toast handled by hook */ });
   };
 
+  /** Return to the list view and clear the selection. */
   const handleBack = useCallback(() => {
     setView('list');
     setSelectedNoteKey(null);
@@ -596,6 +704,22 @@ export function NotesPage() {
     });
   }, [router]);
 
+  /**
+   * Save (create or update) a note or checklist with all its items.
+   *
+   * **Note save**: Simple create/update via the corresponding mutation hook.
+   * **New checklist**: Creates the checklist first, then batches all `addChecklistItem`
+   * calls in parallel via `Promise.all`.
+   * **Existing checklist update**: Computes a diff against the original items:
+   *   - Items with numeric IDs in the original but absent from the form → deleted.
+   *   - Items with string IDs (local `crypto.randomUUID()` → created via API.
+   *   - The checklist title is updated unconditionally.
+   * This diff-based approach avoids deleting and recreating unchanged items,
+   * preserving their server-side IDs and creation timestamps.
+   *
+   * On success, navigates back to the list view. Errors are swallowed here —
+   * the mutation hooks' `onError` shows a toast.
+   */
   const handleSave = async (note: DisplayNote) => {
     const isNew = !note.id;
 
@@ -680,6 +804,14 @@ export function NotesPage() {
     }
   };
 
+  /**
+   * Toggle a checklist item's completion state via the API.
+   *
+   * Only fires for items with **numeric** IDs (already persisted). Items with
+   * string IDs are local-only and their toggle is handled in `NoteForm` without
+   * an API call. The item's text is included in the mutation payload so the
+   * backend doesn't overwrite it with `null` (the API requires text on update).
+   */
   const handleItemToggle = (itemId: string | number, done: boolean) => {
     if (!selectedNote) return;
     const checklistId = selectedNote.id;

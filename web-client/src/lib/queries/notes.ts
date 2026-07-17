@@ -6,12 +6,18 @@ import {
   updateNote,
   deleteNote,
 } from '#/services/notes/notes/notes';
+/** Cache key factory.
+ * `all` → root key. `lists()` → note list. `list(filters)` → filtered list (reserved).
+ */
 export const notesKeys = {
   all: ['notes'] as const,
   lists: () => [...notesKeys.all, 'list'] as const,
   list: (filters: string) => [...notesKeys.lists(), filters] as const,
 };
 
+/** Pre-configured query options for fetching all notes.
+ * Guard clause defaults non-array response to empty array. 30s staleTime.
+ */
 export const notesQueries = {
   all: () =>
     queryOptions({
@@ -24,6 +30,12 @@ export const notesQueries = {
     }),
 };
 
+/** Mutation hook: create a new note. No optimistic update.
+ * Invalidates `notesKeys.lists()` on success.
+ *
+ * @param title - Note headline
+ * @param content - Note body (supports markdown)
+ */
 export function useCreateNote() {
   const queryClient = useQueryClient();
 
@@ -42,6 +54,13 @@ export function useCreateNote() {
   });
 }
 
+/** Mutation hook: update an existing note. Sends full payload (both fields required).
+ * Invalidates `notesKeys.lists()` on success.
+ *
+ * @param id - Note ID to update
+ * @param title - Updated headline
+ * @param content - Updated body (supports markdown)
+ */
 export function useUpdateNote() {
   const queryClient = useQueryClient();
 
@@ -60,6 +79,11 @@ export function useUpdateNote() {
   });
 }
 
+/** Mutation hook: delete a note. No optimistic removal.
+ * Invalidates `notesKeys.lists()` on success.
+ *
+ * @param id - Note ID to delete
+ */
 export function useDeleteNote() {
   const queryClient = useQueryClient();
 

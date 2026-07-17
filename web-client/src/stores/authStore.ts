@@ -19,6 +19,10 @@ interface JwtPayload {
   [key: string]: unknown;
 }
 
+/** Zustand store: authentication state backed by localStorage persistence.
+ * Persisted: `token`, `userId`, `username`. `isAuthenticated` is re-derived on rehydrate.
+ * Actions: setAuth (decode JWT), clearAuth (logout), validateToken (server-side check).
+ */
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -27,6 +31,11 @@ export const useAuthStore = create<AuthState>()(
       username: null,
       isAuthenticated: false,
 
+      /** Decode JWT and populate auth state from its claims. No signature verification
+       * client-side — that is the server's responsibility.
+       *
+       * @param token - Raw JWT string from the login endpoint
+       */
       setAuth: (token: string) => {
         const decoded = jwtDecode<JwtPayload>(token);
         const userId = decoded.sub ? Number(decoded.sub) : null;
@@ -34,10 +43,14 @@ export const useAuthStore = create<AuthState>()(
         set({ token, userId, username, isAuthenticated: true });
       },
 
+      /** Clear all auth state (logout). Safe to call multiple times. */
       clearAuth: () => {
         set({ token: null, userId: null, username: null, isAuthenticated: false });
       },
 
+      /** Verify current token with the server. Auto-clears auth on non-2xx.
+       * No-ops if no token is set.
+       */
       validateToken: async () => {
         const { token } = get();
         if (!token) return;

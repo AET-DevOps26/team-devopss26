@@ -1,13 +1,17 @@
 import axios, { type AxiosRequestConfig, type AxiosInstance, type AxiosResponse } from 'axios';
 import { useAuthStore } from 'src/stores/authStore';
 
+/** Shared Axios instance. baseURL from VITE_API_URL env var. 30s timeout default. */
 export const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 30_000,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Request interceptor: attach Bearer token from auth store
+/**
+ * Request interceptor: inject Bearer token from auth store. Uses direct store
+ * access (not a hook) — safe outside React components. Skips header if no token.
+ */
 api.interceptors.request.use((config) => {
   const { token } = useAuthStore.getState();
   if (token) {
@@ -16,7 +20,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: clear auth state and redirect to /login on 401 (but not for auth endpoints)
+/**
+ * Global 401 handler: skips auth routes (prevents redirect loops), clears auth
+ * and hard-redirects to `/login` for others. Hard navigation avoids render errors
+ * from stale router state.
+ */
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: unknown) => {
@@ -32,8 +40,15 @@ api.interceptors.response.use(
   },
 );
 
-// Orval mutator: wraps the shared instance with the call signature Orval expects.
-// The second `options` parameter enables per-request overrides (e.g., cancellation signals).
+/** Orval-compatible request wrapper. Second `options` param enables per-request
+ * overrides (e.g., `signal` for cancellation).
+ *
+ * Edge cases: 204 → `undefined`, empty body → `undefined`.
+ *
+ * @param config - Axios request config
+ * @param options - Optional overrides merged into config
+ * @returns Typed response body, or `undefined` for empty responses
+ */
 export const customInstance = <T>(config: AxiosRequestConfig, options?: AxiosRequestConfig): Promise<T> => {
   return api({ ...config, ...options }).then((response: AxiosResponse<T>): T => {
     // No Content responses have no body — return undefined to match void return types

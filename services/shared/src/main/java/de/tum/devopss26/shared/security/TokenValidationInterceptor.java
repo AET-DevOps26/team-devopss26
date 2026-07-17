@@ -23,6 +23,14 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
 
+/**
+ * <b>Caching strategy:</b> The RSA public key is fetched lazily from the user-service and cached
+ * in-memory. If signature verification fails ({@link io.jsonwebtoken.security.SignatureException})
+ * and at least 30&nbsp;s have elapsed since the last fetch, the cache is cleared and the key is
+ * refetched — this self-heals transparently after key rotation or user-service restarts.
+ * <p>On success, {@code userId} (the token subject) and {@code jwtClaims} are injected as request
+ * attributes so downstream handlers can access them without re-parsing the token.
+ */
 @Component
 public class TokenValidationInterceptor implements HandlerInterceptor {
 
@@ -33,6 +41,10 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 	private Instant lastFetchTime = Instant.MIN;
 	private static final Duration MIN_REFETCH_INTERVAL = Duration.ofSeconds(30);
 
+	/**
+	 * The built-in {@link RestClient} uses a 2-second connect/read timeout so a stalled
+	 * user-service does not block request threads.
+	 */
 	public TokenValidationInterceptor(@Value("${user-service.url:http://localhost:8001}") String userServiceUrl) {
 		SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
 		requestFactory.setConnectTimeout(Duration.ofSeconds(2));
@@ -86,6 +98,16 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
 				.getPayload();
 	}
 
+	/**
+	 * Intercepts incoming requests to validate JWT tokens on endpoints annotated with
+	 * {@link RequireTokenValidation}. The validation flow is documented in the class-level
+	 * JavaDoc.
+	 *
+	 * @param request  the incoming HTTP request
+	 * @param response the outgoing HTTP response
+	 * @param handler  the handler object chosen for this request
+	 * @return {@code true} if the request should proceed, {@code false} if a response was sent
+	 */
 	@Override
 	public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
 		if (!(handler instanceof HandlerMethod handlerMethod)) {

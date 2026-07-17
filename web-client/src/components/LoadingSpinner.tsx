@@ -12,6 +12,10 @@ interface LoadingSpinnerProps {
   className?: string;
 }
 
+/**
+ * Accessible loading spinner. Use when content shape is unknown or changes on load.
+ * Prefer Skeleton when layout is predictable.
+ */
 function LoadingSpinner({ size = 'md', className }: LoadingSpinnerProps) {
   return (
     <Spinner

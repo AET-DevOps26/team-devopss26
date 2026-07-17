@@ -53,8 +53,6 @@ export {
   SidebarTrigger,
 } from './ui/sidebar';
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-
-// shadcn primitives added for this change
 export { Spinner } from './ui/spinner';
 export { Toaster } from './ui/sonner';
 export {

@@ -16,12 +16,22 @@ import {
   LayoutTemplateIcon,
 } from 'lucide-react';
 
+/**
+ * Development-only page for visually verifying components added on this branch.
+ * Showcases ErrorBoundary, notFoundComponent, Spinner, Empty, and Sonner toast.
+ */
 export const Route = createFileRoute('/_authenticated/demo/')({ component: DemoPage });
 
+/**
+ * Inline code span for file/component names.
+ */
 function Code({ children }: { children: string }) {
   return <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">{children}</code>;
 }
 
+/**
+ * Section card wrapper with title, optional description, and border styling.
+ */
 function Section({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
     <section className="rounded-xl border bg-card p-5">
@@ -34,6 +44,10 @@ function Section({ title, desc, children }: { title: string; desc?: string; chil
 
 // ── Full-screen error fallback ─────────────────────────────────
 
+/**
+ * Full-screen fallback when ErrorBoundary catches a render crash.
+ * Includes retry and "Go Home" link.
+ */
 function FullScreenFallback({ error, retry }: { error: Error; retry: () => void }) {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
@@ -57,6 +71,9 @@ function FullScreenFallback({ error, retry }: { error: Error; retry: () => void 
 
 // ── Demo content (wrapped in ErrorBoundary) ────────────────────
 
+/**
+ * Demo content organized into sections: ErrorBoundary, 404, and UI primitives.
+ */
 function DemoContent({ onCrash }: { onCrash: () => void }) {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-2xl mx-auto">
@@ -159,12 +176,19 @@ function DemoContent({ onCrash }: { onCrash: () => void }) {
 
 // ── Component that throws (must be inside ErrorBoundary) ──────
 
+/**
+ * Always throws during render. Must only be rendered within ErrorBoundary.
+ */
 function ThrowError(): React.ReactNode {
   throw new Error('This is a simulated crash triggered from the demo page.');
 }
 
 // ── Page wrapper with crash state ──────────────────────────────
 
+/**
+ * Wraps content in ErrorBoundary with crash toggle. Both `retry()` and
+ * `setCrash(false)` must fire together to fully recover.
+ */
 function DemoPage() {
   const [crash, setCrash] = useState(false);
 

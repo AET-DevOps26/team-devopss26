@@ -15,6 +15,10 @@ import {
 import { useAuthStore } from 'src/stores/authStore';
 import { AppSidebar } from './AppSidebar';
 
+/**
+ * Auto-generated breadcrumb trail from URL pathname. Root shows "Dashboard".
+ * Final segment is rendered as plain text (current page indicator).
+ */
 function HeaderBreadcrumb() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const segments = pathname.split('/').filter(Boolean);
@@ -50,6 +54,10 @@ function HeaderBreadcrumb() {
   );
 }
 
+/**
+ * Top-bar with sidebar-aware trigger, user identity (2-char avatar initial),
+ * and logout flow (`clearAuth()` + navigate to `/login`).
+ */
 function HeaderContent() {
   const { open } = useSidebar();
   const username = useAuthStore((s) => s.username);
@@ -82,6 +90,10 @@ function HeaderContent() {
   );
 }
 
+/**
+ * Root layout: TooltipProvider → SidebarProvider → AppSidebar + SidebarInset.
+ * Responsive behavior delegated to shadcn Sidebar primitives.
+ */
 export function AppShell() {
   return (
     <TooltipProvider delay={300}>

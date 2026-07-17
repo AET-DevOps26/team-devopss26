@@ -8,6 +8,11 @@ import { Spinner } from 'src/components/ui/spinner';
 import { loginUser } from 'src/services/users/user-authentication/user-authentication';
 import { useAuthStore } from 'src/stores/authStore';
 
+/**
+ * Login form with client-side validation and Basic Auth flow. Generic
+ * error message on failure (avoids leaking whether username is valid).
+ * All inputs disabled during loading.
+ */
 export function LoginPage() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -17,6 +22,11 @@ export function LoginPage() {
   const [errors, setErrors] = useState<{ username?: string; password?: string; form?: string }>({});
   const [loading, setLoading] = useState(false);
 
+/**
+ * Client-side validation: username ≥3 chars, password ≥6 chars.
+ *
+ * @returns `true` when all fields pass validation, `false` otherwise.
+ */
   function validate(): boolean {
     const next: { username?: string; password?: string } = {};
     if (!username.trim()) next.username = 'Username is required';
@@ -27,6 +37,12 @@ export function LoginPage() {
     return Object.keys(next).length === 0;
   }
 
+/**
+ * Validates, Base64-encodes credentials, sends Basic Auth request.
+ * On success: setAuth(token) + navigate to `/`. On error: generic message.
+ *
+ * @param e - The form submission event (prevents default behaviour).
+ */
   async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     if (!validate()) return;
