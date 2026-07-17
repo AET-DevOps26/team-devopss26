@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Suspense } from 'react';
@@ -8,6 +8,17 @@ import { notesKeys } from '#/lib/queries/notes.ts';
 import { checklistKeys } from '#/lib/queries/checklists.ts';
 import type { Note } from '#/types/notes';
 import type { Checklist } from '#/types/checklist';
+
+// useSearch requires a RouterProvider context; mock it for isolated component tests
+vi.mock('@tanstack/react-router', async () => {
+  const actual = await vi.importActual('@tanstack/react-router');
+  return {
+    ...actual,
+    useSearch: () => ({ action: undefined, type: undefined, detailId: undefined }),
+    useRouter: () => ({ navigate: vi.fn() }),
+    useNavigate: () => vi.fn(),
+  };
+});
 
 // ── Test helpers ───────────────────────────────────────────────
 

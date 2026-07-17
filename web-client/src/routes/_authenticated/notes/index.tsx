@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useSearch, useRouter } from '@tanstack/react-router';
 import { useSuspenseQuery, useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card.tsx';
 import { Button } from '#/components/ui/button.tsx';
@@ -90,7 +90,26 @@ interface DisplayNote {
  */
 type ViewMode = 'list' | 'detail' | 'create' | 'edit';
 
-// ── Route config ───────────────────────────────────────────────
+// ── Search params ──────────────────────────────────────────────
+
+interface NotesSearch {
+  action?: 'create';
+  type?: 'note' | 'checklist';
+  detailId?: string;
+  detailType?: 'note' | 'checklist';
+}
+
+interface NotesSearch {
+  action?: 'create';
+  type?: 'note' | 'checklist';
+  detailId?: string;
+  detailType?: 'note' | 'checklist';
+}
+
+function NotesPageWithKey() {
+  const search: NotesSearch = useSearch({ from: '/_authenticated/notes/' });
+  return <NotesPage key={`${search.action ?? ''}-${search.detailId ?? ''}-${search.detailType ?? ''}`} />;
+}
 
 /**
  * Displays a searchable grid of notes and checklists with full CRUD.
@@ -99,6 +118,12 @@ type ViewMode = 'list' | 'detail' | 'create' | 'edit';
  * via `ensureQueryData`.
  */
 export const Route = createFileRoute('/_authenticated/notes/')({
+  validateSearch: (input: Record<string, unknown>): NotesSearch => ({
+    action: input.action === 'create' ? 'create' : undefined,
+    type: input.type === 'checklist' ? 'checklist' : input.type === 'note' ? 'note' : undefined,
+    detailId: typeof input.detailId === 'string' ? input.detailId : undefined,
+    detailType: input.detailType === 'checklist' ? 'checklist' : input.detailType === 'note' ? 'note' : undefined,
+  }),
   loader: async ({ context: { queryClient } }) => {
     await Promise.all([
       queryClient.ensureQueryData(notesQueries.all()),
@@ -107,7 +132,7 @@ export const Route = createFileRoute('/_authenticated/notes/')({
   },
   pendingComponent: NotesSkeleton,
   errorComponent: NotesError,
-  component: NotesPage,
+  component: NotesPageWithKey,
 });
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -151,7 +176,7 @@ function fromApiNote(note: ApiNote): DisplayNote {
  */
 function fromApiChecklist(checklist: ApiChecklist): DisplayNote {
   return {
-    id: checklist.id ?? 0,
+    id: (checklist as { id?: number }).id ?? 0,
     title: checklist.title ?? '',
     body: '',
     type: 'checklist',
@@ -541,9 +566,27 @@ function NoteForm({
  * absent from form are deleted, string IDs (from `crypto.randomUUID()`) are created.
  */
 export function NotesPage() {
-  const [view, setView] = useState<ViewMode>('list');
-  const [selectedNoteKey, setSelectedNoteKey] = useState<{ type: NoteType; id: number } | null>(null);
-  const [editingNote, setEditingNote] = useState<DisplayNote>(emptyDisplayNote());
+  const router = useRouter();
+  const routeSearch = useSearch({ from: '/_authenticated/notes/' }) as NotesSearch;
+  const [view, setView] = useState<ViewMode>(() => {
+    if (routeSearch.action === 'create') return 'create';
+    if (routeSearch.detailId) return 'detail';
+    return 'list';
+  });
+  const [selectedNoteKey, setSelectedNoteKey] = useState<{ type: NoteType; id: number } | null>(() => {
+    if (routeSearch.detailId && routeSearch.detailType) {
+      return { type: routeSearch.detailType, id: Number(routeSearch.detailId) };
+    }
+    return null;
+  });
+  const [editingNote, setEditingNote] = useState<DisplayNote>(() => {
+    if (routeSearch.action === 'create') {
+      const prefill = sessionStorage.getItem('chat-quick-note');
+      if (prefill) sessionStorage.removeItem('chat-quick-note');
+      return { ...emptyDisplayNote(), body: prefill ?? '' };
+    }
+    return emptyDisplayNote();
+  });
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 
@@ -641,6 +684,10 @@ export function NotesPage() {
     if (!note) return;
     setView('list');
     setSelectedNoteKey(null);
+    void router.navigate({
+      to: '/notes',
+      search: {},
+    });
     const promise = note.type === 'note'
       ? deleteNote.mutateAsync(note.id)
       : deleteChecklist.mutateAsync(note.id);
@@ -651,7 +698,11 @@ export function NotesPage() {
   const handleBack = useCallback(() => {
     setView('list');
     setSelectedNoteKey(null);
-  }, []);
+    void router.navigate({
+      to: '/notes',
+      search: {},
+    });
+  }, [router]);
 
   /**
    * Save (create or update) a note or checklist with all its items.
@@ -685,6 +736,10 @@ export function NotesPage() {
         }
         setView('list');
         setSelectedNoteKey(null);
+        void router.navigate({
+          to: '/notes',
+          search: {},
+        });
       } else {
         if (isNew) {
           const created = await createChecklist.mutateAsync(
@@ -699,6 +754,10 @@ export function NotesPage() {
             );
           }
           setView('list');
+          void router.navigate({
+            to: '/notes',
+            search: {},
+          });
         } else {
           // Editing existing checklist
           const originalNote = displayList.find((n) => n.type === note.type && n.id === note.id);
@@ -734,6 +793,10 @@ export function NotesPage() {
 
           setView('list');
           setSelectedNoteKey(null);
+          void router.navigate({
+            to: '/notes',
+            search: {},
+          });
         }
       }
     } catch {
