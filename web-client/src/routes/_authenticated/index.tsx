@@ -224,7 +224,7 @@ function EventsWidget({ events }: { events: { id: number; title: string; time: s
         ) : (
           <div className="space-y-3">
             {events.map((event) => (
-              <div key={event.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-border hover:bg-muted/50 -mx-2"
+              <div key={event.id} className="flex cursor-pointer items-center gap-3 rounded-lg  border border-transparent p-2 transition-colors hover:border-accent hover:bg-accent/50 -mx-2"
                 onClick={() => {
                   void router.navigate({ to: '/calendar', search: event.dateStr ? { date: event.dateStr } : {} });
                 }}>
@@ -291,7 +291,7 @@ function NotesWidget({ items }: { items: RecentItem[] }) {
           <div className="space-y-1">
             {items.map((item) => (
               <div key={`${item.type}-${String(item.id)}`}
-                className="group cursor-pointer rounded-lg border border-transparent p-2 transition-colors hover:border-border hover:bg-muted/50 -mx-2"
+                className="group cursor-pointer rounded-lg border border-transparent p-2 transition-colors hover:border-accent hover:bg-accent/50 -mx-2"
                 onClick={() => { openDetail(item); }}>
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium truncate">{item.title}</p>

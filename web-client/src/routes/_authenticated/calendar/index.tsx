@@ -723,8 +723,8 @@ export function CalendarPage() {
                     isCurrent
                       ? 'bg-primary/10 ring-1 ring-inset ring-primary'
                       : isSelected
-                        ? 'bg-muted ring-1 ring-inset ring-muted-foreground/30'
-                        : 'hover:bg-muted/50'
+                        ? 'bg-muted ring-1 ring-inset ring-muted-foreground/30 hover:bg-accent'
+                        : 'hover:bg-accent/50'
                   } ${!day ? 'bg-muted/20' : day ? 'cursor-pointer' : ''}`}
                 >
                   {day && (
@@ -787,7 +787,7 @@ export function CalendarPage() {
             {selectedDayEvents.map((ev) => (
               <div
                 key={ev.id}
-                className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors hover:border-ring/30"
+                className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-accent/50 hover:border-ring/30"
                 onClick={() => { openEditSheet(ev); }}
               >
                 <div className="flex flex-col items-center text-xs">
