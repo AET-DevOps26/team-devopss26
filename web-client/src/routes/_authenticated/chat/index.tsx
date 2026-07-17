@@ -27,6 +27,12 @@ import { getConversation } from '#/services/genai/gen-a-i/gen-a-i';
 
 // ── Types ──────────────────────────────────────────────────────
 
+/**
+ * Chat message with content and display state.
+ * - `'sent'` — successfully delivered.
+ * - `'error'` — failed to send (shows retry button).
+ * - `'typing'` — placeholder skeleton while agent generates.
+ */
 interface Message {
   id: string;
   role: 'user' | 'agent';
@@ -36,6 +42,7 @@ interface Message {
 
 // ── Constants ──────────────────────────────────────────────────
 
+/** Quick-prompt suggestion chips shown in the welcome state. */
 const suggestionChips = [
   'What tasks are due today?',
   'Summarize my recent notes',
@@ -43,12 +50,18 @@ const suggestionChips = [
   'Explain the project architecture',
 ];
 
+/** LLM model label shown in agent message badges. */
 const RAG_MODEL = 'Gemini 3.1 Flash Lite';
 
+/** LocalStorage key for persisting the last active conversation ID across sessions. */
 const LS_CONVERSATION_KEY = 'chat-last-conversation-id';
 
 // ── Route ───────────────────────────────────────────────────────
 
+/**
+ * Error-state fallback for the chat route.
+ * Resets the query error boundary and reloads on retry.
+ */
 function RouteErrorComponent() {
   const queryErrorReset = useQueryErrorResetBoundary();
 
@@ -80,6 +93,11 @@ export const Route = createFileRoute('/_authenticated/chat/')({
 
 // ── Streaming Markdown ─────────────────────────────────────────
 
+/**
+ * Renders a syntax-highlighted code block with a copy button.
+ * Language is inferred from the className (e.g. `language-typescript`).
+ * Uses `react-syntax-highlighter` with the `oneDark` theme.
+ */
 function CodeBlock({ className, children }: { className?: string; children?: React.ReactNode }) {
   const match = /language-(\w+)/.exec(className ?? '');
   const rawCode = typeof children === 'string' ? children : '';
@@ -124,6 +142,11 @@ function CodeBlock({ className, children }: { className?: string; children?: Rea
   );
 }
 
+/**
+ * Renders agent responses as formatted Markdown with GFM support.
+ * Code blocks are syntax-highlighted via `CodeBlock`; inline code and
+ * other elements use default `react-markdown` + `rehype-sanitize` rendering.
+ */
 function StreamingMarkdown({ content }: { content: string }) {
   return (
     <div className="prose prose-sm dark:prose-invert max-w-none [&_:is(pre,code)]:before:!content-none [&_:is(pre,code)]:after:!content-none">
@@ -151,6 +174,10 @@ function StreamingMarkdown({ content }: { content: string }) {
 
 // ── Sub-components ─────────────────────────────────────────────
 
+/**
+ * Initial empty-state view shown when no conversation is active.
+ * Displays suggestion chips that kick off a new chat on click.
+ */
 function WelcomeState({ onChipClick }: { onChipClick: (text: string) => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
@@ -179,6 +206,16 @@ function WelcomeState({ onChipClick }: { onChipClick: (text: string) => void }) 
   );
 }
 
+/**
+ * Renders a single chat message with role-based alignment and styling.
+ * User messages are right-aligned in primary color; agent messages are
+ * left-aligned in muted background with Markdown rendering.
+ *
+ * Supports additional actions:
+ * - Error messages show a "Try Again" button.
+ * - Agent messages show a "Save as note" button.
+ * - Typing state renders skeleton placeholders.
+ */
 function MessageBubble({
   message,
   onRetry,
@@ -263,6 +300,25 @@ function MessageBubble({
 
 // ── Main page component ────────────────────────────────────────
 
+/**
+ * Main chat page — real AI chat with the GenAI backend.
+ *
+ * **States:**
+ * - Welcome screen with suggestion chips when no conversation exists.
+ * - Live chat with message history, streaming Markdown rendering.
+ * - Loading skeleton during agent response generation.
+ * - Error state with retry on API failure.
+ *
+ * **Persistence:** The last conversation ID is saved to localStorage so
+ * the chat history survives page reloads. A "New Chat" button deletes
+ * the current conversation and starts fresh.
+ *
+ * **Data flow:**
+ * 1. Send message → POST to GenAI API via `sendMutation`.
+ * 2. RAG context (notes, events, checklists) is fetched server-side.
+ * 3. Response rendered as Markdown via `StreamingMarkdown`.
+ * 4. "Save as note" redirects to notes page with pre-filled content.
+ */
 export function ChatPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -318,6 +374,12 @@ export function ChatPage() {
     }
   }, [showRagStatus]);
 
+  /**
+   * Send a user message to the GenAI backend and append the response.
+   * Creates a new conversation if none is active; saves conversation ID
+   * to localStorage on success. On error, classifies the error type and
+   * displays a user-friendly message.
+   */
   const sendMessage = useCallback(
     (text: string) => {
       const trimmed = text.trim();
