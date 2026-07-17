@@ -137,12 +137,12 @@ function formatTime(isoString: string | undefined): string {
 }
 
 /**
- * Format an ISO 8601 datetime to a localized date string (e.g. "15.7.2026").
+ * Format an ISO 8601 datetime to a localized date string (e.g. "15.07.2026").
  * Uses `de-DE` locale and forces UTC to avoid timezone drift from the stored value.
  */
 function formatDate(isoString: string | undefined): string {
   if (!isoString) return '';
-  return new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC' }).format(new Date(isoString));
+  return new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(isoString));
 }
 
 /**

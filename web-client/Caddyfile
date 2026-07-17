@@ -58,10 +58,11 @@
     }
 
     # Prometheus: configured with --web.external-url=/prometheus/ and --web.route-prefix=/
-    # Strip the prefix; Prometheus serves at / internally and generates /prometheus URLs
-    @prometheus path /prometheus /prometheus/*
-    handle @prometheus {
-        uri strip_prefix /prometheus
+    # Redirect bare /prometheus to /prometheus/ so Prometheus' sub-path routing works
+    @prometheusRoot path /prometheus
+    redir @prometheusRoot /prometheus/ 308
+    # Forward /prometheus/* to Prometheus, stripping the prefix
+    handle_path /prometheus/* {
         reverse_proxy {$PROMETHEUS_UPSTREAM}
     }
 

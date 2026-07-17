@@ -19,6 +19,7 @@ import {
 import { notesQueries } from '#/lib/queries/notes.ts';
 import { checklistQueries } from '#/lib/queries/checklists.ts';
 import { calendarQueries } from '#/lib/queries/calendar.ts';
+import { useAuthStore } from '#/stores/authStore.ts';
 
 // ── Route config ───────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ export const Route = createFileRoute('/_authenticated/')({
 // ── Greeting ───────────────────────────────────────────────────
 
 function GreetingSection() {
+  const username = useAuthStore((s) => s.username);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const date = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date());
@@ -45,7 +47,9 @@ function GreetingSection() {
   return (
     <div className="flex items-baseline justify-between">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{greeting}, team!</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          {greeting}, {username}!
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">{date}</p>
       </div>
     </div>

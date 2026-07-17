@@ -1,14 +1,13 @@
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import type { ComponentType } from 'react';
 import {
-  LayoutDashboard,
-  FileText,
-  Calendar,
-  MessageSquare,
-  Palette,
   BookOpen,
+  Calendar,
   ChartNoAxesCombined,
+  FileText,
   HeartPulse,
+  LayoutDashboard,
+  MessageSquare,
 } from 'lucide-react';
 
 import {
@@ -28,7 +27,7 @@ import {
  * Internal links (`to`) use TanStack Router's `<Link />`. External links
  * (`href` + `external: true`) render as `<a>` with target="_blank".
  */
-type NavItem = 
+type NavItem =
   | { to: string; label: string; icon: ComponentType<{ className?: string }> }
   | { href: string; label: string; icon: ComponentType<{ className?: string }>; external: true };
 
@@ -38,7 +37,6 @@ const navItems: NavItem[] = [
   { to: '/notes', label: 'Notes', icon: FileText },
   { to: '/calendar', label: 'Calendar', icon: Calendar },
   { to: '/chat', label: 'Chat', icon: MessageSquare },
-  { to: '/demo', label: 'Demo', icon: Palette },
 ];
 
 /** Secondary navigation items — rendered under the "Developer" group, always external links. */
@@ -59,9 +57,7 @@ export function AppSidebar() {
    * Active-link detection: exact match for `/`, fuzzy (prefix) match for others.
    */
   const isLinkActive = (to: string) =>
-    to === '/'
-      ? !!matchRoute({ to: '/' })
-      : !!matchRoute({ to, fuzzy: true });
+    to === '/' ? !!matchRoute({ to: '/' }) : !!matchRoute({ to, fuzzy: true });
 
   return (
     <Sidebar collapsible="icon">
