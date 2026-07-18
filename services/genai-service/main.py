@@ -1,8 +1,8 @@
 """GenAI chatbot service with RAG across user notes, calendar events, and checklists.
 
 Provides a FastAPI application with LangChain-powered LLM chains (Gemini, Groq,
-Mistral, Cohere), Weaviate vector search for retrieval-augmented generation, and
-JWT-authenticated CRUD endpoints for chat conversations.
+Mistral, Cohere, local Ollama), Weaviate vector search for retrieval-augmented
+generation, and JWT-authenticated CRUD endpoints for chat conversations.
 """
 
 import asyncio
@@ -415,6 +415,11 @@ async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 5) -> str:
 
 
 # ── LangChain ─────────────────────────────────────────────────────────────────
+# Applied when the client doesn't specify a model (the web client never does). Local
+# (docker-compose) deployment sets this to "local" to use the Ollama container; k8s
+# deployment leaves it as "gemini" since no Ollama container is provisioned there.
+_DEFAULT_MODEL = os.environ.get("DEFAULT_LLM_MODEL", "gemini")
+
 _prompt = ChatPromptTemplate.from_messages([
     ("system",
      "You are a helpful assistant for a personal productivity app. "
@@ -457,9 +462,10 @@ def _build_chain(model: str):
     elif model == "local":
         # Local / self-hosted LLM option: talk to an Ollama server running an open model
         # (e.g. Llama 3.1) so the service can operate fully offline with no hosted API key.
-        # Not deployed in our environment — a local model is too heavy for the target infra —
-        # so `langchain_ollama` is imported lazily and only used if someone explicitly
-        # selects model="local" against a reachable OLLAMA_BASE_URL.
+        # This is the default model for docker-compose (local) deployment, where an
+        # `ollama` container is available; k8s deployment defaults to Gemini instead
+        # since no Ollama container is provisioned there. `langchain_ollama` is imported
+        # lazily so the dependency is only exercised when model="local" is actually used.
         from langchain_ollama import ChatOllama
         llm = ChatOllama(
             model=os.environ.get("LOCAL_LLM_MODEL", "llama3.1"),
@@ -668,7 +674,7 @@ class GenAIApiImpl(BaseGenAIApi):
             except Exception:
                 pass
 
-            response_text = await _build_chain(chat_request.model).ainvoke({
+            response_text = await _build_chain(chat_request.model or _DEFAULT_MODEL).ainvoke({
                 "message": chat_request.message,
                 "context": context or "No relevant data found in the user's notes, calendar, or checklists.",
             })

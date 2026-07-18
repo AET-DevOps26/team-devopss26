@@ -6,9 +6,8 @@ langchain-groq==0.2.0
 langchain-mistralai==0.2.0
 langchain-cohere==0.3.0
 # Local (self-hosted / offline) LLM option via Ollama — see the model=="local" branch in
-# main.py's _build_chain(). Left commented out: the local model is not deployed, so this
-# dependency is only needed when running against a local Ollama server.
-# langchain-ollama==0.2.0
+# main.py's _build_chain(). Used as the default model for local (docker-compose) deployment.
+langchain-ollama==0.2.0
 pydantic==2.9.0
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.29.0

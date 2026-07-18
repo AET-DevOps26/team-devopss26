@@ -211,8 +211,10 @@ components:
           example: 1
         model:
           type: string
-          enum: [gemini, gemini-lite, groq-llama, mistral, cohere]
-          default: gemini-lite
+          # No default here: the genai-service picks the default (env-driven — see
+          # DEFAULT_LLM_MODEL in main.py) when the field is omitted.
+          enum: [gemini, gemini-lite, groq-llama, mistral, cohere, local]
+          nullable: true
           example: gemini
 
     ChatResponse:
