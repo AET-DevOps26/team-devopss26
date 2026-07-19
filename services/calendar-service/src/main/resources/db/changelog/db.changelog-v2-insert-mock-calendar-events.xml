@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!--
+        Mock calendar events owned by user_id = -1 (the mock user from user-service).
+        Timestamps use ISO-8601 with timezone (TIMESTAMP WITH TIME ZONE).
+    -->
+    <changeSet id="2" author="devopss26">
+        <insert tableName="calendar_event">
+            <column name="user_id" valueNumeric="-1"/>
+            <column name="title" value="Team standup"/>
+            <column name="description" value="Daily sync: blockers, plans, demos."/>
+            <column name="start_time" valueDate="2026-07-17T08:30:00+00:00"/>
+            <column name="end_time" valueDate="2026-07-17T09:00:00+00:00"/>
+            <column name="location" value="Online (Zoom)"/>
+        </insert>
+
+        <insert tableName="calendar_event">
+            <column name="user_id" valueNumeric="-1"/>
+            <column name="title" value="DevOps lecture"/>
+            <column name="description" value="Weekly lecture: container orchestration and GitOps."/>
+            <column name="start_time" valueDate="2026-07-17T13:00:00+00:00"/>
+            <column name="end_time" valueDate="2026-07-17T15:00:00+00:00"/>
+            <column name="location" value="MI HS1"/>
+        </insert>
+
+        <insert tableName="calendar_event">
+            <column name="user_id" valueNumeric="-1"/>
+            <column name="title" value="Sprint review"/>
+            <column name="description" value="Demo of the notes service and the checklist service."/>
+            <column name="start_time" valueDate="2026-07-18T14:00:00+00:00"/>
+            <column name="end_time" valueDate="2026-07-18T15:30:00+00:00"/>
+            <column name="location" value="MI 00.04.011"/>
+        </insert>
+
+        <insert tableName="calendar_event">
+            <column name="user_id" valueNumeric="-1"/>
+            <column name="title" value="Coffee with mentor"/>
+            <column name="description" value="1:1 to discuss internship and project feedback."/>
+            <column name="start_time" valueDate="2026-07-19T10:00:00+00:00"/>
+            <column name="end_time" valueDate="2026-07-19T11:00:00+00:00"/>
+            <column name="location" value="Fakultatscafe"/>
+        </insert>
+
+        <insert tableName="calendar_event">
+            <column name="user_id" valueNumeric="-1"/>
+            <column name="title" value="Hackathon kickoff"/>
+            <column name="description" value="Team formation, problem statement reveal, and brainstorming."/>
+            <column name="start_time" valueDate="2026-07-20T17:00:00+00:00"/>
+            <column name="end_time" valueDate="2026-07-20T21:00:00+00:00"/>
+            <column name="location" value="MI HS1"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

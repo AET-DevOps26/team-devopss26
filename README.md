@@ -21,6 +21,10 @@ responsibilities**.
 - [API Documentation](#api-documentation)
   - [Viewing the API](#viewing-the-api)
   - [Endpoint Overview](#endpoint-overview)
+- [Mock Data](#mock-data)
+  - [Seeded Mock User](#seeded-mock-user)
+  - [Seeded Mock Data](#seeded-mock-data)
+  - [Resetting the Seed](#resetting-the-seed)
 - [CI/CD and Monitoring](#cicd-and-monitoring)
   - [Live Deployments](#live-deployments)
   - [Continuous Integration](#continuous-integration--githubworkflowsciyml)
@@ -211,6 +215,51 @@ links to the per-service specs:
 
 For exact request/response schemas, parameters, and error codes, see the OpenAPI specs above — they are the
 authoritative contract.
+
+---
+
+## Mock Data
+
+For local development and demos, the databases are pre-seeded with a mock user and a small set of related data. The seed
+runs automatically via Liquibase on every fresh database migration.
+
+### Seeded Mock User
+
+| Field    | Value                                                                          |
+|----------|--------------------------------------------------------------------------------|
+| Username | `mock`                                                                         |
+| Password | `password`                                                                     |
+| User ID  | `-1` (negative on purpose, so it cannot collide with auto-assigned real users) |
+
+The password is stored as a BCrypt-12 hash. The user is created by
+`services/user-service/src/main/resources/db/changelog/db.changelog-v2-insert-mock-user.xml`.
+
+### Seeded Mock Data
+
+All seed data references `user_id = -1`, so it is owned by the mock user. The mock data lives in per-service `v2` changelogs:
+
+| Service              | Changelog                                                                                          | Seeded records                                  |
+|----------------------|----------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| **user-service**     | `services/user-service/.../db.changelog-v2-insert-mock-user.xml`                                  | 1 user (`mock`)                                 |
+| **note-service**     | `services/note-service/.../db.changelog-v2-insert-mock-notes.xml`                                  | 4 notes                                         |
+| **checklist-service**| `services/checklist-service/.../db.changelog-v2-insert-mock-checklists.xml`                        | 3 checklists with 12 items (mix of done/open)  |
+| **calendar-service** | `services/calendar-service/.../db.changelog-v2-insert-mock-calendar-events.xml`                    | 5 events (standup, lecture, sprint review, etc.) |
+
+After `npm run start`, log in with `mock` / `password` and the frontend will show the seeded notes, checklists, and calendar
+events.
+
+### Resetting the Seed
+
+The seed lives in the persistent `services-db` Docker volume, so re-running `docker compose up` will not re-apply it
+once Liquibase has recorded the changesets. To start from a clean seeded state, remove the volume and restart:
+
+```bash
+docker compose -f infra/docker-compose.yml down -v
+npm run start
+```
+
+> **Note:** The mock user's ID is `-1` to keep it out of the auto-increment sequence. Real users registered through
+> `POST /api/v1/users/auth/register` will receive positive IDs (`1`, `2`, …) and never see the mock data.
 
 ---
 

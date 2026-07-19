@@ -142,6 +142,25 @@ services:
       services-db:
         condition: service_healthy
 
+  ollama:
+    profiles:
+      - local
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - genai-service-net
+    # Pulls the configured model on startup so genai-service can use model="local"
+    # against it without a manual `ollama pull` step.
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${LOCAL_LLM_MODEL:-llama3.1} && wait"]
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.27.0
     container_name: weaviate
@@ -178,6 +197,13 @@ services:
         condition: service_completed_successfully
       weaviate:
         condition: service_started
+      # Ollama is profile-gated (see `ollama:` above). On Azure it's not in the
+      # active profile set; `required: false` makes the dependency a no-op in
+      # that case so genai-service still starts. With `local` profile (local
+      # dev) the dependency is enforced as usual.
+      ollama:
+        condition: service_healthy
+        required: false
     healthcheck:
       test: ["CMD-SHELL", "python3 -c \"import urllib.request; exit(0 if urllib.request.urlopen('http://localhost:${GENAI_SERVICE_APP_PORT}/api/v1/health').status == 200 else 1)\""]
       interval: 15s
@@ -252,6 +278,8 @@ volumes:
   services-db: {}
   prometheus-data: {}
   grafana-data: {}
+  # LOCAL-DEV-ONLY: backs the ollama service (no equivalent in the k8s chart).
+  ollama-data: {}
 
 networks:
   user-service-net: {}

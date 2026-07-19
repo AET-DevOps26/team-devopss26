@@ -89,6 +89,20 @@
         group: devops-admin
         mode: '0600'
 
+    - name: Disable local profile in deployed .env (ollama must never start in Azure)
+      ansible.builtin.lineinfile:
+        path: /home/devops-admin/app/.env
+        regexp: '^COMPOSE_PROFILES=.*$'
+        line: 'COMPOSE_PROFILES='
+        state: present
+
+    - name: Switch genai-service to hosted LLM in Azure
+      ansible.builtin.lineinfile:
+        path: /home/devops-admin/app/.env
+        regexp: '^DEFAULT_LLM_MODEL=.*$'
+        line: 'DEFAULT_LLM_MODEL=gemini'
+        state: present
+
     - name: Ensure init-db directory exists on VM
       ansible.builtin.file:
         path: /home/devops-admin/app/init-db

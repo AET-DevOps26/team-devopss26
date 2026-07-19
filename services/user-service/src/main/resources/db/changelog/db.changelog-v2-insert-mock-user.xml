@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!--
+        Mock user for development, demos, and local testing.
+        - Username: mock
+        - Password: password
+        - Password hash: BCrypt strength 12
+
+        The user_id (-1) is referenced from mock data in the note-, checklist-
+        and calendar-service changelogs. It must remain -1 to keep the seed
+        consistent across all four databases.
+    -->
+    <changeSet id="2" author="devopss26">
+        <insert tableName="users">
+            <column name="id" valueNumeric="-1"/>
+            <column name="username" value="mock"/>
+            <column name="password_hash" value="$2a$12$DVYNiG7MmtykRd52.XK03O0hvpozcE1uYNxT06NT5E162jOBMnXoi"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

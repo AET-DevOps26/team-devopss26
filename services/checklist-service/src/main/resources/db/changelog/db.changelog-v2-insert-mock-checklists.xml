@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!--
+        Mock checklists and items owned by user_id = -1 (the mock user from user-service).
+        The checklist_items.position column defines display order; completed items
+        come last due to ORDER BY completed ASC, position ASC.
+    -->
+    <changeSet id="3" author="devopss26">
+        <!-- Checklist 1: onboarding tasks -->
+        <insert tableName="checklists">
+            <column name="id" valueNumeric="-1"/>
+            <column name="user_id" valueNumeric="-1"/>
+            <column name="title" value="Onboarding tasks"/>
+            <column name="created_at" valueDate="2026-07-08T10:00:00"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-1"/>
+            <column name="text" value="Complete user profile"/>
+            <column name="completed" valueBoolean="true"/>
+            <column name="position" valueNumeric="0"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-1"/>
+            <column name="text" value="Read team handbook"/>
+            <column name="completed" valueBoolean="true"/>
+            <column name="position" valueNumeric="1"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-1"/>
+            <column name="text" value="Set up local dev environment"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="2"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-1"/>
+            <column name="text" value="Pair with a teammate on first PR"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="3"/>
+        </insert>
+
+        <!-- Checklist 2: weekly groceries -->
+        <insert tableName="checklists">
+            <column name="id" valueNumeric="-2"/>
+            <column name="user_id" valueNumeric="-1"/>
+            <column name="title" value="Weekly groceries"/>
+            <column name="created_at" valueDate="2026-07-13T18:00:00"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-2"/>
+            <column name="text" value="Milk"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="0"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-2"/>
+            <column name="text" value="Eggs"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="1"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-2"/>
+            <column name="text" value="Bread"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="2"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-2"/>
+            <column name="text" value="Coffee beans"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="3"/>
+        </insert>
+
+        <!-- Checklist 3: current sprint goals -->
+        <insert tableName="checklists">
+            <column name="id" valueNumeric="-3"/>
+            <column name="user_id" valueNumeric="-1"/>
+            <column name="title" value="Current sprint goals"/>
+            <column name="created_at" valueDate="2026-07-14T09:30:00"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-3"/>
+            <column name="text" value="Finish user service refactor"/>
+            <column name="completed" valueBoolean="true"/>
+            <column name="position" valueNumeric="0"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-3"/>
+            <column name="text" value="Wire up Prometheus dashboards"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="1"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-3"/>
+            <column name="text" value="Review two open pull requests"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="2"/>
+        </insert>
+        <insert tableName="checklist_items">
+            <column name="checklist_id" valueNumeric="-3"/>
+            <column name="text" value="Deploy to staging"/>
+            <column name="completed" valueBoolean="false"/>
+            <column name="position" valueNumeric="3"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
