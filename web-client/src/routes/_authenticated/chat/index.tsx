@@ -23,6 +23,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useSendMessage, useDeleteConversation } from '#/lib/queries/chat.ts';
 import { classifyChatError } from '#/lib/utils/chat.ts';
+import { genId } from '#/lib/utils';
 import { getConversation } from '#/services/genai/gen-a-i/gen-a-i';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -371,7 +372,7 @@ export function ChatPage() {
           .then((conv) => {
             if (conv.messages && conv.messages.length > 0) {
               const restored: Message[] = conv.messages.map((m) => ({
-                id: crypto.randomUUID(),
+                id: genId(),
                 role: m.role === 'USER' ? 'user' : 'agent',
                 content: m.content ?? '',
                 state: 'sent' as const,
@@ -417,7 +418,7 @@ export function ChatPage() {
 
       setShowWelcome(false);
 
-      const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: trimmed, state: 'sent' };
+      const userMsg: Message = { id: genId(), role: 'user', content: trimmed, state: 'sent' };
       setMessages((prev) => [...prev, userMsg]);
       setInput('');
       setIsLoading(true);
@@ -435,7 +436,7 @@ export function ChatPage() {
             setMessages((prev) => [
               ...prev,
               {
-                id: crypto.randomUUID(),
+                id: genId(),
                 role: 'agent',
                 content: data.response ?? '',
                 state: 'sent',

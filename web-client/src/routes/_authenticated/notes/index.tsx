@@ -45,6 +45,7 @@ import {
 } from '#/lib/queries/checklists.ts';
 import type { IdentifiedTimestampedNote as ApiNote } from '#/types/notes';
 import type { IdentifiedChecklist as ApiChecklist } from '#/types/checklist';
+import { genId } from '#/lib/utils';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -54,7 +55,7 @@ type NoteType = 'note' | 'checklist';
 /**
  * A single item within a checklist.
  * `id` can be a **number** (persisted via API, used for toggling completion) or a
- * **string** (locally generated via `crypto.randomUUID()` for items not yet saved).
+ * **string** (locally generated via `genId()` for items not yet saved).
  * The form uses this distinction: numeric IDs map to API items, string IDs are new
  * items that will be created via `addChecklistItem`.
  */
@@ -438,7 +439,7 @@ function NoteDetail({
 
 /**
  * Create / Edit form. Type is locked when editing (cannot convert note ↔ checklist).
- * New checklist items get `crypto.randomUUID()` string IDs; persisted items have
+ * New checklist items get `genId()` string IDs; persisted items have
  * numeric IDs. Enter in "Add item" input triggers `addItem`.
  */
 function NoteForm({
@@ -459,7 +460,7 @@ function NoteForm({
   /** Add a new checklist item with a local UUID string ID. */
   const addItem = () => {
     if (!newItemText.trim()) return;
-    setItems([...items, { id: crypto.randomUUID(), text: newItemText.trim(), done: false }]);
+    setItems([...items, { id: genId(), text: newItemText.trim(), done: false }]);
     setNewItemText('');
   };
 
@@ -563,7 +564,7 @@ function NoteForm({
  * is derived via `useMemo` from the live list to avoid stale snapshots.
  *
  * Checklist save: computes diff between original and form items — numeric IDs
- * absent from form are deleted, string IDs (from `crypto.randomUUID()`) are created.
+ * absent from form are deleted, string IDs (from `genId()`) are created.
  */
 export function NotesPage() {
   const router = useRouter();
@@ -712,7 +713,7 @@ export function NotesPage() {
    * calls in parallel via `Promise.all`.
    * **Existing checklist update**: Computes a diff against the original items:
    *   - Items with numeric IDs in the original but absent from the form → deleted.
-   *   - Items with string IDs (local `crypto.randomUUID()` → created via API.
+   *   - Items with string IDs (local `genId()` → created via API.
    *   - The checklist title is updated unconditionally.
    * This diff-based approach avoids deleting and recreating unchanged items,
    * preserving their server-side IDs and creation timestamps.
@@ -781,7 +782,7 @@ export function NotesPage() {
             );
           }
 
-          // Add new items (string ids from crypto.randomUUID)
+          // Add new items (string ids from genId)
           const newItems = note.checklist.filter((item) => typeof item.id === 'string');
           if (newItems.length > 0) {
             await Promise.all(
