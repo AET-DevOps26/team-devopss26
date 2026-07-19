@@ -229,3 +229,7 @@ components:
           minimum: -9223372036854775808
           maximum: 9223372036854775807
           example: 1
+        model:
+          type: string
+          nullable: true
+          example: "llama3.1"

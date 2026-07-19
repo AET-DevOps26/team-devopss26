@@ -92,6 +92,6 @@ export const handlers = [
     HttpResponse.json({ message: 'Conversation deleted' }),
   ),
   http.post(`${API_BASE}/api/v1/chat`, () =>
-    HttpResponse.json({ response: 'AI response text', conversation_id: 1 }),
+    HttpResponse.json({ response: 'AI response text', conversation_id: 1, model: 'gemini-3.1-flash-lite' }),
   ),
 ];

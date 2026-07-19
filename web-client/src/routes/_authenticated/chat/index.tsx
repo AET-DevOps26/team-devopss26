@@ -32,12 +32,18 @@ import { getConversation } from '#/services/genai/gen-a-i/gen-a-i';
  * - `'sent'` — successfully delivered.
  * - `'error'` — failed to send (shows retry button).
  * - `'typing'` — placeholder skeleton while agent generates.
+ *
+ * `model` is the underlying LLM identifier returned by the server (see
+ * `ChatResponse.model` in `api/genai-service.yaml`). It is only populated
+ * for messages produced in the current session; restored history falls
+ * back to {@link MODEL_FALLBACK_LABEL}.
  */
 interface Message {
   id: string;
   role: 'user' | 'agent';
   content: string;
   state: 'sent' | 'error' | 'typing';
+  model?: string;
 }
 
 // ── Constants ──────────────────────────────────────────────────
@@ -50,8 +56,32 @@ const suggestionChips = [
   'Explain the project architecture',
 ];
 
-/** LLM model label shown in agent message badges. */
-const RAG_MODEL = 'Gemini 3.1 Flash Lite';
+/**
+ * Human-friendly display names for the model identifiers the genai-service
+ * can return (see `_resolve_model_name` in `services/genai-service/main.py`).
+ * Keys must stay in sync with the server-side resolver; unknown identifiers
+ * fall through to the raw value via {@link formatModelLabel}.
+ */
+const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  'llama-3.1-8b-instant': 'Llama 3.1 8B (Groq)',
+  'mistral-small-latest': 'Mistral Small',
+  'command-r': 'Cohere Command R',
+  'llama3.1': 'Llama 3.1 (Ollama)',
+  'gemini-3.1-flash-lite': 'Gemini 3.1 Flash Lite',
+};
+
+/** Fallback label for messages where the server didn't report a model (e.g. restored history). */
+const MODEL_FALLBACK_LABEL = 'AI Assistant';
+
+/**
+ * Turn a server-side model identifier into a label suitable for the agent
+ * message badge. Falls back to {@link MODEL_FALLBACK_LABEL} when no model
+ * is known and to the raw identifier when it isn't in {@link MODEL_DISPLAY_NAMES}.
+ */
+function formatModelLabel(model?: string): string {
+  if (!model) return MODEL_FALLBACK_LABEL;
+  return MODEL_DISPLAY_NAMES[model] ?? model;
+}
 
 /** LocalStorage key for persisting the last active conversation ID across sessions. */
 const LS_CONVERSATION_KEY = 'chat-last-conversation-id';
@@ -261,7 +291,7 @@ function MessageBubble({
         {!isUser && (
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal text-muted-foreground">
-              {RAG_MODEL}
+              {formatModelLabel(message.model)}
             </Badge>
           </div>
         )}
@@ -409,6 +439,7 @@ export function ChatPage() {
                 role: 'agent',
                 content: data.response ?? '',
                 state: 'sent',
+                model: data.model ?? undefined,
               },
             ]);
             setIsLoading(false);

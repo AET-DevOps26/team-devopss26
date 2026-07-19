@@ -420,6 +420,20 @@ async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 5) -> str:
 # deployment leaves it as "gemini" since no Ollama container is provisioned there.
 _DEFAULT_MODEL = os.environ.get("DEFAULT_LLM_MODEL", "gemini")
 
+# Defensive: the k8s configmap hardcodes `DEFAULT_LLM_MODEL=gemini` precisely because
+# no Ollama container is provisioned in Azure. Surface a loud warning at startup if
+# `local` is selected so the misconfiguration is immediately visible in pod logs
+# instead of failing silently on the first chat request.
+if _DEFAULT_MODEL == "local":
+    logger.warning(
+        "DEFAULT_LLM_MODEL=local: this service will route requests to a self-hosted "
+        "Ollama endpoint (%s). This setting is intended for LOCAL DEVELOPMENT ONLY "
+        "(see infra/docker-compose.yml). The Azure / k8s deployment does NOT provision "
+        "an Ollama container; if you see this warning in a production pod, the chart "
+        "in infra/iac/aet/templates/genai-service/ has been misconfigured.",
+        os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+    )
+
 _prompt = ChatPromptTemplate.from_messages([
     ("system",
      "You are a helpful assistant for a personal productivity app. "
@@ -477,6 +491,29 @@ def _build_chain(model: str):
             raise ValueError("GEMINI_API_KEY environment variable is not set")
         llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite", google_api_key=key)
     return _prompt | llm | StrOutputParser()
+
+
+# ── Model resolution ──────────────────────────────────────────────────────────
+
+def _resolve_model_name(model: str) -> str:
+    """Map a ``ChatRequest.model`` key to the underlying LLM identifier.
+
+    Mirrors the actual model used by :func:`_build_chain` so the response can
+    tell the client which model actually answered. For ``"local"`` the Ollama
+    model name is read from ``LOCAL_LLM_MODEL`` so a deployment that swaps in
+    a different open-weight model (e.g. ``llama3.2``, ``mistral:7b``) is
+    reflected in the UI badge automatically.
+    """
+    if model == "groq-llama":
+        return "llama-3.1-8b-instant"
+    if model == "mistral":
+        return "mistral-small-latest"
+    if model == "cohere":
+        return "command-r"
+    if model == "local":
+        return os.environ.get("LOCAL_LLM_MODEL", "llama3.1")
+    # "gemini", "gemini-lite", or any unrecognised value → default Gemini
+    return "gemini-3.1-flash-lite"
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -633,8 +670,10 @@ class GenAIApiImpl(BaseGenAIApi):
         5. Persists the agent response and commits the transaction.
 
         RAG failures are silently caught so the LLM can still respond without
-        retrieved context. The response includes both the generated text and
-        the (possibly new) conversation id.
+        retrieved context. The response includes the generated text, the
+        (possibly new) conversation id, and the effective model that produced
+        the answer (so the client can show which LLM actually responded,
+        e.g. ``llama3.1`` for the local Ollama deployment).
 
         Raises:
             HTTPException 400: If the message is empty after stripping or contains NUL bytes.
@@ -685,7 +724,15 @@ class GenAIApiImpl(BaseGenAIApi):
             ))
             await db.commit()
 
-            return ChatResponse(response=response_text, conversation_id=conversation.id)
+            # Resolve the effective model once and report it in the response so the
+            # web client can show which LLM actually answered (e.g. "llama3.1" for
+            # the local Ollama deployment instead of the hardcoded Gemini label).
+            effective_model = chat_request.model or _DEFAULT_MODEL
+            return ChatResponse(
+                response=response_text,
+                conversation_id=conversation.id,
+                model=_resolve_model_name(effective_model),
+            )
 
 
 # Defining the class above already registers it as BaseGenAIApi.subclasses[0]
