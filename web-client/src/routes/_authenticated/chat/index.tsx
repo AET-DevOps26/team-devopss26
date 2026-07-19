@@ -67,6 +67,7 @@ const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'mistral-small-latest': 'Mistral Small',
   'command-r': 'Cohere Command R',
   'llama3.1': 'Llama 3.1 (Ollama)',
+  'llama3.2:1b': 'Llama 3.2 1B (Ollama)',
   'gemini-3.1-flash-lite': 'Gemini 3.1 Flash Lite',
 };
 
