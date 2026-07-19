@@ -791,6 +791,24 @@ export function NotesPage() {
             );
           }
 
+          const updatedItems = note.checklist.filter(
+            (cur) => typeof cur.id === 'number' && originalItems.some((orig) => orig.id === cur.id),
+          );
+          if (updatedItems.length > 0) {
+            await Promise.all(
+              updatedItems.map((cur) => {
+                const orig = originalItems.find((o) => o.id === cur.id);
+                if (!orig || orig.done === cur.done) return Promise.resolve();
+                return updateChecklistItem.mutateAsync({
+                  checklistId,
+                  itemId: cur.id as number,
+                  completed: cur.done,
+                  text: cur.text,
+                });
+              }),
+            );
+          }
+
           setView('list');
           setSelectedNoteKey(null);
           void router.navigate({

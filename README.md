@@ -21,6 +21,10 @@ responsibilities**.
 - [API Documentation](#api-documentation)
   - [Viewing the API](#viewing-the-api)
   - [Endpoint Overview](#endpoint-overview)
+- [AI / LLM Configuration](#ai--llm-configuration)
+  - [Supported Models](#supported-models)
+  - [Environment Variables](#environment-variables)
+  - [Defaults by Deployment](#defaults-by-deployment)
 - [Mock Data](#mock-data)
   - [Seeded Mock User](#seeded-mock-user)
   - [Seeded Mock Data](#seeded-mock-data)
@@ -211,10 +215,86 @@ links to the per-service specs:
 - `POST /api/v1/conversations` — create a new chat conversation
 - `GET /api/v1/conversations/{conversationId}` — get a conversation with all messages
 - `DELETE /api/v1/conversations/{conversationId}` — delete a conversation
-- `POST /api/v1/chat` — send a message and receive an AI response (backed by Weaviate); supports model selection (`gemini`, `gemini-lite`, `groq-llama`, `mistral`, `cohere`)
+- `POST /api/v1/chat` — send a message and receive an AI response (backed by Weaviate); supports model selection (`local`, `gemini`, `gemini-lite`, `groq-llama`, `mistral`, `cohere`)
 
 For exact request/response schemas, parameters, and error codes, see the OpenAPI specs above — they are the
 authoritative contract.
+
+---
+
+## AI / LLM Configuration
+
+The `genai-service` is the only model-aware component. It wraps LangChain chains and dispatches each chat request to
+one of several supported LLM backends. The active backend is chosen at **request time** (via the `model` field on
+`POST /api/v1/chat`) and can be overridden globally with the `DEFAULT_LLM_MODEL` environment variable.
+
+### Supported Models
+
+| Model key         | Backend                                 | Requires                                   | Notes                                                                               |
+|-------------------|-----------------------------------------|--------------------------------------------|-------------------------------------------------------------------------------------|
+| `local`           | Self-hosted Ollama (e.g. `llama3.1`)    | Running Ollama container (`local` profile) | Offline / no API key. Default for local Docker Compose dev. Slow on CPU (~6 tok/s). |
+| `gemini`          | Google Gemini (`gemini-3.1-flash-lite`) | `GEMINI_API_KEY`                           | Default for k8s / Azure. Cheapest hosted option, fast.                              |
+| `gemini-lite`     | Alias for `gemini`                      | `GEMINI_API_KEY`                           | Same backend, kept as an explicit name for client-side labelling.                   |
+| `groq-llama`      | Groq (`llama-3.1-8b-instant`)           | `GROQ_API_KEY`                             | Hosted Llama via Groq; very fast inference.                                         |
+| `mistral`         | Mistral (`mistral-small-latest`)        | `MISTRAL_API_KEY`                          | Hosted Mistral model.                                                               |
+| `cohere`          | Cohere (`command-r`)                    | `COHERE_API_KEY`                           | Hosted Cohere model.                                                                |
+| _(anything else)_ | Falls back to Gemini                    | `GEMINI_API_KEY`                           | Unknown / unset `model` values default to the hosted Gemini backend.                |
+
+The resolved model identifier is reported back in the chat response (`model` field) so the web client can display
+which LLM actually answered (e.g. `llama3.1` for the local Ollama deployment instead of the hardcoded `gemini` label).
+
+### Environment Variables
+
+| Variable            | Purpose                                                                                                            | Used by         |
+|---------------------|--------------------------------------------------------------------------------------------------------------------|-----------------|
+| `DEFAULT_LLM_MODEL` | Backend used when a request omits `model`.                                                                         | `genai-service` |
+| `OLLAMA_BASE_URL`   | Ollama HTTP endpoint. Inside Docker Compose, must be `http://ollama:11434` (not `localhost`).                      | `genai-service` |
+| `LOCAL_LLM_MODEL`   | Concrete Ollama model name (e.g. `llama3.1`, `llama3.2:1b`, `phi3:mini`). Pulled on first start.                   | `genai-service` |
+| `GEMINI_API_KEY`    | Google Gemini API key. Empty in local `.env`, supplied via Secret in k8s.                                          | `genai-service` |
+| `GROQ_API_KEY`      | Groq API key.                                                                                                      | `genai-service` |
+| `MISTRAL_API_KEY`   | Mistral API key.                                                                                                   | `genai-service` |
+| `COHERE_API_KEY`    | Cohere API key.                                                                                                    | `genai-service` |
+| `LLM_TIMEZONE`      | IANA zone name used to compute the temporal context injected into the LLM system prompt. Default: `Europe/Berlin`. | `genai-service` |
+
+In local development, all of the above live in `infra/.env` and are loaded by every service via the `app-template`'s
+`env_file`. Empty values (e.g. `GEMINI_API_KEY=""`) are intentional — they let the local stack start without paid
+API access by defaulting to `local` (Ollama).
+
+In the AET deployment, the same variables are set in:
+
+- `infra/iac/aet/templates/genai-service/configmap.yaml` (non-secret values, e.g. `DEFAULT_LLM_MODEL=gemini`,
+  service URLs)
+- `infra/iac/aet/templates/genai-service/secret.yaml` (API keys)
+- The k8s chart deliberately does **not** provision an Ollama container, so the `local` model is only available
+  locally.
+
+### Defaults by Deployment
+
+| Deployment             | `DEFAULT_LLM_MODEL` | Reasoning                                                                                                                          |
+|------------------------|---------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| Local (Docker Compose) | `local` (Ollama)    | Self-contained, no API keys, works offline. Override by setting `DEFAULT_LLM_MODEL=gemini` (and `GEMINI_API_KEY`) in `infra/.env`. |
+| Azure (Docker Compose) | `gemini`            | Also uses Docker containers, but no Ollama container is provisioned here, so fallback is used.                                     |
+| k8s / AET (Azure)      | `gemini`            | No Ollama container is provisioned in the cluster, so the hosted fallback is used.                                                 |
+
+To switch the local stack from Ollama to Gemini for a session:
+
+```bash
+# In infra/.env:
+DEFAULT_LLM_MODEL=gemini
+GEMINI_API_KEY=<your-key>
+
+docker compose -f infra/docker-compose.yml --profile local up --build -d genai-service-app
+```
+
+To use a smaller local model (faster cold start, less RAM) on hardware that struggles with `llama3.1`:
+
+```bash
+# In infra/.env:
+LOCAL_LLM_MODEL=llama3.2:1b    # or phi3:mini, qwen2.5:3b, etc.
+docker compose -f infra/docker-compose.yml --profile local up --build -d genai-service-app
+# Trigger a fresh pull:
+docker exec ollama ollama pull llama3.2:1b
+```
 
 ---
 

@@ -144,9 +144,6 @@ class CalendarEventServiceImpl implements CalendarEventService {
         if (diff.getLocation() != null) {
             event.setLocation(diff.getLocation());
         }
-
-        event = repository.save(event);
-
         return mapper.toUpdateResponse(event);
     }
 

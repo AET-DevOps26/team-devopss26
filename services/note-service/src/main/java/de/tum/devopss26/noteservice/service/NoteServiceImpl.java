@@ -124,8 +124,6 @@ public class NoteServiceImpl implements NoteService {
         }
 
         note.setLastUpdatedAt(OffsetDateTime.now());
-        note = repository.save(note);
-
         return mapper.toUpdateResponse(note);
     }
 

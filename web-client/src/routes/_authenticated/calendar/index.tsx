@@ -371,7 +371,7 @@ function EventSheet({
       description: description.trim() || undefined,
     };
 
-    if (event?.id && event.id > 0) {
+    if (event?.id !== undefined) {
       updateMutation.mutate({ id: event.id, form });
     } else {
       createMutation.mutate(form);
@@ -380,7 +380,7 @@ function EventSheet({
   };
 
   const handleDelete = () => {
-    if (event?.id && event.id > 0 && !isPending) {
+    if (event?.id && !isPending) {
       deleteMutation.mutate(event.id);
       onOpenChange(false);
     }
@@ -481,7 +481,7 @@ function EventSheet({
         </div>
 
         <SheetFooter className="flex-row gap-2 p-4">
-          {event?.id && event.id > 0 && (
+          {event?.id && (
             <Button
               variant="destructive"
               size="sm"

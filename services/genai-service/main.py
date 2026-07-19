@@ -436,7 +436,8 @@ if _DEFAULT_MODEL == "local":
 
 _prompt = ChatPromptTemplate.from_messages([
     ("system",
-     "You are a helpful assistant for a personal productivity app. "
+     "You are a helpful assistant for a personal productivity app.\n"
+     "{now_context}\n"
      "Use the context below, retrieved from the user's personal notes, calendar events, and checklists, "
      "to answer their question. If the context does not contain enough information, say so.\n\n"
      "Context:\n{context}"),
@@ -610,6 +611,39 @@ def _now_ms() -> int:
     return int(time.time() * 1000)
 
 
+def _now_context() -> str:
+    """Human-readable temporal context for the LLM (date, time, timezone).
+
+    Injected into the system prompt so the model can correctly resolve
+    relative date/time references like "today", "tomorrow", "this week",
+    "in 2 hours" — the RAG chunks themselves only carry absolute timestamps
+    (ISO 8601), which the LLM can't always map to relative phrases on its
+    own. Computed per-request so it stays accurate across long-lived
+    processes.
+
+    The container's system clock is typically UTC, so ``datetime.now()`` with
+    no explicit zone would report the UTC date even when it's already past
+    midnight in the user's locale. We resolve an explicit ``zoneinfo`` zone
+    (configurable via ``LLM_TIMEZONE``, defaulting to ``Europe/Berlin``) so
+    the date matches the user's wall-clock day.
+    """
+    from zoneinfo import ZoneInfo
+    tz_name = os.environ.get("LLM_TIMEZONE", "Europe/Berlin")
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        # Invalid / unknown zone name (e.g. typo in env var): fall back to
+        # the default rather than failing the whole chat request.
+        tz = ZoneInfo("Europe/Berlin")
+        tz_name = "Europe/Berlin"
+    now = datetime.now(tz)
+    return (
+        f"Today's date: {now.strftime('%A, %Y-%m-%d')}\n"
+        f"Current time: {now.strftime('%H:%M:%S')}\n"
+        f"Timezone: {now.tzname()}"
+    )
+
+
 def _to_conversation_model(conversation: ChatConversation) -> Conversation:
     """Requires eagerly loaded messages for serialisation.
     """
@@ -770,6 +804,7 @@ class GenAIApiImpl(BaseGenAIApi):
             response_text = await _build_chain(effective_model).ainvoke({
                 "message": chat_request.message,
                 "context": context or "No relevant data found in the user's notes, calendar, or checklists.",
+                "now_context": _now_context(),
             })
 
             db.add(ChatMessage(
