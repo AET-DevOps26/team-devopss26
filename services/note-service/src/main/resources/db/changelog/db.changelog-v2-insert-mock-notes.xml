@@ -11,6 +11,7 @@
     -->
     <changeSet id="3" author="devopss26">
         <insert tableName="note">
+            <column name="id" valueNumeric="-1"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="Welcome to your notes"/>
             <column name="content" value="This is your first note. Use it to capture ideas, meeting minutes, or anything worth remembering."/>
@@ -19,6 +20,7 @@
         </insert>
 
         <insert tableName="note">
+            <column name="id" valueNumeric="-2"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="DevOps Lecture - Week 3"/>
             <column name="content" value="Topics: CI/CD pipelines, observability, deployment strategies. Action item: review the ArgoCD tutorial before next session."/>
@@ -27,6 +29,7 @@
         </insert>
 
         <insert tableName="note">
+            <column name="id" valueNumeric="-3"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="Project ideas"/>
             <column name="content" value="1) Build a personal knowledge graph backed by the notes service. 2) Add tags and full-text search. 3) Integrate with the calendar for daily journaling."/>
@@ -35,6 +38,7 @@
         </insert>
 
         <insert tableName="note">
+            <column name="id" valueNumeric="-4"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="Reading list"/>
             <column name="content" value="- The Phoenix Project (Gene Kim)&#10;- Accelerate (Forsgren, Humble, Kim)&#10;- Designing Data-Intensive Applications (Kleppmann)"/>

@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "start": "docker compose -f infra/docker-compose.yml up --build",
+    "start": "docker compose -f infra/docker-compose.yml --profile local up --build",
     "openapi:generate": "bash api/scripts/gen-all.sh",
     "openapi:clean": "node scripts/clean.js",
     "openapi": "npm run openapi:clean && npm run openapi:generate",

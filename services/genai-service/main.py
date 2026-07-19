@@ -398,7 +398,7 @@ def _rag_sync(query: str, chunks: list[str], top_k: int) -> str:
         _weaviate_client.collections.delete(collection_name)
 
 
-async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 5) -> str:
+async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 50) -> str:
     """Offloads the blocking embedding and Weaviate calls to avoid stalling the
     asyncio event loop. When Weaviate or the embedding model is unavailable,
     falls back to returning raw chunks directly (no vector search). Returns
@@ -514,6 +514,42 @@ def _resolve_model_name(model: str) -> str:
         return os.environ.get("LOCAL_LLM_MODEL", "llama3.1")
     # "gemini", "gemini-lite", or any unrecognised value → default Gemini
     return "gemini-3.1-flash-lite"
+
+
+# ── Local-model readiness ────────────────────────────────────────────────────
+
+async def _ollama_is_ready() -> tuple[bool, str]:
+    """Probe the local Ollama server for the configured model.
+
+    On a fresh ``docker compose --profile local`` start the ``ollama`` entrypoint
+    runs ``ollama pull ${LOCAL_LLM_MODEL}`` (a multi-GB download that can take
+    5-30 min). During that window the Ollama daemon is up — so the docker
+    healthcheck ``ollama list`` passes and ``genai-service`` starts — but
+    ``ChatOllama.ainvoke`` blocks waiting for the model, which the browser
+    experiences as a TCP reset ("Connection lost") once its request times out.
+
+    We short-circuit here with a 503 + ``Retry-After`` so the client gets a
+    clean "model still loading" message instead.
+
+    Returns ``(ready, detail)``: ``detail`` is empty on success, otherwise a
+    short human-readable reason suitable for the HTTP response body.
+    """
+    base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    model = os.environ.get("LOCAL_LLM_MODEL", "llama3.1")
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.get(f"{base}/api/tags")
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as exc:
+        return False, f"Ollama not reachable at {base} ({type(exc).__name__})"
+    # Ollama returns model names like "llama3.1:latest" — strip the tag for matching.
+    available = {m.get("name", "").split(":")[0] for m in data.get("models", [])}
+    target = model.split(":")[0]
+    if target not in available:
+        loaded = ", ".join(sorted(available)) or "none"
+        return False, f"model '{model}' is not pulled yet (loaded: {loaded})"
+    return True, ""
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -713,7 +749,25 @@ class GenAIApiImpl(BaseGenAIApi):
             except Exception:
                 pass
 
-            response_text = await _build_chain(chat_request.model or _DEFAULT_MODEL).ainvoke({
+            # Resolve the effective model once and report it in the response so the
+            # web client can show which LLM actually answered (e.g. "llama3.1" for
+            # the local Ollama deployment instead of the hardcoded Gemini label).
+            effective_model = chat_request.model or _DEFAULT_MODEL
+
+            # For the local (Ollama) path, fail fast with a clear 503 when the
+            # model isn't pulled yet — see `_ollama_is_ready` for context. Without
+            # this the request would block on the model download and the browser
+            # would see a TCP reset ("Connection lost") after its own timeout.
+            if effective_model == "local":
+                ready, detail = await _ollama_is_ready()
+                if not ready:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"Local AI model is not ready yet: {detail}",
+                        headers={"Retry-After": "30"},
+                    )
+
+            response_text = await _build_chain(effective_model).ainvoke({
                 "message": chat_request.message,
                 "context": context or "No relevant data found in the user's notes, calendar, or checklists.",
             })
@@ -724,10 +778,6 @@ class GenAIApiImpl(BaseGenAIApi):
             ))
             await db.commit()
 
-            # Resolve the effective model once and report it in the response so the
-            # web client can show which LLM actually answered (e.g. "llama3.1" for
-            # the local Ollama deployment instead of the hardcoded Gemini label).
-            effective_model = chat_request.model or _DEFAULT_MODEL
             return ChatResponse(
                 response=response_text,
                 conversation_id=conversation.id,

@@ -1,4 +1,5 @@
 import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { LogOutIcon } from 'lucide-react';
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from 'src/components/ui/sidebar';
 import { TooltipProvider } from 'src/components/ui/tooltip';
@@ -63,11 +64,13 @@ function HeaderContent() {
   const username = useAuthStore((s) => s.username);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const initials = username ? username.slice(0, 2).toUpperCase() : '?';
 
   function handleLogout() {
     clearAuth();
+    queryClient.clear();
     void router.navigate({ to: '/login' });
   }
 

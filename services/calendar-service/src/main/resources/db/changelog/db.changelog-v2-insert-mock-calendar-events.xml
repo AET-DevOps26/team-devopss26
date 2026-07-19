@@ -11,6 +11,7 @@
     -->
     <changeSet id="2" author="devopss26">
         <insert tableName="calendar_event">
+            <column name="id" valueNumeric="-1"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="Team standup"/>
             <column name="description" value="Daily sync: blockers, plans, demos."/>
@@ -20,6 +21,7 @@
         </insert>
 
         <insert tableName="calendar_event">
+            <column name="id" valueNumeric="-2"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="DevOps lecture"/>
             <column name="description" value="Weekly lecture: container orchestration and GitOps."/>
@@ -29,6 +31,7 @@
         </insert>
 
         <insert tableName="calendar_event">
+            <column name="id" valueNumeric="-3"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="Sprint review"/>
             <column name="description" value="Demo of the notes service and the checklist service."/>
@@ -38,6 +41,7 @@
         </insert>
 
         <insert tableName="calendar_event">
+            <column name="id" valueNumeric="-4"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="Coffee with mentor"/>
             <column name="description" value="1:1 to discuss internship and project feedback."/>
@@ -47,6 +51,7 @@
         </insert>
 
         <insert tableName="calendar_event">
+            <column name="id" valueNumeric="-5"/>
             <column name="user_id" valueNumeric="-1"/>
             <column name="title" value="Hackathon kickoff"/>
             <column name="description" value="Team formation, problem statement reveal, and brainstorming."/>
