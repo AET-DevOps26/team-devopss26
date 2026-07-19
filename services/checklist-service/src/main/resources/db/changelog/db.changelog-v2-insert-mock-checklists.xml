@@ -19,24 +19,28 @@
             <column name="created_at" valueDate="2026-07-08T10:00:00"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-1"/>
             <column name="checklist_id" valueNumeric="-1"/>
             <column name="text" value="Complete user profile"/>
             <column name="completed" valueBoolean="true"/>
             <column name="position" valueNumeric="0"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-2"/>
             <column name="checklist_id" valueNumeric="-1"/>
             <column name="text" value="Read team handbook"/>
             <column name="completed" valueBoolean="true"/>
             <column name="position" valueNumeric="1"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-3"/>
             <column name="checklist_id" valueNumeric="-1"/>
             <column name="text" value="Set up local dev environment"/>
             <column name="completed" valueBoolean="false"/>
             <column name="position" valueNumeric="2"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-4"/>
             <column name="checklist_id" valueNumeric="-1"/>
             <column name="text" value="Pair with a teammate on first PR"/>
             <column name="completed" valueBoolean="false"/>
@@ -51,24 +55,28 @@
             <column name="created_at" valueDate="2026-07-13T18:00:00"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-5"/>
             <column name="checklist_id" valueNumeric="-2"/>
             <column name="text" value="Milk"/>
             <column name="completed" valueBoolean="false"/>
             <column name="position" valueNumeric="0"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-6"/>
             <column name="checklist_id" valueNumeric="-2"/>
             <column name="text" value="Eggs"/>
             <column name="completed" valueBoolean="false"/>
             <column name="position" valueNumeric="1"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-7"/>
             <column name="checklist_id" valueNumeric="-2"/>
             <column name="text" value="Bread"/>
             <column name="completed" valueBoolean="false"/>
             <column name="position" valueNumeric="2"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-8"/>
             <column name="checklist_id" valueNumeric="-2"/>
             <column name="text" value="Coffee beans"/>
             <column name="completed" valueBoolean="false"/>
@@ -83,24 +91,28 @@
             <column name="created_at" valueDate="2026-07-14T09:30:00"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-9"/>
             <column name="checklist_id" valueNumeric="-3"/>
             <column name="text" value="Finish user service refactor"/>
             <column name="completed" valueBoolean="true"/>
             <column name="position" valueNumeric="0"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-10"/>
             <column name="checklist_id" valueNumeric="-3"/>
             <column name="text" value="Wire up Prometheus dashboards"/>
             <column name="completed" valueBoolean="false"/>
             <column name="position" valueNumeric="1"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-11"/>
             <column name="checklist_id" valueNumeric="-3"/>
             <column name="text" value="Review two open pull requests"/>
             <column name="completed" valueBoolean="false"/>
             <column name="position" valueNumeric="2"/>
         </insert>
         <insert tableName="checklist_items">
+            <column name="id" valueNumeric="-12"/>
             <column name="checklist_id" valueNumeric="-3"/>
             <column name="text" value="Deploy to staging"/>
             <column name="completed" valueBoolean="false"/>

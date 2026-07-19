@@ -13,7 +13,13 @@ export function classifyChatError(error: unknown): ClassifiedError {
   }
 
   if (!error.response) {
-    return { type: 'network', message: 'Connection lost. Check your internet.' };
+    // No HTTP response means the request never reached a 2xx/4xx/5xx reply — the
+    // most common cause is the backend chat service (genai-service → Ollama)
+    // hanging, crashing, or being unreachable while the browser was waiting.
+    return {
+      type: 'service-unavailable',
+      message: 'The AI service is unreachable. Please retry in a moment.',
+    };
   }
 
   switch (error.response.status) {

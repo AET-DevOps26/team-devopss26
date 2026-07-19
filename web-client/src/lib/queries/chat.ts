@@ -9,7 +9,11 @@ export function useSendMessage() {
     }: {
       message: string;
       conversationId?: number;
-    }) => chat({ message, conversation_id: conversationId ?? null }),
+    }) =>
+      chat(
+        { message, conversation_id: conversationId ?? null },
+        { timeout: 120_000 },
+      ),
   });
 }
 

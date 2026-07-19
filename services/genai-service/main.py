@@ -398,7 +398,7 @@ def _rag_sync(query: str, chunks: list[str], top_k: int) -> str:
         _weaviate_client.collections.delete(collection_name)
 
 
-async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 5) -> str:
+async def _rag_retrieve(query: str, chunks: list[str], top_k: int = 50) -> str:
     """Offloads the blocking embedding and Weaviate calls to avoid stalling the
     asyncio event loop. When Weaviate or the embedding model is unavailable,
     falls back to returning raw chunks directly (no vector search). Returns
@@ -436,7 +436,8 @@ if _DEFAULT_MODEL == "local":
 
 _prompt = ChatPromptTemplate.from_messages([
     ("system",
-     "You are a helpful assistant for a personal productivity app. "
+     "You are a helpful assistant for a personal productivity app.\n"
+     "{now_context}\n"
      "Use the context below, retrieved from the user's personal notes, calendar events, and checklists, "
      "to answer their question. If the context does not contain enough information, say so.\n\n"
      "Context:\n{context}"),
@@ -516,6 +517,42 @@ def _resolve_model_name(model: str) -> str:
     return "gemini-3.1-flash-lite"
 
 
+# ── Local-model readiness ────────────────────────────────────────────────────
+
+async def _ollama_is_ready() -> tuple[bool, str]:
+    """Probe the local Ollama server for the configured model.
+
+    On a fresh ``docker compose --profile local`` start the ``ollama`` entrypoint
+    runs ``ollama pull ${LOCAL_LLM_MODEL}`` (a multi-GB download that can take
+    5-30 min). During that window the Ollama daemon is up — so the docker
+    healthcheck ``ollama list`` passes and ``genai-service`` starts — but
+    ``ChatOllama.ainvoke`` blocks waiting for the model, which the browser
+    experiences as a TCP reset ("Connection lost") once its request times out.
+
+    We short-circuit here with a 503 + ``Retry-After`` so the client gets a
+    clean "model still loading" message instead.
+
+    Returns ``(ready, detail)``: ``detail`` is empty on success, otherwise a
+    short human-readable reason suitable for the HTTP response body.
+    """
+    base = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+    model = os.environ.get("LOCAL_LLM_MODEL", "llama3.1")
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.get(f"{base}/api/tags")
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception as exc:
+        return False, f"Ollama not reachable at {base} ({type(exc).__name__})"
+    # Ollama returns model names like "llama3.1:latest" — strip the tag for matching.
+    available = {m.get("name", "").split(":")[0] for m in data.get("models", [])}
+    target = model.split(":")[0]
+    if target not in available:
+        loaded = ", ".join(sorted(available)) or "none"
+        return False, f"model '{model}' is not pulled yet (loaded: {loaded})"
+    return True, ""
+
+
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(title="GenAI Chatbot Service", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -572,6 +609,39 @@ async def _auth_middleware(request: Request, call_next):
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
+
+
+def _now_context() -> str:
+    """Human-readable temporal context for the LLM (date, time, timezone).
+
+    Injected into the system prompt so the model can correctly resolve
+    relative date/time references like "today", "tomorrow", "this week",
+    "in 2 hours" — the RAG chunks themselves only carry absolute timestamps
+    (ISO 8601), which the LLM can't always map to relative phrases on its
+    own. Computed per-request so it stays accurate across long-lived
+    processes.
+
+    The container's system clock is typically UTC, so ``datetime.now()`` with
+    no explicit zone would report the UTC date even when it's already past
+    midnight in the user's locale. We resolve an explicit ``zoneinfo`` zone
+    (configurable via ``LLM_TIMEZONE``, defaulting to ``Europe/Berlin``) so
+    the date matches the user's wall-clock day.
+    """
+    from zoneinfo import ZoneInfo
+    tz_name = os.environ.get("LLM_TIMEZONE", "Europe/Berlin")
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        # Invalid / unknown zone name (e.g. typo in env var): fall back to
+        # the default rather than failing the whole chat request.
+        tz = ZoneInfo("Europe/Berlin")
+        tz_name = "Europe/Berlin"
+    now = datetime.now(tz)
+    return (
+        f"Today's date: {now.strftime('%A, %Y-%m-%d')}\n"
+        f"Current time: {now.strftime('%H:%M:%S')}\n"
+        f"Timezone: {now.tzname()}"
+    )
 
 
 def _to_conversation_model(conversation: ChatConversation) -> Conversation:
@@ -713,9 +783,28 @@ class GenAIApiImpl(BaseGenAIApi):
             except Exception:
                 pass
 
-            response_text = await _build_chain(chat_request.model or _DEFAULT_MODEL).ainvoke({
+            # Resolve the effective model once and report it in the response so the
+            # web client can show which LLM actually answered (e.g. "llama3.1" for
+            # the local Ollama deployment instead of the hardcoded Gemini label).
+            effective_model = chat_request.model or _DEFAULT_MODEL
+
+            # For the local (Ollama) path, fail fast with a clear 503 when the
+            # model isn't pulled yet — see `_ollama_is_ready` for context. Without
+            # this the request would block on the model download and the browser
+            # would see a TCP reset ("Connection lost") after its own timeout.
+            if effective_model == "local":
+                ready, detail = await _ollama_is_ready()
+                if not ready:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"Local AI model is not ready yet: {detail}",
+                        headers={"Retry-After": "30"},
+                    )
+
+            response_text = await _build_chain(effective_model).ainvoke({
                 "message": chat_request.message,
                 "context": context or "No relevant data found in the user's notes, calendar, or checklists.",
+                "now_context": _now_context(),
             })
 
             db.add(ChatMessage(
@@ -724,10 +813,6 @@ class GenAIApiImpl(BaseGenAIApi):
             ))
             await db.commit()
 
-            # Resolve the effective model once and report it in the response so the
-            # web client can show which LLM actually answered (e.g. "llama3.1" for
-            # the local Ollama deployment instead of the hardcoded Gemini label).
-            effective_model = chat_request.model or _DEFAULT_MODEL
             return ChatResponse(
                 response=response_text,
                 conversation_id=conversation.id,

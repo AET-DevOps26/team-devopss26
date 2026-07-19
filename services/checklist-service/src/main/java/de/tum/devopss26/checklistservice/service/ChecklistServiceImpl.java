@@ -106,7 +106,7 @@ public class ChecklistServiceImpl implements ChecklistService {
     public UpdateChecklistResponse updateChecklist(Long userId, Long id, org.openapitools.model.Checklist checklist) {
         Checklist entity = getOwnedChecklistEntity(userId, id);
         entity.setTitle(checklist.getTitle());
-        return mapper.toUpdateChecklistResponse(toDto(checklistRepository.save(entity)));
+        return mapper.toUpdateChecklistResponse(toDto(entity));
     }
 
     /**
@@ -183,7 +183,7 @@ public class ChecklistServiceImpl implements ChecklistService {
         if (dto.getPosition() != null) {
             item.setPosition(dto.getPosition());
         }
-        return mapper.toUpdateChecklistItemResponse(toDto(checklistItemRepository.save(item)));
+        return mapper.toUpdateChecklistItemResponse(toDto(item));
     }
 
     /**
