@@ -4,7 +4,7 @@ import { useAuthStore } from 'src/stores/authStore';
 /** Shared Axios instance. baseURL from VITE_API_URL env var. 30s timeout default. */
 export const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 120_000,
+  timeout: 30_000,
   headers: { 'Content-Type': 'application/json' },
 });
 
