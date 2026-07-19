@@ -329,7 +329,7 @@ function NotesToolbar({
 function NoteCard({ note, onClick }: { note: DisplayNote; onClick: () => void }) {
   const doneCount = note.checklist.filter((i) => i.done).length;
   return (
-    <Card className="cursor-pointer transition-colors hover:border-ring/30" onClick={onClick}>
+    <Card className="cursor-pointer transition-colors hover:bg-accent hover:border-ring/30" onClick={onClick}>
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="truncate">{note.title}</CardTitle>
