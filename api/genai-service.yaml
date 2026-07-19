@@ -232,4 +232,4 @@ components:
         model:
           type: string
           nullable: true
-          example: "llama3.1"
+          example: "llama3.2:1b"

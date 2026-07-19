@@ -451,7 +451,7 @@ def _build_chain(model: str):
     - ``groq-llama`` → ChatGroq (llama-3.1-8b-instant)
     - ``mistral`` → ChatMistralAI (mistral-small-latest)
     - ``cohere`` → ChatCohere (command-r)
-    - ``local`` → ChatOllama (llama3.1 via OLLAMA_BASE_URL)
+    - ``local`` → ChatOllama (llama3.2:1b via OLLAMA_BASE_URL)
     - anything else  → ChatGoogleGenerativeAI (gemini-3.1-flash-lite) as fallback
 
     The prompt template injects RAG-retrieved context before the user's message.
@@ -475,14 +475,14 @@ def _build_chain(model: str):
         llm = ChatCohere(model="command-r", cohere_api_key=key)
     elif model == "local":
         # Local / self-hosted LLM option: talk to an Ollama server running an open model
-        # (e.g. Llama 3.1) so the service can operate fully offline with no hosted API key.
+        # (e.g. Llama 3.2 1B) so the service can operate fully offline with no hosted API key.
         # This is the default model for docker-compose (local) deployment, where an
         # `ollama` container is available; k8s deployment defaults to Gemini instead
         # since no Ollama container is provisioned there. `langchain_ollama` is imported
         # lazily so the dependency is only exercised when model="local" is actually used.
         from langchain_ollama import ChatOllama
         llm = ChatOllama(
-            model=os.environ.get("LOCAL_LLM_MODEL", "llama3.1"),
+            model=os.environ.get("LOCAL_LLM_MODEL", "llama3.2:1b"),
             base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
         )
     else:
@@ -511,7 +511,7 @@ def _resolve_model_name(model: str) -> str:
     if model == "cohere":
         return "command-r"
     if model == "local":
-        return os.environ.get("LOCAL_LLM_MODEL", "llama3.1")
+        return os.environ.get("LOCAL_LLM_MODEL", "llama3.2:1b")
     # "gemini", "gemini-lite", or any unrecognised value → default Gemini
     return "gemini-3.1-flash-lite"
 
@@ -673,7 +673,7 @@ class GenAIApiImpl(BaseGenAIApi):
         retrieved context. The response includes the generated text, the
         (possibly new) conversation id, and the effective model that produced
         the answer (so the client can show which LLM actually responded,
-        e.g. ``llama3.1`` for the local Ollama deployment).
+        e.g. ``llama3.2:1b`` for the local Ollama deployment).
 
         Raises:
             HTTPException 400: If the message is empty after stripping or contains NUL bytes.
@@ -725,7 +725,7 @@ class GenAIApiImpl(BaseGenAIApi):
             await db.commit()
 
             # Resolve the effective model once and report it in the response so the
-            # web client can show which LLM actually answered (e.g. "llama3.1" for
+            # web client can show which LLM actually answered (e.g. "llama3.2:1b" for
             # the local Ollama deployment instead of the hardcoded Gemini label).
             effective_model = chat_request.model or _DEFAULT_MODEL
             return ChatResponse(

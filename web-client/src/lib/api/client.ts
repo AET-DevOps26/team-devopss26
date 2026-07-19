@@ -1,10 +1,10 @@
 import axios, { type AxiosRequestConfig, type AxiosInstance, type AxiosResponse } from 'axios';
 import { useAuthStore } from 'src/stores/authStore';
 
-/** Shared Axios instance. baseURL from VITE_API_URL env var. 30s timeout default. */
+/** Shared Axios instance. baseURL from VITE_API_URL env var. 120s timeout default. */
 export const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 30_000,
+  timeout: 120_000,
   headers: { 'Content-Type': 'application/json' },
 });
 
