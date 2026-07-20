@@ -103,6 +103,13 @@
         line: 'DEFAULT_LLM_MODEL=gemini'
         state: present
 
+    - name: Inject hosted LLM API key into deployed .env
+      ansible.builtin.lineinfile:
+        path: /home/devops-admin/app/.env
+        regexp: '^GEMINI_API_KEY=.*$'
+        line: "GEMINI_API_KEY={{ lookup('env', 'GEMINI_API_KEY') }}"
+        state: present
+
     - name: Ensure init-db directory exists on VM
       ansible.builtin.file:
         path: /home/devops-admin/app/init-db
